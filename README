@@ -1,8 +1,9 @@
 METAREP WEB DIRECTORY
 
-/app 			application files
+/app 			web application files
 /cake 			cake framework files
-/parsers		lucene index parsing/generating  files
-/solr-server	solr server configuration files
+/loader                 index generation scripts
+/mysql                  mysql database files/dump
+/solr	                solr/lucene configuration files
 /vendors		3rd-party php tools
 
