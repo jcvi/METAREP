@@ -1,0 +1,8 @@
+METAREP WEB DIRECTORY
+
+/app 			application files
+/cake 			cake framework files
+/parsers		lucene index parsing/generating  files
+/solr-server	solr server configuration files
+/vendors		3rd-party php tools
+

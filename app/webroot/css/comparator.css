@@ -1,0 +1,265 @@
+/*
+CSS for comparator pages
+*/
+
+/* basic component
+----------------------------------*/
+.comparator-multi-select-panel {  
+	position: absolute;
+	top: 170px;
+	left: 40px;
+	width: 1030px;
+	height: 152px;
+	border: 1px solid #aaaaaa;
+}
+
+.comparator-query-panel {  
+	position: absolute;
+	top: 336px;
+	left:40px;
+	width: 500px;
+	height: 50px;
+	
+}
+
+.comparator-main-panel { 	
+	position: absolute;
+	top: 400px;
+	left:40px;
+	width: 1030px;
+	height: 540px;
+	border: 1px solid #aaaaaa;
+	overflow:scroll;
+}
+
+.comparator-option-panel {  
+	position: absolute;
+	top: 336px;
+	left:560px;
+	width: 510px;
+	height: 50px;
+}
+
+.align-right td {  
+	text-align:right;
+}
+
+.align-left td {  
+	text-align:left;
+}
+
+.comparator-error-message {
+	position: absolute;
+	left:40px;
+	text-align:center;
+	font-size:0.9em;
+}
+
+/* defines the height of the multi select box */
+.multiselect {	
+	height: 130px ;
+}
+form {	
+	clear: none;
+	margin-right: 0px;
+	padding: 0px;
+	width: 390px;
+}
+
+label {
+	float: left;
+}
+
+#dialog_link {
+	position: absolute;
+	top: 0px;
+	left:0px;
+	height: 15px;
+}
+
+input[type="submit"] {
+	position: absolute;
+	top: 0px;
+	left:440px;
+	width: 70px;
+	height: 25px;
+}
+
+input[type="text"] {
+	position: absolute;
+	top: 0px;
+	width: 490px;
+	font-size:120% !important;
+	hight:8px;
+	left: 0px;
+	padding:0px !important;
+}
+	
+input[type="radio"] {
+	float: right;
+	width:20px;
+	hight:10px;
+	padding:10em;
+}	
+
+form div {
+	clear:none;
+	margin-bottom:0em;
+	padding:0em;
+	vertical-align:text-top;
+}
+
+select {	
+	font-size: 0.9em;
+	margin: 0px;
+	padding: 0px;
+}
+
+.comparator-level-select {	
+	position:absolute;
+	left: 9px;
+	top: 55px;
+}
+
+.comparator-heatmap-color-select {	
+	position:absolute;
+	left: 635px;
+	top: 55px;
+}
+
+#comparison-results {
+	margin-top:45px;
+	width: 1010px;
+	height: 400px;
+	padding-left:5px;
+	font-size: 0.9em;	
+	overflow:auto;
+}
+
+.comparison-results-table {
+	font-size:1em;
+}
+
+.comparator-heatmap-legend {  
+	font-weight: bold;
+	font-size: 0.7em;	
+}
+
+.comparator-heatmap {  	
+	
+}
+
+.comparator-min-count-option {
+	position: absolute;
+	left:70px;
+	top:0px;
+	width:145px;
+	height: 23px;
+}
+
+fieldset {
+	padding:6px;
+}	
+
+.comparator-min-count-option label {
+	position: absolute;
+	top:0px;
+	left:0px;
+	width:70px;
+	height:35px;
+	padding:0px !important;
+	text-align: left !important;	
+}
+
+.comparator-min-count-option input[type="text"] {
+	position: absolute;
+	width:55px;
+	left:75px;
+	top:2px;
+	padding:0px !important;
+	font-size:120% !important;
+	height:15px;
+	float: none;
+	padding: 0px;
+}
+.comparator-test-select input[type="text"]  {
+	with:260px;
+}
+.comparator-select-option select {
+	position: absolute;
+	font-size: 0.9em;
+	left: 215px;
+	width:210px;
+	float: none;
+	padding: 0px;
+	height: 23px;
+}
+
+.comparator-plot-select-option select {
+	position: absolute;
+	font-size: 0.9em;
+	top: 30px;
+	left: 220px;
+	width:160px;
+	float: none;
+	padding: 0px;
+}
+
+.comparator-download {  	
+	position: absolute;
+	top: 5px;
+	left:955px;
+}
+
+.tab{
+	padding-bottom:50px;
+}
+
+
+table.tablesorter thead tr .header {
+        background-image: url(../img/sort-bg.gif);
+        background-repeat: no-repeat;
+        background-position: center right;
+        cursor: pointer;
+        padding-left:5px;
+       
+}
+table.tablesorter thead tr .headerSortUp {
+        background-image: url(../img/sort-asc.gif);
+        padding-left:5px;
+}
+table.tablesorter thead tr .headerSortDown {
+        background-image: url(../img/sort-desc.gif);
+        padding-left:5px;
+}
+table.tablesorter tbody tr.odd td {
+        background-color:#f4f4f4;
+}
+
+#resize-box{
+	background-color:#f0f0f0;
+	border:1px dashed #a0a0a0;
+	position:absolute;
+	top:54px;
+	right:42px;
+}
+
+#resize-box:hover{
+	background-color:#e0e0e0;
+}		
+
+#resize-box a{
+	font-size:10px;
+	font-family:Arial,sans-serif;
+	text-decoration:none;
+	color:#909090;
+	display:block;
+	float:left;
+	padding:5px 10px;
+}
+
+#resize-box a:hover{
+	color: #fff; background: #e32;
+}
+
+

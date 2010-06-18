@@ -1,0 +1,83 @@
+/*
+CSS Browse Page
+*/
+
+/* basic component
+----------------------------------*/
+
+.browse-download-facets {  	
+	position: relative;
+	margin-left: 95%;
+	top: 22px;
+}
+
+.browse-download-classification {  	
+	position: relative;
+	margin-left: 95%;
+	top: -30px;
+}
+
+
+#dialog_link {  	
+	position: relative;
+	
+	margin-bottom: 20px;
+	top: 0px;
+	left:0px;
+	margin-bottom:20px;
+}
+
+#browse-tree-panel {
+	position: relative;
+	float:left;
+	margin-top:0px;
+	padding-top:0px;
+	height: 100%;
+	width: 30%;
+	font-size: 0.9em;
+	vertical-align:center;
+	overflow:auto;
+	
+}
+
+fieldset {
+	margin-top: 0px;
+}
+
+#browse-right-panel {
+	position: relative;
+	float:none;
+	margin-left:31%;
+	height: 100%;
+	width: 69%;
+	overflow:none;
+	text-align: center
+}
+
+#browse-classification-panel {
+	position: relative;
+	float:none;
+	height: 100%;
+	width: 100%;
+	font-size: 0.9em;
+	overflow:auto;
+
+}
+
+#browse-facet-list-panel {
+	position: relative;
+	float:none;
+	height: 100%;
+	width: 100%;
+	font-size: 0.9em;
+
+}
+
+#browse-facet-pie-panel {
+	position: relative;
+	float:none;
+	height: 100%;
+	width: 100%;
+	font-size: 0.9em;
+	overflow:auto;
+}
