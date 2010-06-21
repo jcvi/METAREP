@@ -1,4 +1,4 @@
-METAREP WEB DIRECTORY
+METAREP DIRECTORIES
 
 /app 			web application files
 /cake 			cake framework files
@@ -7,3 +7,5 @@ METAREP WEB DIRECTORY
 /solr	                solr/lucene configuration files
 /vendors		3rd-party php tools
 
+please visit the project's wiki page at http://wiki.github.com/jcvi/METAREP
+for additional information
