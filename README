@@ -7,5 +7,5 @@ METAREP DIRECTORIES
 /solr	                solr/lucene configuration files
 /vendors		3rd-party php tools
 
-please visit the project's wiki page at http://wiki.github.com/jcvi/METAREP
+Please visit the project's wiki page at http://wiki.github.com/jcvi/METAREP
 for additional information
