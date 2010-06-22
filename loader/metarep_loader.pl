@@ -492,13 +492,11 @@ sub getTaxonAncestors() {
 
 #returns array of GO ancestors (integer part of the ID)
 sub getGoAncestors(){
-	
+
 	my $goTerms = shift;
 	my @ancestors=();
 		
 	my @goTerms = split (/\|\|/, $goTerms);
-	#print 'go-term:'.$goTerms;
-	#print 'go-array:'.@goTerms;
 	
 	@goTerms = &trimArray(@goTerms);
 	
@@ -522,6 +520,7 @@ sub getGoAncestors(){
 	$sth->bind_col(1, \$ancestor);
 	
 	while ($sth->fetch) {
+		
 		#remove trailing zeros
 		$ancestor =~ s/^0*//;
 		push(@ancestors,$ancestor);
