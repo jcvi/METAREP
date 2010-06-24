@@ -135,8 +135,11 @@
 		if (Authsome::get()):?>
 			<?php 
 				$currentUser 	= Authsome::get();
+				if($currentUser) {//debug($currentUser);
+				//die();
 				$currentUserId 	= $currentUser['User']['id'];	    	        	
 	       		$userGroup  	= $currentUser['UserGroup']['name'];
+			};
 	       	?>	       					
 		<ul id="menu">			
 			<li><?php echo $html->link(__('Quick Navigation', true), array('controller'=> 'menus', 'action'=>'quick')); ?></li>

@@ -49,7 +49,7 @@
  */
 	Configure::write('App.encoding', 'UTF-8');
 	
-	define('METAREP_TMP_DIR','/opt/www/metarep/tmp');	
+	define('METAREP_TMP_DIR','/tmp');	
 	
 /**
  * To configure CakePHP *not* to use mod_rewrite and to
@@ -194,17 +194,17 @@ define ('MAX_MEMORY_LIMIT', '512M');
  * Default settings provided below
  *
  * File storage engine.
- *
- * 	 Cache::config('default', array(
- *		'engine' => 'File', //[required]
- *		'duration'=> 3600, //[optional]
- *		'probability'=> 100, //[optional]
- * 		'path' => CACHE, //[optional] use system tmp directory - remember to use absolute path
- * 		'prefix' => 'cake_', //[optional]  prefix every cache file with this string
- * 		'lock' => false, //[optional]  use file locking
- * 		'serialize' => true, [optional]
- *	));
- *
+ */
+ 	 Cache::config('default', array(
+		'engine' => 'File', //[required]
+		'duration'=> 3600, //[optional]
+		'probability'=> 100, //[optional]
+ 		'path' => METAREP_TMP_DIR, //[optional] use system tmp directory - remember to use absolute path
+ 		'prefix' => 'cake_', //[optional]  prefix every cache file with this string
+ 		'lock' => false, //[optional]  use file locking
+ 		'serialize' => true,
+	));
+ /**
  *
  * APC (http://pecl.php.net/package/APC)
  *
@@ -241,5 +241,5 @@ define ('MAX_MEMORY_LIMIT', '512M');
  *	));
  *
  */
-	Cache::config('default', array('engine' => 'File'));
+	#Cache::config('default', array('engine' => 'File'));
 ?>

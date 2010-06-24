@@ -7,7 +7,7 @@
 <!---------------------------------------------------------->
 
 <?php echo $html->css('user-dashboard.css'); ?>
-<?php echo $html->css('jquery-ui-1.7.2.custom.css'); ?>
+<?php echo $html->css('jquery-ui-1.7.2.custom.css');?>
 
 <div class="user-dash-board">
 	<h2><?php __('Dash Board - Welcome '); echo Authsome::get('username'); ?></h2>
@@ -17,23 +17,23 @@
 			<legend >Manage Account</legend>
 			<p>
 				<ul>
-				    <?
+				    <?php
 				    $currentUser	=  Authsome::get();
 					$currentUserId	= $currentUser['User']['id'];	
-				    
-				    if (Authsome::check('users/index')):?>
+				    ?>
+				    <?if (Authsome::check('users/index')):?>
 				    <li>
-				        <?=$html->link('Manage Users','/users/index')?>
+				        <?php echo($html->link('Manage Users','/users/index'))?>
 				    </li>
 				    <?endif;?>
 				    <?if (Authsome::check(' user_group_permissions/index')):?>
 				    <li>
-				        <?=$html->link('Manage Permissions','/user_group_permissions/index')?>
+				        <?php echo($html->link('Manage Permissions','/user_group_permissions/index'))?>
 				    </li>
 				    <?endif;?>
-				    <li><?=$html->link('Change Account Information',"/users/edit/$currentUserId")?></li>
-				    <li><?=$html->link('Change Password','/users/change_password')?></li>
-				    <li><?=$html->link('Logout','/users/logout')?></li>
+				    <li><?php echo($html->link('Change Account Information',"/users/edit/$currentUserId"))?></li>
+				    <li><?php echo($html->link('Change Password','/users/change_password'))?></li>
+				    <li><?php echo($html->link('Logout','/users/logout'))?></li>
 				</ul>
 			</p>
 		</fieldset>
@@ -69,7 +69,7 @@
 	<div class="user-dash-board-feedback-panel"> 
 		<fieldset>
 		<legend >Feedback</legend>
-		<? 
+		<?php 
 			echo($form->create('Users', array('action' => 'feedback')));
 			echo $form->input( 'type', array( 'options' => array('feature request'=>'feature request','bug report'=>'bug report','data load'=>'data load','other'=>'other'), 'selected' => 'other','label' => false, 'empty'=>'--select feedback type--'));
 			echo $form->input('feedback',array('type' => 'textaerea'));
@@ -78,7 +78,7 @@
 		?>		
 	</fieldset>
 	</div>
-	
+<?php if (!empty($news)):?>	
 	<div class="user-dash-board-news-panel" > 
 		<fieldset >
 			<legend >News</legend>
@@ -91,6 +91,7 @@
 		</fieldset>
 	</div>
 </div>
+<?php endif;?>
 
 <script type="text/javascript">
 	jQuery(function() {

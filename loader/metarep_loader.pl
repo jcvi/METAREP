@@ -23,6 +23,10 @@ use Pod::Usage;
 =head1 NAME
 metarep_loader.pl generates METAREP lucene indices from METAREP tab delimited files
 			
+=head1 SYNOPSIS
+
+
+=head1 OPTIONS
 B<--project_id, -i>
 	METAREP project id (MySQL table projects, field project_id)			
 			
@@ -70,14 +74,14 @@ B<--go_password, -f>
 	
 B<--xml_only, -x>
 	Useful for debugging. Generates only XML files in the specified tmp directory without pushing the data to the Solr server. 
-	
-=back
 
 =head1 AUTHOR
 
 Johannes Goll  C<< <jgoll@jcvi.org> >>
 
 =cut
+
+my $initialJavaHeapSize = '250M';
 
 my %args = ();
 
@@ -105,8 +109,8 @@ GetOptions(
 ) || pod2usage(2);
 
 #print help
-if($args{help}) {	
-	pod2usage(-exitval => 1, -verbose => 1);
+if($args{help}) {
+	pod2usage(-exitval => 1, -verbose => 2);
 }
 
 #check arguments || mandatory fields
@@ -136,7 +140,7 @@ elsif(!defined($args{tmp_dir}) || !(-d $args{tmp_dir})) {
 elsif(!defined($args{metarep_username})) {
 	pod2usage(
 			-message =>
-"\n\nERROR: A MySQL username needs to be defined.\n",
+"\n\nERROR: A METAREP MySQL username needs to be defined.\n",
 			-exitval => 1,
 			-verbose => 1
 	);
@@ -144,20 +148,27 @@ elsif(!defined($args{metarep_username})) {
 elsif(!defined($args{metarep_password})) {
 	pod2usage(
 			-message =>
-"\n\nERROR: A MySQL password needs to be defined.\n",
+"\n\nERROR: A METAREP MySQL password needs to be defined.\n",
 			-exitval => 1,
 			-verbose => 1
 	);
 }
-elsif(!defined($args{solr_home_dir})) {
+elsif(!defined($args{solr_home_dir}) && !$args{xml_only}) {
 	pod2usage(
 			-message =>
-"\n\nERROR: A Solr installation directory needs to be defined.\n",
+"\n\nERROR: A Solr home directory needs to be defined.\n",
 			-exitval => 1,
 			-verbose => 1
 	);
 }
-
+elsif(!defined($args{solr_instance_dir}) && !$args{xml_only}) {
+	pod2usage(
+			-message =>
+"\n\nERROR: A Solr instance directory needs to be defined.\n",
+			-exitval => 1,
+			-verbose => 1
+	);
+}
 
 #set default values
 if(!defined($args{solr_url})) {
@@ -182,10 +193,7 @@ if(!defined($args{solr_max_mem})) {
 	$args{solr_max_mem} = '1000M';
 }
 if(!defined($args{solr_data_dir})) {
-	$args{solr_data_dir} = "$args{solr_home_dir}/example/solr/data/";
-}
-if(!defined($args{solr_instance_dir})) {
-	$args{solr_instance_dir} = "$args{solr_home_dir}/example/solr";
+	$args{solr_data_dir} = "$args{solr_instance_dir}/data/";
 }
 
 #connect to metarep MySQL database
@@ -233,11 +241,14 @@ sub createIndex() {
 	my $datsetName = basename($file);
 	$datsetName =~ s/.tab//;
 	
+	
 	#create index file
 	&openIndex($datsetName);
 	
 	while(<FILE>) {
 		chomp $_;
+		
+		my ($blastTree,$blastSpecies,$blastEvalueExponent);
 		
 		#read fields
         my (
@@ -256,18 +267,46 @@ sub createIndex() {
             $blastCov,
 			$filter,
            ) = split("\t",  $_);	 
+        
+        #set GO tree
+        my @GoAncestors= &getGoAncestors($goId);
+        my $goTree 	= join('||',@GoAncestors);
+        
+       
+        #set Blast tree and Blast species based in provided taxon
+        if($blastTaxon) {
+	        my @taxonAncestors = &getTaxonAncestors($blastTaxon);
+	        $blastTree 		= join('||',@taxonAncestors);
+	 		$blastSpecies 	= &getSpecies(\@taxonAncestors);	
+        }	
            
-        &addDocument($peptideId,$libraryId,$comName,$comNameSrc,$goId,$goSrc,$ecId,$ecSrc,$hmmId,$blastTaxon,$blastEvalue,$blastPid,$blastCov,$filter);         
+        #set Blast Evalue exponent 
+		if($blastEvalue == 0) {
+			#set evalue to high default value
+			$blastEvalueExponent = 9999;
+		}
+		else {
+			my @tmp = split('e-',lc($blastEvalue));	
+			use POSIX qw( floor );
+			$blastEvalueExponent  = floor($tmp[1]);
+		}
+         
+        &addDocument($peptideId,$libraryId,$comName,$comNameSrc,$goId,$goSrc,$goTree,$ecId,$ecSrc,
+        $hmmId,$blastTaxon,$blastSpecies,$blastEvalue,$blastEvalueExponent,$blastPid,$blastCov,$blastTree,$filter);         
 	}
 	&closeIndex();
-	&pushIndex($datsetName);
+	
+	#push index if xml only option has not been selected
+	unless($args{xml_only}) {
+		&pushIndex($datsetName);
+	}
 }
 
 #creates index file
 sub openIndex {
 	my $dataset = shift;
 	#open output file
-	print "creating index file $args{tmp_dir}/$dataset".".xml\n";
+	print "Creating index file $args{tmp_dir}/$dataset".".xml ...\n";
 	my $outFile	= "$args{tmp_dir}/$dataset".".xml";
 	
 	open(INDEX, ">$outFile") || die("Could not create file $outFile.");
@@ -276,7 +315,7 @@ sub openIndex {
 }
 
 #closes index file
-sub openIndex {
+sub closeIndex {
 	print INDEX "</add>";
 	close INDEX;
 }
@@ -304,80 +343,14 @@ sub pushIndex() {
 	&createMetarepDataset($dataset);	
 }
 
-#deletes dataset from METAREP MySQL database
-sub deleteMetarepDataset() {
-	my $name = shift;
-	
-	my $query ="delete from libraries where name = ?";
 
-	#prepare query
-	my $sth =$metarepDbConnection->prepare($query);
-	
-	$sth->execute($name) or die "Couldn't execute: $DBI::errstr";
-}
-
-#deletes Solr core (if exists)
-sub deleteSolrCore() {
-	my $core = shift;
-
-	#delete all documents of existing index
-	print "Deleting index: java -Durl=$args{solr_url}/solr/$core/update -Xms150 -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_instance_dir}/delete.xml...\n";
-	`java -Durl=$args{solr_url}/solr/$core/update -Xms150 -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_instance_dir}/delete.xml `;
-		
-	#unload core from core registry
-	print "Unloading index: curl $args{solr_url}/solr/admin/cores?action=UNLOAD&core=$core \n";
-	`curl \"$args{solr_url}/solr/admin/cores?action=UNLOAD&core=$core\"`;
-}
-
-#creates Solr core
-sub createSolrCore() {
-	my $core = shift;
-	
-	#create core
-	print "Creating new core: curl $args{solr_url}/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_home_dir}/example/solr&dataDir=$args{solr_instance_dir}/$args{project_id}/$core...\n";
-	`curl \"$args{solr_url}/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_instance_dir}&dataDir=$args{solr_data_dir}/$args{project_id}/$core\"`;	
-}
-
-#creates Solr index
-sub loadSolrIndex() {
-	my $core = shift;
-	
-	my $file = "$args{tmp_dir}/$core.xml";
-	
-	#load index
-	print "Loading Dataset Index: java -Durl=$args{solr_url}/solr/$core/update -Xms150 -Xmx$args{solr_max_memory} -jar $args{solr_home_dir}/example/exampledocs/post.jar $file ...\n";
-	`java -Durl=$args{solr_url}/solr/$core/update -Xms150 -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $file`;
-}
-
-#optimizes Solr index
-sub optimizeIndex() {
-	my $core = shift;
-	
-	#optimize index
-	print "Optimize Dataset Index: java -Durl=$args{solr_url}/solr/$core/update -Xms150 -Xmx$args{solr_max_memory} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_instance_dir}/optimize.xml \n";
-	`java -Durl=$args{solr_url}/solr/$core/update -Xms150 -Xmx$args{solr_max_memory}  -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_instance_dir}/optimize.xml `;
-
-}
-
-#creates dataset in METAREP MySQL database
-sub createMetarepDataset() {
-	my $dataset = shift;
-	
-	my $query ="insert ignore into libraries (name,project_id,created,updated) VALUES (?,?,now(),now())";
-	print $query."\n";
-	
-	#prepare query
-	my $sth =$metarepDbConnection->prepare($query);
-	
-	#execute query
-	$sth->execute($dataset,$args{project_id}) or die "Couldn't execute: $DBI::errstr";
-}
 
 #adds lucene document to lucene index
 sub addDocument() {
-	my ($peptideId,$libraryId,$comName,$comNameSrc,$goId,$goSrc,$ecId,$ecSrc,$hmmId,$blastTaxon,$blastEvalue,$blastPid,$blastCov,$filter) = @_;	 
+	my ($peptideId,$libraryId,$comName,$comNameSrc,$goId,$goSrc,$goTree,$ecId,$ecSrc,
+        $hmmId,$blastTaxon,$blastSpecies,$blastEvalue,$blastEvalueExponent,$blastPid,$blastCov,$blastTree,$filter) = @_;	 
 	
-	print INDEX "<doc>\n";	
+	print INDEX "<doc>\n";		
 	
 	#write core fields
 	&printSingleValue("peptide_id",$peptideId);
@@ -386,11 +359,19 @@ sub addDocument() {
 	&printMultiValue("com_name_src",$comNameSrc);
 	&printMultiValue("go_id",$goId);
 	&printMultiValue("go_src",$goSrc);
-	&printAncestors("go_tree",$goId);
+	&printMultiValue("go_tree",$goTree);
 	&printMultiValue("ec_id",$ecId);
-	&printMultiValue("ec_src",$ecSrc);			
+	&printMultiValue("ec_src",$ecSrc);		
 	&printMultiValue("hmm_id",$hmmId);		
 	&printMultiValue("filter",$filter);
+	
+	#write best hit Blast fields
+	&printSingleValue('blast_species',$blastSpecies);
+	&printSingleValue('blast_evalue',$blastEvalue);
+	&printSingleValue('blast_evalue_exp',$blastEvalueExponent);
+	&printSingleValue('blast_pid',$blastPid);
+	&printSingleValue('blast_cov',$blastCov);	
+	&printMultiValue("blast_tree",$blastTree);			
 	
 	print INDEX "</doc>\n";		
 }
@@ -425,67 +406,31 @@ sub printMultiValue() {
 	}
 }
 
-#adds ancestors to a taxon or GO ID
-sub printAncestors {
-	my ($field,$value) = @_;
-	
-	if($value ne '') {
-		
-		my @ancestors = undef;
-		
-		if($field eq 'go_tree') {		
-			@ancestors = &getGoAncestors($value);
-		}
-		elsif($field eq 'blast_tree') {			
-			@ancestors = &getTaxonAncestors($value);
-		}
-		
-		if(@ancestors>0) {
-			foreach(@ancestors) {
-				my $value =  &clean($_);
-				
-				if($value) {
-					print INDEX "<field name=\"$field\">". &clean($_)."</field>\n";
-				}
-			}
-		}
-	}
-}
-
 
 #takes a species taxon id and returns an array that contains its lineage
 sub getTaxonAncestors() {
-	my $speciesId = shift;
+	my $taxonId = shift;
 	my @ancestors = ();
 	
-	my @speciesIds = split (/\|\|/, $speciesId);
-	
-	@speciesIds = &trimArray(@speciesIds);	
-	
-	foreach $speciesId (@speciesIds) {
-		unshift(@ancestors,$speciesId);
+	#add taxon id to the front of the array
+	unshift(@ancestors,$taxonId);
 		
-		#loop through tree until root has been reached
-		while(1) {
-			my $parentTaxonId = &getParentTaxonId($speciesId);
-			
-			#add parent to the front of the array 
-			unshift(@ancestors,$parentTaxonId);
-			
-			#stop if root has been reached	
-			if($parentTaxonId == 1 || $parentTaxonId eq ''){
-				last;
-			}				
-			$speciesId = $parentTaxonId;
-		} 
-	}
-	
-	#remove unique entries
-	if(@speciesIds>1 ){ 
-		my %hash =();
+	#loop through tree until root has been reached
+	while(1) {
+		my $parentTaxonId = &getParentTaxonId($taxonId);
 		
-		@ancestors = grep {!$hash{$_}++} @ancestors;
-	}
+		#add parent to the front of the array if is non-empty
+		if($parentTaxonId ne '') {			
+			unshift(@ancestors,$parentTaxonId);			
+		}	
+		
+		#stop if root has been reached or empty taxon ID has been returned	
+		if($parentTaxonId == 1 || $parentTaxonId eq ''){
+			last;
+		}	
+				
+		$taxonId = $parentTaxonId;
+	} 
 	
 	return @ancestors;
 }
@@ -498,7 +443,7 @@ sub getGoAncestors(){
 		
 	my @goTerms = split (/\|\|/, $goTerms);
 	
-	@goTerms = &trimArray(@goTerms);
+	@goTerms = &cleanArray(@goTerms);
 	
 	my $goTermSelection = join 'or term.acc=',map{qq/'$_'/} @goTerms;
 	
@@ -517,6 +462,9 @@ sub getGoAncestors(){
 	#execute query
 	my $sth = $goDbConnection->prepare($query);	
 
+
+	$sth->execute();
+	
 	$sth->bind_col(1, \$ancestor);
 	
 	while ($sth->fetch) {
@@ -546,6 +494,101 @@ sub getParentTaxonId() {
 	return $parentTaxonId;
 }
 
+#returns species level of taxon; returns 'unresolved' string if taxon is higher than species
+sub getSpecies() {
+	my $ancestors = shift;
+	my $species = 'unresolved';
+	my $query = '';
+		
+	my @ancestors = reverse(@$ancestors);
+	
+	if(@ancestors == 1) {
+		$query ="SELECT name FROM taxonomy WHERE rank = 'species' AND taxon_id = $ancestors[0]" ;
+	}
+	elsif(@ancestors > 1) {
+	 	$query ="SELECT name FROM taxonomy WHERE rank = 'species' AND taxon_id IN(".join(',',@ancestors).")" ;
+	}
+	else{
+		return $species;	
+	}
+	 	
+ 	my $sth = $metarepDbConnection->prepare($query);
+ 	$sth->execute();	
+	$sth->bind_col(1, \$species);
+	$sth->fetch;
+
+	return $species;
+}
+
+#deletes dataset from METAREP MySQL database
+sub deleteMetarepDataset() {
+	my $name = shift;
+	
+	my $query ="delete from libraries where name = ?";
+
+	#prepare query
+	my $sth =$metarepDbConnection->prepare($query);
+	
+	$sth->execute($name) or die "Couldn't execute: $DBI::errstr";
+}
+
+#deletes Solr core (if exists)
+sub deleteSolrCore() {
+	my $core = shift;
+
+	#delete all documents of existing index
+	print "Deleting index: java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_instance_dir}/delete.xml...\n";
+	`java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_instance_dir}/delete.xml `;
+		
+	#unload core from core registry
+	print "Unloading index: curl $args{solr_url}/solr/admin/cores?action=UNLOAD&core=$core \n";
+	`curl \"$args{solr_url}/solr/admin/cores?action=UNLOAD&core=$core\"`;
+}
+
+#creates Solr core
+sub createSolrCore() {
+	my $core = shift;
+	
+	#create core
+	print "Creating new core: curl $args{solr_url}/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_home_dir}/example/solr&dataDir=$args{solr_instance_dir}/$args{project_id}/$core...\n";
+	`curl \"$args{solr_url}/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_instance_dir}&dataDir=$args{solr_data_dir}/$args{project_id}/$core\"`;	
+}
+
+#creates Solr index
+sub loadSolrIndex() {
+	my $core = shift;
+	
+	my $file = "$args{tmp_dir}/$core.xml";
+	
+	#load index
+	print "Loading Dataset Index: java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $file ...\n";
+	`java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $file`;
+}
+
+#optimizes Solr index
+sub optimizeIndex() {
+	my $core = shift;
+	
+	#optimize index
+	print "Optimize Dataset Index: java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_instance_dir}/optimize.xml \n";
+	`java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem}  -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_instance_dir}/optimize.xml `;
+
+}
+
+#creates dataset in METAREP MySQL database
+sub createMetarepDataset() {
+	my $dataset = shift;
+	
+	my $query ="insert ignore into libraries (name,project_id,created,updated) VALUES (?,?,now(),now())";
+	print $query."\n";
+	
+	#prepare query
+	my $sth =$metarepDbConnection->prepare($query);
+	
+	#execute query
+	$sth->execute($dataset,$args{project_id}) or die "Couldn't execute: $DBI::errstr";
+}
+
 #trims and escapes array values
 sub cleanArray() {
 	my @array = shift;
@@ -558,15 +601,16 @@ sub cleanArray() {
 
 #trims and escapes special xml characters
 sub clean {
-	my ($self,$tmp) = @_;
+	my $tmp = shift;
 	
+	#escape special xml characters
 	$tmp =~ s/&/&amp;/g;
 	$tmp =~ s/</&lt;/g;
 	$tmp =~ s/>/&gt;/g;
 	$tmp =~ s/\"/&quot;/g;
 	$tmp =~ s/'/&apos;/g;
 	
-	#remove white spaced
+	#remove white spaces
 	$tmp =~ s/^\s+//g;
 	$tmp =~ s/\s+$//g;
 		

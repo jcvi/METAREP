@@ -59,21 +59,24 @@
 
 <div class="dash-board-login-panel"> 
 <fieldset>
-<legend >Login</legend>
-<?=$form->create('User', array('action' => 'login')); ?>
-<?=$form->input("username")	?>
-<?=$form->input("password",array("type"=>"password")) ?>
-<?=$form->input('remember', array('label' => "Remember me for 2 weeks",'type' => 'checkbox'))?>
-<?=$form->submit('Login'); ?>
-<?=$form->end(); ?>
-<p>
-<?php echo $html->link("Forgot password?","/users/forgotPassword") ?></p>
-<?php echo $html->link("Register","/users/register",array('class'=>'button')) ?>
-
+<legend >Login </legend>
+	<?php  
+	#die(phpinfo());
+	echo $form->create('User', array('action' => 'login')); 
+	echo $form->input("username");	
+	echo $form->input("password",array("type"=>"password"));
+	echo $form->input('remember', array('label' => "Remember me for 2 weeks",'type' => 'checkbox'));
+	echo $form->submit('Login'); 
+	echo $form->end(); 
+	echo('<p>');
+	echo $html->link("Forgot password?","/users/forgotPassword");
+	echo('</p>');
+	echo $html->link("Register","/users/register",array('class'=>'button')); 
+	?>
 </fieldset>
 </div>
 
-
+<?php if (!empty($news)):?>
 <div class="dash-board-news-panel" > 
 	<fieldset >
 		<legend >News</legend>
@@ -84,7 +87,7 @@
 		<?php endforeach; ?>
 	</fieldset>
 </div>
-
+<?php endif;?>
 
 <script type="text/javascript">
 jQuery(function() {
