@@ -22,9 +22,9 @@
  */
 
 define('ADMIN_USER_GROUP','Admin');
-define('JCVI_USER_GROUP','JCVI');
-define('USER_GROUP','User');
-define('GUEST','Guest');
+define('INTERNAL_USER_GROUP','JCVI');
+define('EXTERNAL_USER_GROUP','User');
+define('GUEST_USER_GROUP','Guest');
 
 class AuthsomeComponent extends Object{
 	public $components = array(

@@ -97,7 +97,7 @@ class User extends AppModel {
 					$tmp 	= split('@',$email);
 					$emailExtension = $tmp[1];
 					
-					if($emailExtension === 'jcvi.org') {
+					if($emailExtension === INTERNAL_EMAIL_EXTENSION) {
 						 $this->data['User']['user_group_id'] = 4;
 					}
 					else {

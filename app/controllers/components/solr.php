@@ -6,50 +6,42 @@
 *  Author: jgoll
 *  Date:   Feb 16, 2010
 *  
-*  test servers:
-*  metagenomics-prodd:8983
-*  
-*  production servers:
-*  metarep-solr1 (master)   -   172.20.13.24:8989 
-*  metarep-solr2 (slave)    -   172.20.13.25:8989 
-*  bigip virtual   			-	172.20.12.25:8989
-*  
-************************************************************/
+/***********************************************************/
 
 require_once('baseModel.php');
-#App::import('Vendor', 'SolrPhpClient');
 
 require_once( '../../vendors/SolrPhpClient/Apache/Solr/Service.php' );
 
-define('SOLR_CONNECT_EXCEPTION', 'There was a problem with fetching data from the Lucene index. Please contact metarep-support@jcvi.org if this problem is persistent');
+define('SOLR_CONNECT_EXCEPTION', "There was a problem with fetching data from the Lucene index. Please contact ".METAREP_SUPPORT_EMAIL." if this problem is persistent");
 
 class SolrComponent extends BaseModelComponent {
 
-	//user configuration
-	
-	//top number of classification returned
-	var $numFacetCounts=10;
-	
-	//component configuration
-    var $controller = true;
  	var $uses 		= array('GoTerm','Enzymes','Hmm','Population','Pathway'); 
-     
-    //solr server configuration
- 	var $solrPort 		 	= 8989;	
- 	var $solrBigIpHost      = '172.20.12.25';
-	var $solrMasterHost     = '172.20.13.24';
-	var $solrSlaveHost 		= '172.20.13.25';
 	
-	var $solrInstanceDir = '/opt/software/apache-solr/solr';
-	var $solrDataDir 	 = '/solr-index';
-	
-   	const METHOD_GET 	= 'GET';
-	const METHOD_POST 	= 'POST';
-
-	function search($dataset,$query, $offset = 0, $limit = 10, $params = array(), $renameFacets=false,$method = self::METHOD_POST,$debug=false){
+	/**
+	 * Searches Solr core/index
+	 *
+	 * @param String $dataset Dataset/Core/Index name to search in
+	 * @param String $query Lucene query string http://lucene.apache.org/java/2_4_0/queryparsersyntax.html
+	 * @param int $offset The starting offset for result documents
+	 * @param int $limit The maximum number of result documents to return
+	 * @param array $params key / value pairs for other query parameters (see Solr documentation), use arrays for parameter keys used more than once (e.g. facet.field)
+ 	 * @param boolean $renameFacets If set to 1, facet names are added based on the facet IDs
+ 	 * @param const $method PSOT or GET
+	 * @return void
+	 * @access public
+	 * @throws Exception If an error occurs during the service call
+	 */	
+	function search($dataset,$query, $offset = 0, $limit = NUM_SEARCH_RESULTS, $params = array(), $renameFacets=false,$method = 'POST'){
 		
-		$solr = new Apache_Solr_Service( $this->solrBigIpHost, $this->solrPort,"/solr/$dataset" );
-
+		//use Solr BigIp host if it has been defined in the METAREP configuration file
+		if(defined('SOLR_BIG_IP_HOST')) {
+			$solr = new Apache_Solr_Service( SOLR_BIG_IP_HOST, SOLR_PORT,"/solr/$dataset" );
+		}
+		else {
+			$solr = new Apache_Solr_Service( SOLR_MASTER_HOST, SOLR_PORT,"/solr/$dataset" );
+		}
+		
 		try {
 			$result= $solr->search($query, $offset,$limit,$params,$method);			
 		}
@@ -79,9 +71,23 @@ class SolrComponent extends BaseModelComponent {
 				
 		return $result;
 	}  
-
-	function count($dataset,$query="*:*",$params=null) {		
-		$solr = new Apache_Solr_Service( $this->solrBigIpHost, $this->solrPort, "/solr/$dataset");
+	
+	/**
+	 * Returns documetn count of dataset/core/index
+	 *
+	 * @param String $dataset Dataset/Core/Index name
+	 * @return void
+	 * @access private
+	 */
+	function count($dataset,$query="*:*",$params=null) {	
+		
+		//use Solr BigIp host if it has been defined in the METAREP configuration file
+		if(defined('SOLR_BIG_IP_HOST')) {
+			$solr = new Apache_Solr_Service( SOLR_BIG_IP_HOST, SOLR_PORT, "/solr/$dataset");
+		}
+		else {
+			$solr = new Apache_Solr_Service( SOLR_MASTER_HOST, SOLR_PORT, "/solr/$dataset");
+		}
 
 		try {
 			$result= $solr->search($query, 0,0,$params);
@@ -95,16 +101,27 @@ class SolrComponent extends BaseModelComponent {
 		return $numHits;
 	}
 	
-	#deletes index data and core meta information
-	public function deleteIndex($dataset) {			
+	/**
+	 * Deletes Solr core/index
+	 *
+	 * @param String $dataset Dataset/Core/Index name
+	 * @return void
+	 * @access private
+	 */
+	public function deleteIndex($dataset) {		
+		
+		//command to delete all documetns of an index	
 		$removeIndexCommand 		= "<delete><query>*:*</query></delete>";
 		
 		try {
-			$solr = new Apache_Solr_Service( $this->solrMasterHost, $this->solrPort, "/solr/$dataset");
+			$solr = new Apache_Solr_Service( SOLR_MASTER_HOST, SOLR_PORT, "/solr/$dataset");
 			$solr->delete($removeIndexCommand);
 			
-			#sleep to allow slave to synchronize
-			sleep(40);
+			#if master/slave configuration sleep to allow slave to synchronize
+			if(defined(SOLR_SLAVE_HOST)) {
+				sleep(40);
+			}
+			
 			$this->unloadCore($dataset);
 		}
 		catch(Exception $e){
@@ -112,45 +129,126 @@ class SolrComponent extends BaseModelComponent {
 		}
 	}
 	
+	/**
+	 * Unloads Solr core and deletes it from the Solr configuration file (solr.xml)
+	 *
+	 * @param String $dataset Dataset name that equals the core name to be deleted
+	 * @return void
+	 * @access private
+	 */
 	private function unloadCore($dataset) {
-		$this->executeUrl("http://{$this->solrMasterHost}:{$this->solrPort}/solr/admin/cores?action=UNLOAD&core=$dataset");
-		$this->executeUrl("http://{$this->solrSlaveHost}:{$this->solrPort}/solr/admin/cores?action=UNLOAD&core=$dataset");
-	}
+		$this->executeUrl($this->getSolrUrl(SOLR_MASTER_HOST,SOLR_PORT)."/solr/admin/cores?action=UNLOAD&core=$dataset");
 		
-	private function createCore($projectId,$dataset) {
-		$this->executeUrl("http://{$this->solrMasterHost}:{$this->solrPort}/solr/admin/cores?action=CREATE&name=$dataset&instanceDir={$this->solrInstanceDir}&dataDir={$this->solrDataDir}/$projectId/$dataset");
-		$this->executeUrl("http://{$this->solrSlaveHost}:{$this->solrPort}/solr/admin/cores?action=CREATE&name=$dataset&instanceDir={$this->solrInstanceDir}&dataDir={$this->solrDataDir}/$projectId/$dataset");		
+		//unload slave core if a Solr slave host has been defined in the metarep configuration file
+		if(defined('SOLR_SLAVE_HOST')) {
+			$this->executeUrl($this->getSolrUrl(SOLR_SLAVE_HOST,SOLR_PORT)."/solr/admin/cores?action=UNLOAD&core=$dataset");
+		}
 	}
 
+	/**
+	 * Creates Solr core and add it to the Solr configuration file (solr.xml)
+	 * Each new core is stored in solr-index-dir/project-dir/dataset
+	 *
+	 * @param Integer $projectId project ids is used to define the root folder of the index directory
+	 * @param String $dataset Dataset name that equals the core name that needs to be created
+	 * @return void
+	 * @access private
+	 */
+	private function createCore($projectId,$dataset) {
+		$this->executeUrl($this->getSolrUrl(SOLR_MASTER_HOST,SOLR_PORT)."/solr/admin/cores?action=CREATE&name=$dataset&instanceDir=".SOLR_INSTANCE_DIR."&dataDir=".SOLR_DATA_DIR."/$projectId/$dataset");
+		
+		//create slave core if a Solr slave host has been defined in the metarep configuration file
+		if(defined('SOLR_SLAVE_HOST')) {
+			$this->executeUrl($this->getSolrUrl(SOLR_SLAVE_HOST,SOLR_PORT)."/solr/admin/cores?action=CREATE&name=$dataset&instanceDir=".SOLR_INSTANCE_DIR."&dataDir=".SOLR_DATA_DIR."/$projectId/$dataset");
+		}
+	}
+	
+	/**
+	 * Commits and pptimizes newly created Solr index
+	 *
+	 * @param String $dataset Dataset name that equals the core name to identify the index to optimize/commit
+	 * @return void
+	 * @access private
+	 */
 	private function commitAndOptimize($dataset) {
-		$solr = new Apache_Solr_Service( $this->solrMasterHost, $this->solrPort, "/solr/$dataset");
+		$solr = new Apache_Solr_Service( SOLR_MASTER_HOST, SOLR_PORT, "/solr/$dataset");
 		$solr->commit();
 		$solr->optimize();
 	} 
+
+	/**
+	 * Returns a Solr Url string based on Solr host and port
+	 * Each new core is stored in solr-index-dir/project-dir/dataset
+	 *
+	 * @param String $host Solr host
+	 * @param Integer $port Solr port
+	 * @return String Solr Url
+	 * @access private
+	 */
+	private function getSolrUrl($host,$port) {
+		return "http://$host:$port";
+	}
 	
-	#merges several index file into a new index files d
+	/**
+	 * Merges Solr indices
+	 *
+	 **@param Integer $projectId Project ID
+	 * @param Sttring $core name of new index file/core after merging
+	 * @param Array $datasets Datasets to be mergede
+	 * @return void
+	 * @access private
+	 */
 	public function mergeIndex($projectId,$core,$datasets) {	
 		
 		#create cores
 		$this->createCore($projectId,$core);	
 
 		#populate newly created core with existing cores
-		$url = "http://{$this->solrMasterHost}:{$this->solrPort}/solr/admin/cores?action=mergeindexes&core=$core";
+		$url = $this->getSolrUrl(SOLR_MASTER_HOST,SOLR_PORT)."/solr/admin/cores?action=mergeindexes&core=$core";
 		
 		foreach($datasets as $dataset) {
-			$url .= "&indexDir={$this->solrDataDir}/$projectId/$dataset/index";
+			$url .= "&indexDir=".SOLR_DATA_DIR."/$projectId/$dataset/index";
 		}
 		$this->executeUrl($url);	
 		$this->commitAndOptimize($core);
 	}
 	
+	/**
+	 * Executes Solr url command 
+	 *
+	 **@param String $url Solr command
+	 * @return void
+	 * @access public
+	 */	
+	public function executeUrl($url) {
+		
+		//write request to log file
+		$this->log("solr request: $url",LOG_DEBUG);
+		try {
+			$solr = new Apache_Solr_Service();
+			$response = $solr->_sendRawGet($url);
+			$response=serialize($response);
+			
+			//write response to log file
+			$this->log("solr response: $response",LOG_DEBUG);
+		}
+		catch (Exception $e) {
+			throw new Exception($e);
+		}
+	}	
+	
+	/**
+	 * Pathway helper function
+	 *
+	 */	
 	public function getPathwayCount($filter,$dataset,$level,$pathwayId,$pathwayEnzymeCount,$ecId=null) {
 		
 		$foundEnzymes = 0;
 		$pathwayCount = 0;
 		
-		$pathway = $this->Pathway->find($pathwayId);
-		#debug($pathway);
+		$pathway = $this->Pathway->findById($pathwayId);
+		
+		
 		$pathwayUrl = "http://www.genome.jp/kegg-bin/show_pathway?ec".str_pad($pathway['Pathway']['kegg_id'],5,0,STR_PAD_LEFT);	
 		
 		$facetQueries = $this->Pathway->getEnzymeFacetQueries($pathwayId,$level,$ecId);
@@ -168,15 +266,14 @@ class SolrComponent extends BaseModelComponent {
 			try	{			
 				$result = $this->search($dataset,$filter,0,0,$solrArguments);			
 			}
-			catch(Exception $e){
-				
+			catch(Exception $e){			
 				$this->set('exception',SOLR_CONNECT_EXCEPTION);
 				$this->redirect('/projects/index');
 			}
 			
 			if(!$result->facet_counts->facet_queries) {
-				debug($facetQueryChunk);
-				die();
+				$this->set('exception',SOLR_CONNECT_EXCEPTION);
+				$this->redirect('/projects/index');
 			}			
 			$facetsQueryResults = $result->facet_counts->facet_queries;			
 		
@@ -190,7 +287,7 @@ class SolrComponent extends BaseModelComponent {
 				}				
 			}			
 		}
-		#debug($pathwayUrl);
+		
 		if($pathwayEnzymeCount > 0) {
 			$results['numPathwayEnzymes'] = $pathwayEnzymeCount;
 			$results['numFoundEnzymes']   = $foundEnzymes;
@@ -204,6 +301,10 @@ class SolrComponent extends BaseModelComponent {
 		}
 	}	
 	
+	/**
+	 * Pathway helper function
+	 *
+	 */	
 	public function getPathwayFacets($filter,$dataset,$level,$nodeId,$children,$ecId=null) {
 		
 		if($level != 'level 1') {				
@@ -213,7 +314,7 @@ class SolrComponent extends BaseModelComponent {
 			'facet.field' => array('blast_species','com_name','go_id','ec_id','hmm_id'),
 			'fq' => implode(' OR ',$facetQueries),
 			'facet.mincount' => 1,
-			"facet.limit" => $this->numFacetCounts);
+			"facet.limit" => NUM_TOP_FACET_COUNTS);
 
 			try	{			
 				$result 	  = $this->search($dataset,$filter,0,0,$solrArguments,true);			
@@ -235,6 +336,9 @@ class SolrComponent extends BaseModelComponent {
 		return $results;
 	}
 	
+	/**
+	* Replaces Solr default values with empty string
+	**/
 	
 	private function removeUnassignedValues(&$hits) {
 		
@@ -251,7 +355,10 @@ class SolrComponent extends BaseModelComponent {
 			$hit->hmm_id =  str_replace('unassigned','',$hit->hmm_id);
 		}		
 	} 
-	
+
+	/**
+	* Mapps HMMs names to HMM IDs returned by Solr
+	**/
 	private function addHmmDescriptions(&$facets) {
 		
 		$hmmHash = array();
@@ -269,7 +376,9 @@ class SolrComponent extends BaseModelComponent {
 		$facets->facet_fields->hmm_id = $hmmHash;		
 	} 
 	
-	#enriches facets with model descriptions
+	/**
+	* Mapps GO names to GO IDs returned by Solr
+	**/
 	private function addGeneOntologyDescriptions(&$facets) {
 		$goHash = array();
 		
@@ -286,7 +395,9 @@ class SolrComponent extends BaseModelComponent {
 		$facets->facet_fields->go_id = $goHash;		
 	}	
 
-	#enriches facets with model descriptions
+	/**
+	* Mapps Enzyme names to Enzyme IDs returned by Solr
+	**/
 	private function addEnzymeDescriptions(&$facets) {
 		$ecHash = array();
 		foreach($facets->facet_fields->ec_id as $acc => $count) {
@@ -304,17 +415,7 @@ class SolrComponent extends BaseModelComponent {
 		$facets->facet_fields->ec_id = $ecHash;		
 	}	
 
-	public function executeUrl($url) {
-		$this->log("solr request: $url",LOG_DEBUG);
-		try {
-			$solr = new Apache_Solr_Service();
-			$response = $solr->_sendRawGet($url);
-			$response=serialize($response);
-			$this->log("solr response: $response",LOG_DEBUG);
-		}
-		catch (Exception $e) {
-			throw new Exception($e);
-		}
-	}		
+	
+		
 }
 ?>

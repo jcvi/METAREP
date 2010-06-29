@@ -222,7 +222,7 @@ class UsersController extends AppController {
 			}
 			#on failure 
 			else {
-				$this->Session->setFlash("There was a problem with your account information. Please contact metagenomics-support@jcvi.org.");
+				$this->Session->setFlash("There was a problem with your account information. Please contact ".METAREP_SUPPORT_EMAIL);
 				$this->redirect("/dashboard");				
 				$this->flash("Sorry. There were problems in your account activation.",Configure::read('httpRootUrl').'/users/login');
 			}

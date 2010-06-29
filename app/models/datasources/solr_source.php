@@ -1,7 +1,7 @@
 <?php
 /***********************************************************
 *  File: solr_source.php
-*  Description:
+*  Description: not in production yet
 *
 *  Author: jgoll
 *  Date:   Feb 16, 2010

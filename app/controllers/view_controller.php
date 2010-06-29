@@ -159,46 +159,6 @@ class ViewController extends AppController {
 				$pathwayLevel		= $level3Result['Pathway']['level'];
 
 				$results= $this->Solr->getPathwayCount('*:*',$dataset,$pathwayLevel,$pathwayId,$pathwayEnzymeCount,null);
-				
-				
-				#$enzymeResults= $this->Pathway->find('all', array('fields'=> array('ec_id'),'conditions' => array('parent_id' =>$pathwayId)));
-							
-//				foreach($enzymeResults as $enzymeResult) {
-//					$pathwayEcId = $enzymeResult['Pathway']['ec_id'];
-//						
-//					#do fuzzy enzyme id matching for pathway enzymes that are defined at a higher level, e.g. contain '-'
-//					if(preg_match('/-/',$pathwayEcId)) {
-//						$hasSolrMatch=false;
-//						#$tmp = explode('-',$pathwayEcId);
-//						#$pathwayEcId = $tmp[0];
-//
-//						$matchEcId = str_replace('.','\.',$pathwayEcId);
-//						$matchEcId = "/".str_replace('-','.*',$matchEcId)."/";
-//							debug($matchEcId);					
-//						foreach($solrEcIds as $solrEcId) {
-//							
-//							if(preg_match($matchEcId,$solrEcId)) {
-//							
-//							#if solr ec id starts with pathway enzyme id
-////							if(strpos($solrEcId, $pathwayEcId) === 0) {
-////								$hasSolrMatch = true;
-//								#debug("$solrEcId:$pathwayEcId");
-//								$numPeptides  += $solrEcIdHash[$solrEcId];
-//							}
-//						}
-//						if($hasSolrMatch) {
-//							$pathwayLink.="+$pathwayEcId";
-//							$numFoundEnzymes ++;
-//						}
-//					}
-//					else {
-//						if(array_key_exists($pathwayEcId ,$solrEcIdHash)) {
-//							$numPeptides  += $solrEcIdHash[$pathwayEcId];
-//							$pathwayLink.="+$pathwayEcId";
-//							$numFoundEnzymes ++;
-//						}
-//					}
-//				}
 
 				$percentEnzymes = round($numFoundEnzymes/$pathwayEnzymeCount,4)*100;
 				
@@ -239,18 +199,24 @@ class ViewController extends AppController {
 	}
 
 	function ftp($projectId,$dataset) {
+		#ob_end_clean();
 		
 		$fileName = "$dataset.tgz";
 		$filePath = "ftp://metarep:k54raCRepene@ftp.jcvi.org/$projectId/$fileName";
 		
 		//open binary file
 		$fp = fopen($filePath,"rb");
+		$fileSize = filesize($filePath);
+		//set timeout to a day
+		stream_set_timeout($fp,86400);		
 		
 		$userAgent = $_SERVER['HTTP_USER_AGENT'];
-						
+
+		header('X-Sendfile: '.$filePath);
 		header('Content-Type: application/x-compressed');
+		header("Content-Length: " . $fileSize); 
 		header("Content-Transfer-Encoding: binary");
-		
+			
 		if (strstr($userAgent,'IE')) {
 			header("Content-Disposition: inline; filename=\"" . $fileName ."\"");			
 			header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
@@ -259,9 +225,19 @@ class ViewController extends AppController {
 			header("Content-Disposition: attachment; filename=\"" . $fileName ."\"");
 			header('Pragma: no-cache');
 		}
+		sleep(1);
+		ignore_user_abort();
+		set_time_limit(0);
+        while(!feof($fp) and (connection_status()==0)) {
+            print(fread($fp, 1024*8));
+            flush();
+        }
+        fclose($fp);
 		
-		fpassthru($fp);
-		exit();
+		exit(); 		
+//		fpassthru($fp);
+//		fclose($fp);
+		#exit();
 	}	
 	
 	function download($dataset,$facetField,$numHits,$limit) {
@@ -316,7 +292,5 @@ class ViewController extends AppController {
        
         echo $content;
 	}
-	
-
 }
 ?>

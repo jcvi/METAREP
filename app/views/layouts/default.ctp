@@ -135,22 +135,19 @@
 		if (Authsome::get()):?>
 			<?php 
 				$currentUser 	= Authsome::get();
-				if($currentUser) {//debug($currentUser);
-				//die();
 				$currentUserId 	= $currentUser['User']['id'];	    	        	
 	       		$userGroup  	= $currentUser['UserGroup']['name'];
-			};
 	       	?>	       					
 		<ul id="menu">			
 			<li><?php echo $html->link(__('Quick Navigation', true), array('controller'=> 'menus', 'action'=>'quick')); ?></li>
 			
-			<? if (	$userGroup === 'Admin'):?>
+			<? if (	$userGroup === ADMIN_USER_GROUP):?>
 				<li><?php echo $html->link(__('New Project', true), array('controller'=> 'projects', 'action'=>'add')); ?></li>
 			<?endif;?>			
 			<li><?php echo $html->link(__('List Projects', true), array('controller'=> 'projects', 'action'=>'index')); ?> </li>			
-			<? if (	$userGroup === 'Admin' || $userGroup === 'JCVI'):?>
+			<? if (	$userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP):?>
 			<li><?php echo $html->link(__('List Populations', true), array('controller'=> 'populations', 'action'=>'index')); ?> </li>
-				<li><?php echo $html->link(__('Pipeline Log', true), array('controller'=> 'logs', 'action'=>'index')); ?> </li>
+				<li><?php if(JCVI_INSTALLATION) {echo $html->link(__('Pipeline Log', true), array('controller'=> 'logs', 'action'=>'index'));} ?> </li>
 			<?endif;?>		
 			<li><?php echo $html->link(__('Dashboard', true), array('controller'=> 'dashboard')); ?></li>
 			<li><?php echo $html->link(__('Log Out', true), array('controller'=> 'users', 'action'=>'logout')); ?> </li>

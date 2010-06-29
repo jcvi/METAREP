@@ -26,27 +26,11 @@
  * @lastmodified  $Date: 2008-12-18 18:16:01 -0800 (Thu, 18 Dec 2008) $
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
-/**
- * Here, we are connecting '/' (base path) to controller called 'Pages',
- * its action called 'display', and we pass a param to select the view file
- * to use (in this case, /app/views/pages/home.ctp)...
- */
-	//Router::connect('/', array('controller' => 'pages', 'action' => 'display', 'home'));
-/**
- * ...and connect the rest of 'Pages' controller's urls.
- */
-	//Router::connect('/*', array('controller' => 'errors', 'action' => 'indexUpdate'));
 
-	#include_once(ROOT.'/app/plugins/spark_plug/config/routes.php');
-//	Router::mapResources('rest');
-//	Router::parseExtensions();
+//redirect all root level pages
+Router::connect('/', array('controller' => 'dashboard', 'action' => 'index'));
 
-	Router::mapResources('projects');
-	Router::parseExtensions('xml'); 
+//redirect legacy contact.php 
+Router::connect('/contact.php', array('controller' => 'dashboard', 'action' => 'index'));
 
-	Router::connect('/pages/*', array('controller' => 'pages', 'action' => 'display'));
-	
-	Router::connect('/', array('controller' => 'dashboard', 'action' => 'index'));
-	
-	Router::connect('/contact.php', array('controller' => 'dashboard', 'action' => 'index'));
 ?>

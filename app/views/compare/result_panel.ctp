@@ -36,7 +36,14 @@ foreach($tabs as $tab) {
 jQuery(document).ready(function(){
   jQuery.noConflict() ;
  
-  jQuery("#myTable").tablesorter({widgets:['zebra']<?php if($option == METASTATS){ echo(", sortList: [[8,0]]");}?>}); 
+  jQuery("#myTable").tablesorter({widgets:['zebra'] <?php 
+  	if($option == METASTATS){ 
+  		echo(", sortList: [[8,0]]");
+  	}
+  	elseif($option == CHISQUARE) {
+  		echo(", sortList: [[4,0]]");
+  	}
+  ?>}); 
 	
   // Reset Font Size
   var originalFontSize = jQuery('.comparison-results-table').css('font-size');

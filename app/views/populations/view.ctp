@@ -142,3 +142,8 @@
 	</fieldset>	
 </div>
 <?php endif; ?>
+<script type="text/javascript">
+function goThere(loc) {
+	window.location.href=loc;
+}
+</script>

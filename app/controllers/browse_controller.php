@@ -79,7 +79,7 @@ class BrowseController extends AppController {
 		$solrArguments = array(	"facet" => "true",
 						'facet.field' => array('blast_species','com_name','go_id','ec_id','com_name_src','hmm_id'),
 						'facet.mincount' => 1,
-						"facet.limit" => $this->Solr->numFacetCounts);
+						"facet.limit" => NUM_TOP_FACET_COUNTS);
 		
 		try{		
 			$result = $this->Solr->search($dataset,"blast_tree:$expandTaxon", 0,0,$solrArguments,true);
@@ -117,6 +117,12 @@ class BrowseController extends AppController {
 		
 	}
 
+	
+	/**
+	 * @param unknown_type $dataset
+	 * @param unknown_type $expandTaxon
+	 */
+	
 	function apisTaxonomy($dataset='CBAYVIR',$expandTaxon=1) {
 		
 		$this->pageTitle = 'Browse Apis Taxonomy';
@@ -170,7 +176,7 @@ class BrowseController extends AppController {
 		$solrArguments = array(	"facet" => "true",
 						'facet.field' => array('blast_species','com_name','go_id','ec_id','com_name_src','hmm_id'),
 						'facet.mincount' => 1,
-						"facet.limit" => $this->Solr->numFacetCounts);
+						"facet.limit" => NUM_TOP_FACET_COUNTS);
 		
 		try{		
 			$result = $this->Solr->search($dataset,"apis_tree:$expandTaxon", 0,0,$solrArguments,true);
@@ -273,7 +279,7 @@ class BrowseController extends AppController {
 		$solrArguments = array(	"facet" => "true",
 						'facet.field' => array('blast_species','com_name','go_id','ec_id','com_name_src','hmm_id'),
 						'facet.mincount' => 1,						
-						"facet.limit" => $this->Solr->numFacetCounts);
+						"facet.limit" => NUM_TOP_FACET_COUNTS);
 
 		try {
 			$result = $this->Solr->search($dataset,$solrQuery, 0,0,$solrArguments,true);
@@ -418,7 +424,7 @@ class BrowseController extends AppController {
 		$solrArguments = array(	"facet" => "true",
 						'facet.field' => array('blast_species','com_name','go_id','ec_id','com_name_src','hmm_id'),
 						'facet.mincount' => 1,
-						"facet.limit" => $this->Solr->numFacetCounts);
+						"facet.limit" => NUM_TOP_FACET_COUNTS);
 		try{
 			$result = $this->Solr->search($dataset,$solrQuery, 0,0,$solrArguments,true);
 		}

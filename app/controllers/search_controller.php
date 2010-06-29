@@ -13,10 +13,6 @@ ini_set('max_execution_time','3000');
 
 class SearchController extends AppController {
 	var $name = 'Search';
-	
-	var $limit = 10;
-	//top number of classification returned
-	var $numFacetCounts=10;
 
 	#FIXME define search field array
 	#var $searchFields = array('common name','com_name_src','go_id','go_id_evidence','ec_id','ec_src','blast_species','e_value_exponent');
@@ -142,11 +138,11 @@ class SearchController extends AppController {
 						'facet' => 'true',
 						'facet.field' => array('blast_species','com_name','go_id','ec_id','hmm_id'),
 						'facet.mincount' => 1,
-						"facet.limit" => $this->numFacetCounts);
+						"facet.limit" => NUM_TOP_FACET_COUNTS);
 
 		#handle exceptions
 		try{
-			$result = $this->Solr->search($dataset,$query, ($page-1)*$this->limit,$this->limit,$solrArguments,true);	
+			$result = $this->Solr->search($dataset,$query, ($page-1)*NUM_SEARCH_RESULTS,NUM_SEARCH_RESULTS,$solrArguments,true);	
 		}
 		catch (Exception $e) {			
 			$this->Session->setFlash("METAREP Lucene Query Exception. Please correct your query and try again.");
@@ -169,7 +165,7 @@ class SearchController extends AppController {
 		$this->set('facets',$facets);
 		$this->set('sessionQueryId',$sessionQueryId);
 		$this->set('page',$page);
-		$this->set('limit',$this->limit);		
+		
 	}
 
 	public function clear($dataset,$sessionQueryId) {

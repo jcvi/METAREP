@@ -213,7 +213,7 @@ class MatrixComponent extends Object {
 
 
 		#execute R code
-		exec("/usr/local/bin/R --quiet --vanilla < ".METAREP_TMP_DIR."/$inFile > ".METAREP_TMP_DIR."/$outFile");
+		exec(R_PATH." --quiet --vanilla < ".METAREP_TMP_DIR."/$inFile > ".METAREP_TMP_DIR."/$outFile");
 
 		#read R results/usr/local/bin/Rscript
 		$fh = fopen(METAREP_TMP_DIR."/$outFile", 'r');
@@ -369,11 +369,8 @@ class MatrixComponent extends Object {
 		fwrite($fh,$matrixContent);
 		fclose($fh);
 
-		//		debug($counts);
-		//		die();
-
 		#prepare metastats rscript
-		$metastatsRScriptContent  = "#!/usr/local/bin/Rscript\n";
+		$metastatsRScriptContent  = "#!".RSCRIPT_PATH."\n";
 		$metastatsRScriptContent .= "source(\"/opt/www/metarep/htdocs/metarep/app/webroot/files/r/metastats/detect_DA_features.r\")\n";
 		$metastatsRScriptContent .= "jobj <- load_frequency_matrix(\"".METAREP_TMP_DIR."/$metastatsFrequencyMatrixFile"."\")\n";
 		$metastatsRScriptContent .= "detect_differentially_abundant_features(jobj,$metastatsStartSecondPopulation,\"".METAREP_TMP_DIR."/$metastatsResultsFile"."\")\n";
@@ -390,7 +387,7 @@ class MatrixComponent extends Object {
 		chmod(METAREP_TMP_DIR."/$metastatsResultsFile", 0755);
 
 		#execute script
-		exec("/usr/local/bin/Rscript ".METAREP_TMP_DIR."/$metastatsRscriptFile");
+		exec(RSCRIPT_PATH." ".METAREP_TMP_DIR."/$metastatsRscriptFile");
 
 		#read R results/usr/local/bin/Rscript
 		$fh = fopen(METAREP_TMP_DIR."/$metastatsResultsFile", 'r');
@@ -466,7 +463,6 @@ class MatrixComponent extends Object {
 		}
 		$this->Session->write('selectedDatasets',$metastatsPopulations);
 		
-#		debug($counts);
 		$counts= $newCounts;
 
 		return;
@@ -478,7 +474,7 @@ class MatrixComponent extends Object {
 		
 		$mode = str_replace('ajax','',$this->Session->read('mode'));
 		$level = $this->Session->read("$mode.level");
-
+		
 		$mode =ucfirst($mode);
 		
 		switch($option) {
@@ -556,7 +552,7 @@ class MatrixComponent extends Object {
 		fwrite($fh,$result);
 		fclose($fh);
 		#debug("/usr/local/bin/Rscript /opt/www/metarep/htdocs/metarep/app/webroot/files/r/r_plots.r ".METAREP_TMP_DIR."/$inFile \"$plotName ($mode $level)\" $rMethod");
-		exec("/usr/local/bin/Rscript /opt/www/metarep/htdocs/metarep/app/webroot/files/r/r_plots.r ".METAREP_TMP_DIR."/$inFile \"$plotName ($mode $level)\" $rMethod");
+		exec(RSCRIPT_PATH." ".METAREP_WEB_ROOT."/app/webroot/files/r/r_plots.r ".METAREP_TMP_DIR."/$inFile \"$plotName ($mode $level)\" $rMethod");
 		$this->Session->write('plotFile',$inFile);
 	}
 }

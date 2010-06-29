@@ -175,12 +175,12 @@ class Project extends AppModel {
         $userGroup  	= $currentUser['UserGroup']['name'];		
 		   
 		#return public projects for guest users
-		if($userGroup === GUEST) {
+		if($userGroup === GUEST_USER_GROUP) {
 			return $projects = $this->find('all', array('conditions' => array('is_public' => 1)));
 		} 
 		
-		#return selective projects for normal users
-		if($userGroup === USER_GROUP) {
+		#return selective projects for external users
+		if($userGroup === EXTERNAL_USER_GROUP) {
 			$projects = array(); 
 			
 			$userProjects = $this->query("SELECT distinct Project.id as id FROM projects as Project LEFT JOIN projects_users as pu on(Project.id=pu.project_id) WHERE pu.user_id = $currentUserId OR Project.user_id = $currentUserId OR Project.is_public=1"); 
@@ -194,7 +194,7 @@ class Project extends AppModel {
 		}
 		
 		#return all project for admin and jcvi users
-		if($userGroup === ADMIN_USER_GROUP || $userGroup === JCVI_USER_GROUP) {
+		if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {
 			return $projects = $this->find('all',array('fields'=>array('Project.name')));
 		}
 	}
@@ -206,7 +206,7 @@ class Project extends AppModel {
 		$currentUserId 	= $currentUser['User']['id'];	
 		$userGroup  	= $currentUser['UserGroup']['name'];
 
-		if($userGroup === ADMIN_USER_GROUP || $userGroup === JCVI_USER_GROUP) {
+		if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {
 			
 			$results = $this->query("select datasets.name,datasets.description,datasets.project,datasets.type from (SELECT 'population' as type,populations.name as name, populations.description as description, projects.name as project from populations INNER JOIN projects ON(projects.id=populations.project_id) UNION SELECT 'library' as type,libraries.name as name, libraries.description as description,projects.name as project  from libraries INNER JOIN projects ON(projects.id=libraries.project_id))  as datasets ORDER BY datasets.project ASC, datasets.name ASC"); 
 		}

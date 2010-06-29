@@ -1,5 +1,6 @@
 #!/usr/local/bin/Rscript
 
+
 ###############################################################################
 
 FRACT_NOISE_THRESHOLD <- 0.00025
@@ -198,11 +199,10 @@ while(!(is.na(args[arg_count]))){
 	# Draw Dendrogram Heatmap Plot
 	pdf(HeatMapPDF, width=11,height=8.5)
 
-	heatmap(Z, cexRow=label_scale,  cexCol=label_scale * 0.70,
-		main=args[2],
-		#xlab="Taxonomies", ylab="Samples",
+	heatmap(Z, cexRow=label_scale* 0.80,  cexCol=label_scale * 0.63,
+		main=args[2],key=TRUE,
 		col=rev(rainbow(2^16, start=0, end=0.65)),
-		margins=c(7,0.5)
+		margins=c(18,8)
 		)
 
 	dev.off()

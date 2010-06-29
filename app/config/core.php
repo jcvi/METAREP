@@ -25,8 +25,8 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-#include_once(ROOT.'/app/plugins/spark_plug/config/config.php');
-
+//add METAREP configuration 
+include_once('metarep.php');
 
 /**
  * CakePHP Debug Level:
@@ -48,8 +48,6 @@
  * Application wide charset encoding
  */
 	Configure::write('App.encoding', 'UTF-8');
-	
-	define('METAREP_TMP_DIR','/tmp');	
 	
 /**
  * To configure CakePHP *not* to use mod_rewrite and to
@@ -94,9 +92,7 @@
  * differentiating error logging and debugging. Currently PHP supports LOG_DEBUG.
  */
 	define('LOG_ERROR', 2);
-	
-
-	
+		
 /**
  * The preferred session handling method. Valid values:
  *
@@ -143,7 +139,8 @@
  * Set maxium mem limit.
  * PHP Fatal error:  Allowed memory size of  bytes exhausted (tried to allocate 4 bytes) in dbo_mysql.php
  */	
-define ('MAX_MEMORY_LIMIT', '512M');
+	
+	define ('MAX_MEMORY_LIMIT', '512M');
 
 /**
  * When set to false, HTTP_USER_AGENT will not be checked

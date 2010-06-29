@@ -62,9 +62,14 @@ class RssSource extends DataSource {
 			'Channel' => $channel,
 			$model->alias => $items,
 		);*/
-		foreach($items as $item) {
-			$item['Channel'] = $channel;
-			$result[] = array($model->alias => $item);
+		if(!empty($items)) {
+			foreach($items as $item) {
+				$item['Channel'] = $channel;
+				$result[] = array($model->alias => $item);
+			}
+		}
+		else {
+			$result = null;
 		}
 		return $result;
 	}

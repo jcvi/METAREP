@@ -32,14 +32,14 @@ class DashboardController extends AppController {
 			$userGroup  = $user['UserGroup']['name'];
 
 			//full adminsitration controll for admin
-			if($userGroup === 'Admin') {
+			if($userGroup === ADMIN_USER_GROUP) {
 				$projects = $this->Project->findAll();
 			}			
 			//project administration per user
-			elseif($userGroup === 'User' || $userGroup === 'JCVI') {
+			elseif($userGroup === EXTERNAL_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {
 				$projects = $this->Project->find('all',array('conditions'=>array('Project.user_id'=>$userId)));				
 			}	
-			elseif($userGroup === 'Guest') {
+			elseif($userGroup === GUEST_USER_GROUP) {
 				$projects = null;
 			}
 			

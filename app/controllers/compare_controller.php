@@ -31,17 +31,20 @@ define('MDS_PLOT', 13);
 define('HEATMAP_PLOT', 14);
 
 #increase memory to handle larger result sets
-ini_set('memory_limit', '556M');
+$x = ini_set('memory_limit', '556M');
 
 class CompareController extends AppController {
-	
+
 	var $name = 'Compare';
 	
 	var $helpers 	= array('Matrix','Dialog','Ajax');
 	var $uses 		= array('Project','Taxonomy','GoGraph','Enzymes','Hmm','Library','Population','Pathway','EnvironmentalLibrary');
 	var $components = array('Solr','RequestHandler','Session','Matrix','Format');
 
-	function index($dataset,$filter="*:*") {
+	function index($dataset = null,$filter="*:*") {
+		ini_set('memory_limit', '556M');
+
+		
 		$this->pageTitle = 'Compare Multiple Datasets';
 
 		if(!$this->Session->check('filter')) {
@@ -54,12 +57,14 @@ class CompareController extends AppController {
 			$this->Session->write('option',ABSOLUTE_COUNTS);
 		}	
 
+		$projectId = $this->Project->getProjectId($dataset);
+		
 		$selectedDatasets = array($dataset);
 		
-		$allDatasets = $this->Project->findUserDatasets();
+		$allDatasets = $this->Project->findUserDatasets($projectId);
 		$this->Session->write('allDatasets',$allDatasets);
 		
-		$this->set('projectId', $this->Project->getProjectId($dataset));
+		$this->set('projectId', $projectId);
 		$this->set('selectedDatasets', $selectedDatasets);
 		$this->set('dataset', $dataset);		
 	}
@@ -192,6 +197,7 @@ class CompareController extends AppController {
 						'phylum' 	=> 'phylum',
 						'order' 	=> 'order',
 						'family' 	=> 'family',
+						'genus' 	=> 'genus',
 						);
 						
 		#read session variables
@@ -237,31 +243,38 @@ class CompareController extends AppController {
 		
 		unset($taxonResults);
 		
-		//specify facet behaviour (fetch all facets)
-		$solrArguments = array(	"facet" => "true",
-		'facet.mincount' => $minCount,
-		'facet.query' => $facetQueries,
-		"facet.limit" => -1);		
+	
 		
 		////populate count matrix with solr facet counts using solr's filter query
 		foreach($selectedDatasets as $dataset) {
-			try	{
-				$result 	  = $this->Solr->search($dataset,$filter,0,0,$solrArguments);
-				
-			}
-			catch(Exception $e){
-				$this->set('exception',SOLR_CONNECT_EXCEPTION);
-				$this->render('/compare/result_panel','ajax');
-			}
 			
-			$facets = $result->facet_counts->facet_queries;
+			$facetQueryChunks = array_chunk($facetQueries,6700);
 			
-			foreach($facets as $facetQuery =>$count) {
-				$tmp 	= explode(":", $facetQuery);
-				$id 	= $tmp[1];	
+			foreach($facetQueryChunks as $facetQueryChunk) {
 				
-				$counts[$id][$dataset] = $count;	
-				$counts[$id]['sum'] += $count;
+					//specify facet behaviour (fetch all facets)
+					$solrArguments = array(	"facet" => "true",
+					'facet.mincount' => $minCount,
+					'facet.query' => $facetQueryChunk,
+					"facet.limit" => -1);	
+					try	{
+						$result 	  = $this->Solr->search($dataset,$filter,0,0,$solrArguments);
+						
+					}
+					catch(Exception $e){
+						$this->set('exception',SOLR_CONNECT_EXCEPTION);
+						$this->render('/compare/result_panel','ajax');
+					}
+				
+				$facets = $result->facet_counts->facet_queries;
+				
+				foreach($facets as $facetQuery =>$count) {
+					$tmp 	= explode(":", $facetQuery);
+					$id 	= $tmp[1];	
+					
+					$counts[$id][$dataset] = $count;	
+					$counts[$id]['sum'] += $count;
+				}
 			}
 		}
 
@@ -862,15 +875,20 @@ class CompareController extends AppController {
 
 		//drop down selection
 		$levels = array(
-			'level 2' => 'Metabolic Pathways (level 1)',	
-			'level 3' => 'Metabolic Pathways (level 2)',				
+			'level 2' => 'Metabolic Pathways (level 2)',	
+			'level 3' => 'Metabolic Pathways (level 3)',				
 		);
 
-		//get post data
+		#read post data
 		if(!empty($this->data['Post']['level'])) {
 			$level = $this->data['Post']['level'];
 		}
-
+		else {
+			if($this->Session->check("$mode.level")) {
+				$level = $this->Session->read("$mode.level");
+			}	
+		}
+		
 		#read session variables
 		$option 			= $this->Session->read('option');
 		$minCount 			= $this->Session->read('minCount');
@@ -886,7 +904,7 @@ class CompareController extends AppController {
 			$selectedDatasets = array_merge($librariesA,$librariesB);
 			$this->Session->write('metastatsStartSecondPopulation',count($librariesA)+1);
 		}			
-		
+				
 		#write session variables
 		$this->Session->write("$mode.level", $level);
 		$this->Session->write('levels',$levels);
@@ -955,7 +973,7 @@ class CompareController extends AppController {
 		}
 
 		#read session variables
-		$option 			= $this->Session->read('option');
+		$option 			= $this->Session->read('option');#ylab="Datasets"
 		$minCount 			= $this->Session->read('minCount');
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
@@ -1042,7 +1060,7 @@ class CompareController extends AppController {
 			$content.= $this->Format->comparisonResultsToDownloadString($counts,$selectedDatasets,$option);
 		}
 		elseif($option == FISHER) {			
-			$title = "Comparison Results - Fisher's Exact Test";
+			$title = "Comparison Results - Fisher's Exact Test";#ylab="Datasets"
 			$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);
 			$content.= $this->Format->comparisonResultsToDownloadString($counts,$selectedDatasets,$option);
 		}

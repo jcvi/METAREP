@@ -52,7 +52,7 @@ class AppController extends Controller {
 						$parameters 	= $this->params['pass'];
 						$dataset = 	$parameters[0];	
 						
-						if($userGroup === JCVI_USER_GROUP) {
+						if($userGroup === INTERNAL_USER_GROUP) {
 							return;
 						}
 						if($this->Project->hasDatasetAccess($dataset,$currentUserId)) {
@@ -69,7 +69,7 @@ class AppController extends Controller {
 					$parameters = $this->params['pass'];
 					$dataset 	= 	$parameters[0];	
 					
-					if($userGroup === JCVI_USER_GROUP) {
+					if($userGroup === INTERNAL_USER_GROUP) {
 						return;
 					}
 					if($this->Project->hasDatasetAccess($dataset,$currentUserId)) {
@@ -82,7 +82,7 @@ class AppController extends Controller {
 					$parameters = $this->params['pass'];
 					$dataset 	= 	$parameters[0];	
 					
-					if($userGroup === JCVI_USER_GROUP) {
+					if($userGroup === INTERNAL_USER_GROUP) {
 						return;
 					}
 					if($this->Project->hasDatasetAccess($dataset,$currentUserId)) {
@@ -96,7 +96,7 @@ class AppController extends Controller {
 						$parameters = $this->params['pass'];
 						$dataset 	= $parameters[0];	
 						
-						if($userGroup === JCVI_USER_GROUP) {
+						if($userGroup === INTERNAL_USER_GROUP) {
 							return;
 						}				
 						if($this->Project->hasDatasetAccess($dataset,$currentUserId)) {
@@ -118,7 +118,7 @@ class AppController extends Controller {
 						#only valid project ids can be passed
 						if($action==='view') {		
 							#JCVI users can see all data
-							if($userGroup === JCVI_USER_GROUP) {
+							if($userGroup === INTERNAL_USER_GROUP) {
 								return;
 							}
 							if($this->Project->hasProjectAccess($projectId,$currentUserId)) {
@@ -137,7 +137,7 @@ class AppController extends Controller {
 				//handle population access
 				if($controller==='populations') {
 					if($action === 'index') {
-						if($userGroup === JCVI_USER_GROUP) {
+						if($userGroup === INTERNAL_USER_GROUP) {
 							return;
 						}
 					}
@@ -148,7 +148,7 @@ class AppController extends Controller {
 						if($action==='view') {
 							$population = $this->Population->findById($arg1);
 							#JCVI users can see all data
-							if($userGroup === JCVI_USER_GROUP) {
+							if($userGroup === INTERNAL_USER_GROUP) {
 								return;
 							}														
 							if($this->Project->hasDatasetAccess($population['Population']['name'],$currentUserId)) {
@@ -176,7 +176,7 @@ class AppController extends Controller {
 				if($controller==='libraries') {
 					if($action === 'index') {
 						#JCVI users can see all data
-						if($userGroup === JCVI_USER_GROUP) {
+						if($userGroup === INTERNAL_USER_GROUP) {
 							return;
 						}
 					}

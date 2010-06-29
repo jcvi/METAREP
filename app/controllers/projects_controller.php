@@ -13,24 +13,32 @@ class ProjectsController extends AppController {
 	
 	var $uses 	= array('Project','User');
 	var $components = array('Solr','Format');
+	//var $helpers = array('Cache');
+	
+//	var $cacheAction = array(
+//		'index/' => 48000,
+//		'view/' => 48000
+//	);
 
 	function index() {
 		$currentUser	= Authsome::get();
 		$currentUserId 	= $currentUser['User']['id'];	    	        	
         $userGroup  	= $currentUser['UserGroup']['name'];			
+
+		if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {
 		
-		if($userGroup === 'Admin' || $userGroup === 'JCVI') {
 			$this->Project->findAll();
 			$this->set('projects', $this->paginate());
 		}   
 		else {
 			$projects = $this->Project->findUserProjects();	  
 			
-			if($userGroup === 'User') {     	
+			
+			if($userGroup === EXTERNAL_USER_GROUP) {     	
 				$this->set('projects', $projects);
 				$this->render('index_no_pagination');
 			}
-			elseif($userGroup === 'Guest') {
+			elseif($userGroup === GUEST_USER_GROUP) {
 				$this->set('projects', $projects);
 				$this->render('index_no_pagination');
 			}
@@ -131,8 +139,6 @@ class ProjectsController extends AppController {
 		header("Content-type: text/plain");
 		header("Content-Disposition: attachment;filename=$fileName");
 		echo $content;
-	}
-	
-	
+	}	
 }
 ?>

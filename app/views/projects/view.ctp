@@ -50,12 +50,23 @@
 		$currentUser 	= Authsome::get();
 		$currentUserId 	= $currentUser['User']['id'];	    	        	
        	$userGroup  	= $currentUser['UserGroup']['name'];	
+    ?>	
+    <?php 
+    #display project options (create pppulation | download all datasets) 
+    if($currentUserId == $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP || $project['Project']['has_ftp']) {
+		echo("<dl><dt>Options</dt>");
+			echo "<dd>";
+			if($currentUserId === $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP) {
+				echo $html->link(__('Add Population', true), array('controller'=>'populations','action'=>'add', $project['Project']['id'])); 
+				echo('&nbsp;');
+			}
+			if($project['Project']['has_ftp']) {				
+				echo $html->link(__('Download All Libraries', true), 
+				array('controller'=>'view','action'=>'ftp', $project['Project']['id'],
+				$project['Project']['id']."_all"));} 
+		echo "</dd></dl>";
+    }
     ?>
-	<?php if($currentUserId === $project['Project']['user_id'] || $userGroup == 'Admin'):?>
-		<dl>
-			<dt><?php echo $html->link(__('Add Population', true), array('controller'=>'populations','action'=>'add', $project['Project']['id'])); ?><dt><?php if($project['Project']['has_ftp']) {echo "<dd>".$html->link(__('Download All Libraries', true), array('controller'=>'view','action'=>'ftp', $project['Project']['id'],$project['Project']['id']."_all"))."</dd>";} ?>
-		</dl>
-	<?php endif;?>
 </fieldset>	
 </div>
 
@@ -72,7 +83,7 @@
 		<th><?php __('Description'); ?></th>
 		<th ><?php __('Annotation Pipeline'); ?></th>	
 		
-		<?php if($currentUserId === $project['Project']['user_id'] || $userGroup == 'Admin'):?>
+		<?php if($currentUserId == $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP):?>
 			<th class="actions"><?php __('Manage');?></th>
 		<?php endif; ?>
 		<th class="actions"><?php __('Analyze');?></th>
@@ -102,7 +113,7 @@
 			<?php if($population['is_viral']){echo ('viral');} else{echo('prokaryotic');} ?>
 		</td>			
 		
-		<?php if($currentUserId === $project['Project']['user_id'] || $userGroup == 'Admin'):?>
+		<?php if($currentUserId == $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP):?>
 		<td class="actions" style="width:4%;text-align:right">				
 			<?php #echo $html->link(__('Edit', true), array('controller'=>'populations','action'=>'edit', $population['id'])); ?>	
 			<?php echo $html->link(__('View', true), array('controller'=>'populations','action'=>'view', $population['id'])); ?>		
@@ -154,7 +165,7 @@
 		<th><?php __('Sample Filter'); ?></th>
 		<th ><?php __('Annotation Pipeline'); ?></th>		
 		
-		<?php if($currentUserId === $project['Project']['user_id'] || $userGroup == 'Admin'):?>
+		<?php if($currentUserId == $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP):?>
 			<th class="actions"><?php __('Manage');?></th>
 		<?php endif;?>	
 		<th class="actions"><?php __('Analyze');?></th>
@@ -204,7 +215,7 @@
 		<td style="width:4%;text-align:center">
 			<?php if($library['is_viral']){echo ('viral');} else{echo('prokaryotic');} ?>
 		</td>		
-		<?php if($currentUserId === $project['Project']['user_id'] || $userGroup === 'Admin'):?>
+		<?php if($currentUserId == $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP):?>
 		<td class="actions" style="width:4%;text-align:right">
 			<?php echo $html->link(__('Edit', true), array('controller'=>'libraries','action'=>'edit', $library['id'])); ?>
 			<?php echo $html->link(__('Delete', true), array('controller'=>'libraries','action'=>'delete', $library['id']),array(),'Delete library?'); ?>			

@@ -39,13 +39,7 @@
 	echo $form->input('field',array('options' => $searchFields,'label' => "Select Search Field",'selected' =>$field,'div'=>'search-field-select-option'));
 	echo $form->end("Search");
 
-//	echo $ajax->observeField( 'SearchField', 
-//	    array(
-//	        'url' => array('controller'=>'search', 'action'=>'clear',$dataset,$sessionQueryId),
-//	        'frequency' => 0.1,
-//	    	'update' => 'search-panel', 'indicator' => 'spinner',
-//	    ) 
-//	);?>
+?>
 	
 </fieldset>
 </div>
