@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/views/reads
+END
+add.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/views/reads/add.ctp
+END
+taxonomic_distribution.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/views/reads/taxonomic_distribution.ctp
+END
+index.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/views/reads/index.ctp
+END
+view.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/views/reads/view.ctp
+END
+edit.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/views/reads/edit.ctp
+END

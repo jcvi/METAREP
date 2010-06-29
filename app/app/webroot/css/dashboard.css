@@ -1,0 +1,128 @@
+/*
+CSS for dash board page
+*/
+
+/* css for dash board component
+----------------------------------*/
+.dash-board h2 {
+	position: absolute;
+	top: 140px;
+	margin: 0px !important;
+	padding-top: 0px !important;
+}
+
+.dash-board-abstract {
+	font-size: 1.25em;	
+}
+
+
+.dash-board-main-panel {
+	position: absolute;
+	top: 175px;
+	width:600px;	
+	height:620px;	
+}
+
+
+.dash-board-login-panel {
+	position: absolute;
+	top: 175px;
+	left:650px;
+	width:300px;
+	height:320px;
+	font-size: 1em;	
+}
+
+.dash-board-project-panel {
+	position: absolute;
+	top: 725px;
+	width:600px;
+	height:400px;
+	overflow: automactic;
+}
+
+.dash-board-news-panel {
+	position: absolute;
+	top: 420px;
+	left:650px;
+	width:300px;
+	height:570px;
+	font-size: 1em;	
+	scroll: auto;
+}
+
+.dash-board-powered-by-panel {
+	position: absolute;
+	top: 420px;
+	left:650px;
+	width:300px;
+	height:570px;
+	font-size: 1em;	
+	scroll: auto;
+}
+
+.input {
+	margin:0px;
+	padding:0px;
+	width: 250px;
+}
+
+form {
+	margin:0px;
+	padding:0px;
+}
+
+form div.submit {
+	margin:0px;
+	padding:5 0 10 0px;
+}
+
+input[type=submit] {
+	display: inline;
+	font-size: 110%;
+	padding: 2px 5px;
+	width: auto;
+	vertical-align: bottom;
+}
+
+.clear {
+	clear:both
+}
+
+#dash-board-gallery {
+	position:relative;
+	height:360px
+}
+#dash-board-gallery a {
+	float:left;
+	position:absolute;
+}
+
+#dash-board-gallery a img {
+	border:none;
+}
+
+#dash-board-gallery a.show {
+	z-index:500
+}
+
+#dash-board-gallery .caption {
+	z-index:600; 
+	background-color:#C0C0C0; 
+	color:#ffffff; 
+	height:100px; 
+	width:100%; 
+	position:absolute;
+	bottom:0;
+}
+
+#dash-board-gallery .caption .content {
+	margin:5px;
+	font-size:1em;
+}
+#dash-board-gallery .caption .content h3 {
+	margin:0;
+	padding:0;
+	color:#ffffff;
+}
+

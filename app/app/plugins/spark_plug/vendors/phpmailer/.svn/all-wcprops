@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/plugins/spark_plug/vendors/phpmailer
+END
+class.phpmailer.php
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/plugins/spark_plug/vendors/phpmailer/class.phpmailer.php
+END
+phpmailer_doc.html
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/plugins/spark_plug/vendors/phpmailer/phpmailer_doc.html
+END
+class.smtp.php
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/plugins/spark_plug/vendors/phpmailer/class.smtp.php
+END

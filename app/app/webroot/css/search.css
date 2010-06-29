@@ -1,0 +1,119 @@
+/*
+CSS for search page
+*/
+
+/* basic component
+----------------------------------*/
+
+.search-panel {  
+	position: relative;
+	top: 20px;
+	width: 100%;
+	padding-bottom:0px;	
+	
+}
+
+.facet-list-panel {  
+	position: relative;
+	top: 0px;
+	float:none;
+	
+}
+.facet-pie-panel { 
+	position: relative;
+	top: 0px;
+	float:left;
+	width: 100%;
+	/*overflow:auto*/;
+}
+
+.data-panel { 
+	position: relative;
+	top: 0px;
+	float:left;
+	width: 100%;
+}
+
+input[type="submit"] {
+	width: 100px;
+	height: 30px;
+}
+
+input[type="text"] {	
+	top: 10px;
+	width: 550px;
+	font-size:100% !important;
+	hight:15px;
+	left: 0px;
+	padding:0px !important;
+}
+
+.download {  	
+	position: relative;
+	width: 106px;
+	left: 96%;
+	top: 27px;
+}
+
+#dialog_link {  	
+	position: absolute;
+	left: 7px;
+	top:7px;
+	height: 21px;
+}
+
+.search-box  {
+	position: absolute;
+	width:550px;
+	left:70px;
+	top:1px;
+	padding:0px !important;
+	font-size:110% !important;
+	height:15px;
+	float: none;
+
+}
+
+form div {
+	padding: 0px !important;
+	margin-bottom:20px !important;
+}
+
+.search-box label {
+	font-size:90% !important;
+	color:#535353 !important;
+}
+
+.search-field-select-option select{
+	position: absolute;
+	font-size: 0.9em;
+	left: 630px;
+	width:190px;
+	float: none;
+	top:18px;
+	padding: 0px;
+	height: 22px;
+}
+
+.search-field-select-option label{
+	position: absolute;
+	font-size:90% !important;
+	left: 630px;
+	width:180px;
+	float: none;
+	top:3px;
+	padding: 0px;
+	height: 20px;
+	text-align: left;
+}
+
+input[type="submit"] {
+	position: absolute;
+	text-align: center;
+	font-size: 0.9em;
+	top: 0px;
+	left:823px;
+	width: 70px;
+	top:18px;
+	height: 23px;
+}

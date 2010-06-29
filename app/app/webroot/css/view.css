@@ -1,0 +1,55 @@
+/*
+CSS for search page
+*/
+
+/* css for view component
+----------------------------------*/
+
+#view-facet-panel {
+	margin-top:15px;
+	padding-left:5px;
+	height: 520px;
+	font-size: 0.9em;	
+	overflow:auto;
+}
+
+.download {  	
+	position: absolute;
+	width: 106px;
+	left: 92%;
+	top: 57px;
+}
+
+.input {
+	margin:0px;
+	padding:0px;
+}
+
+form {
+	margin:0px;
+	padding:0px;
+}
+
+.view-panel{
+	position: absolute;
+	height: 550px;
+	width: 90%;
+}
+
+#view-tabs {
+	height: 600px;
+}
+
+#view-data-tab {
+	margin-top:15px;
+	padding-left:5px;
+	height: 500px;
+	font-size: 0.9em;	
+	overflow:auto;
+}
+
+#view-facet-panel a {		
+	font-weight:normal !important; 
+	background: none  !important; ; 
+}
+

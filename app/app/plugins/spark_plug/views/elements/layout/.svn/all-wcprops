@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/plugins/spark_plug/views/elements/layout
+END
+logged_in_menu.default.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 125
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/plugins/spark_plug/views/elements/layout/logged_in_menu.default.ctp
+END
+rightcol.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/plugins/spark_plug/views/elements/layout/rightcol.ctp
+END
+help_section.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/plugins/spark_plug/views/elements/layout/help_section.ctp
+END
+footer.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/plugins/spark_plug/views/elements/layout/footer.ctp
+END
+header.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/plugins/spark_plug/views/elements/layout/header.ctp
+END
