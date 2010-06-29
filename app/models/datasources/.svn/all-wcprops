@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/ANNOTATION/!svn/ver/32321/metagenomics-reports/trunk/app/models/datasources
+END
+rss_source.php
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/ANNOTATION/!svn/ver/32485/metagenomics-reports/trunk/app/models/datasources/rss_source.php
+END
+solr_source.php
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/ANNOTATION/!svn/ver/32526/metagenomics-reports/trunk/app/models/datasources/solr_source.php
+END
+soap_source.php
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/ANNOTATION/!svn/ver/32321/metagenomics-reports/trunk/app/models/datasources/soap_source.php
+END
+empty
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/models/datasources/empty
+END

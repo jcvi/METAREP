@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/config/htaccess
+END
+htaccess_root
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/config/htaccess/htaccess_root
+END
+htaccess_app
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/config/htaccess/htaccess_app
+END
+htaccess_webroot
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/config/htaccess/htaccess_webroot
+END

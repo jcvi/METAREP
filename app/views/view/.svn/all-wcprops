@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/ANNOTATION/!svn/ver/32382/metagenomics-reports/trunk/app/views/view
+END
+index.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/ANNOTATION/!svn/ver/32312/metagenomics-reports/trunk/app/views/view/index.ctp
+END
+apis.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/ANNOTATION/!svn/ver/32382/metagenomics-reports/trunk/app/views/view/apis.ctp
+END
+facet_panel.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/ANNOTATION/!svn/ver/32207/metagenomics-reports/trunk/app/views/view/facet_panel.ctp
+END

@@ -1,0 +1,56 @@
+          .jGM_box
+          { position: absolute; top: 100px; left: 100px; width: 227px; height: 317px; background: #fff; margin: 0; padding: 0;
+                  border: 1px solid #ccc; overflow: hidden; }
+          .jGM_header
+          { position: absolute; top: 0; left: 0; height: 18px; width: 713px !important; background: #d1d1d1; color: #fff;
+            text-align: right; vertical-align: middle; line-height: 18px; cursor: move; }
+          .jGM_header a
+          { margin-right: 12px; text-decoration: none; color: #fff; cursor: pointer; }
+          .jGM_header a:HOVER
+          { color: #333; }
+          .jGM_wrapper
+          { position: absolute; top: 19px; left: 0; width: 2270px; height: 288px; margin: 0; padding: 0; border: 0; } /* overflow: hidden; */
+          .jGM_tile
+          { position: absolute; height: 640px !important;}
+          .jGM_cats
+          { width: 100%; height: 64px; overflow: hidden; vertical-align: middle; text-align: left; }
+          .jGM_cats h1
+           { font-family:'Gill Sans','lucida grande',helvetica, arial, sans-serif; font-size: 1.6em; margin: 0; padding: 2px 0; line-height: 1.8em; color: #e32; font-weight: bold; }
+          .jGM_cats p
+          { font-family: verdana,tahoma,arial,sans-serif; font-size: 1em; margin: 0; padding: 0; line-height: 1.4em; color: #858585; font-weight: normal; }
+          .jGM_pager
+          { height: 18px; width: 613px !important; line-height: 18px; margin: 0; border: 0; padding: 0; background: #f6f6f6;
+                  color: #fff; text-align: center; vertical-align: middle; }
+          .jGM_pager a
+          { text-decoration: none; color: #fff; font-weight: bold; text-decoration: none; color: #fff; display: block; }
+          .jGM_pager a:HOVER
+          { background: #d1d1d1; }
+          .jGM_pager img
+          { border: 0; margin: 6px 0; }
+          .jGM_content
+          { width: 613px !important; height: 305px; margin: 1px 0; padding: 0; border: 0; font-size: 0.9em;overflow: hidden; }
+          .jGM_content a
+          { text-decoration: none; color: #333; height: 18px; width: 100%; display: block; line-height: 18px; padding: 0 0 0 10px; background-color: #e6e7e9; margin: 1px 0; }
+          .jGM_content a:HOVER
+          { color: #fff; background-color: #e32; font-size:1.2em}
+.jGM_more
+{ background-image: url(../img/arrow.gif); background-repeat: no-repeat; background-position: 603px 50%; }
+          .jGM_back
+          { position: absolute; top: 400px; right: 200px; height: 18px; width: 52px; background: #d1d1d1; color: #fff; line-height: 18px;
+                  vertical-align: right; text-align: center; margin: 10px 0 0 0; padding: 0; border: 0; z-index: 99; }
+          .jGM_back a
+          { height: 100%; width: 100%; text-decoration: none; color: #fff; display: block; }
+          .jGM_back a
+          { color: #fff; background: #d1d1d1; }
+          .jGM_back a:HOVER
+          { color: #fff; background: #e32; }
+          .jGM_reset
+          { position: absolute; top: 400px; right: 255px; height: 18px; width: 52px; background: #d1d1d1; color: #fff; line-height: 18px;
+                  vertical-align: middle; text-align: center; margin: 10px 0 0 0; padding: 0; border: 0; z-index: 99; }
+          .jGM_reset a
+          { height: 100%; width: 100%; text-decoration: none; color: #fff; display: block; }
+          .jGM_reset a
+          { color: #fff; background: #d1d1d1; }
+          .jGM_reset a:HOVER
+          { color: #fff; background: #e32; }
+

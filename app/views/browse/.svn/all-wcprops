@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/ANNOTATION/!svn/ver/32382/metagenomics-reports/trunk/app/views/browse
+END
+enzymes.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/ANNOTATION/!svn/ver/32345/metagenomics-reports/trunk/app/views/browse/enzymes.ctp
+END
+apis_taxonomy.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/ANNOTATION/!svn/ver/32345/metagenomics-reports/trunk/app/views/browse/apis_taxonomy.ctp
+END
+blast_taxonomy.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/ANNOTATION/!svn/ver/32345/metagenomics-reports/trunk/app/views/browse/blast_taxonomy.ctp
+END
+gene_ontology.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/ANNOTATION/!svn/ver/32345/metagenomics-reports/trunk/app/views/browse/gene_ontology.ctp
+END
+pathways.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/ANNOTATION/!svn/ver/32382/metagenomics-reports/trunk/app/views/browse/pathways.ctp
+END

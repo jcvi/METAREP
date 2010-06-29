@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/ANNOTATION/!svn/ver/32237/metagenomics-reports/trunk/app/views/users
+END
+index.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/ANNOTATION/!svn/ver/32237/metagenomics-reports/trunk/app/views/users/index.ctp
+END
+register.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/views/users/register.ctp
+END
+dashboard.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/views/users/dashboard.ctp
+END
+activate_password.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/views/users/activate_password.ctp
+END
+forgot_password.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/views/users/forgot_password.ctp
+END
+change_password.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/ANNOTATION/!svn/ver/32237/metagenomics-reports/trunk/app/views/users/change_password.ctp
+END
+edit.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/ANNOTATION/!svn/ver/32237/metagenomics-reports/trunk/app/views/users/edit.ctp
+END
+edit_project_users.ctp
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/views/users/edit_project_users.ctp
+END

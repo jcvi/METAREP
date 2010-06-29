@@ -1,0 +1,59 @@
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/models
+END
+project.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/models/project.test.php
+END
+read.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/models/read.test.php
+END
+blast_result.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/models/blast_result.test.php
+END
+rrna.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/models/rrna.test.php
+END
+peptide.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/models/peptide.test.php
+END
+trna.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/models/trna.test.php
+END
+annotation.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/models/annotation.test.php
+END
+empty
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/models/empty
+END
+library.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/models/library.test.php
+END

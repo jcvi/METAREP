@@ -1,0 +1,59 @@
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/controllers
+END
+peptides_controller.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/controllers/peptides_controller.test.php
+END
+trnas_controller.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/controllers/trnas_controller.test.php
+END
+annotations_controller.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/controllers/annotations_controller.test.php
+END
+libraries_controller.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/controllers/libraries_controller.test.php
+END
+projects_controller.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/controllers/projects_controller.test.php
+END
+reads_controller.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/controllers/reads_controller.test.php
+END
+empty
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/controllers/empty
+END
+blast_results_controller.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/controllers/blast_results_controller.test.php
+END
+rrnas_controller.test.php
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/ANNOTATION/!svn/ver/32045/metagenomics-reports/trunk/app/tests/cases/controllers/rrnas_controller.test.php
+END
