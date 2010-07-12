@@ -1,0 +1,31 @@
+##################################################################
+# Description: metarep_ftp_put.pl
+# --------------
+# Author: jgoll 
+# Email:  jgoll@jcvi.org
+# Date:   May 14, 2010  
+##################################################################
+
+BEGIN {
+   #unshift(@INC, '/local/annotation_metagenomic/METAREP/parser/lib');
+  unshift(@INC, '/export/projects/metagenomics-reports/parsers/solr/lib');
+}
+use MetarepDAO;
+use strict;
+
+open LOG, ">", "solr_results.log" or die $!;
+
+my $solrUrl = $ARGV[0];
+
+my @steps = qw(2 4 8 16 32 64 128 256 512);
+
+foreach(@steps) {
+	my $numRequest = $_ * 1000;
+	my $concurrency = 1 ;
+	print LOG "ab -n$numRequest -c$concurrency \n";
+	print "ab -n$numRequest 'http://172.20.13.25:8989/solr/Manangatang-Managed/select?q=com_name_txt%3A%2Aepimerase+AND+blast_evalue_exp%3A%7B20+TO+%2A%7D+AND+-blast_tree%3A28211&start=0&rows=10'";
+	my $result = `ab -n$numRequest 'http://172.20.13.25:8989/solr/Manangatang-Managed/select?q=com_name_txt%3A%2Aepimerase+AND+blast_evalue_exp%3A%7B20+TO+%2A%7D+AND+-blast_tree%3A28211&start=0&rows=20'`;
+	print LOG $result."\n";
+}
+
+

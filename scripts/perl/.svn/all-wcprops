@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/ANNOTATION/!svn/ver/32685/metagenomics-reports/trunk/scripts/perl
+END
+metarep_ftp_load.pl
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/ANNOTATION/!svn/ver/32685/metagenomics-reports/trunk/scripts/perl/metarep_ftp_load.pl
+END
+metarep_loader.pl
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/ANNOTATION/!svn/ver/32685/metagenomics-reports/trunk/scripts/perl/metarep_loader.pl
+END
+enzyme_dat_to_tab.pl
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/ANNOTATION/!svn/ver/32685/metagenomics-reports/trunk/scripts/perl/enzyme_dat_to_tab.pl
+END
+enzyme_class_to_tab.pl
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/ANNOTATION/!svn/ver/32685/metagenomics-reports/trunk/scripts/perl/enzyme_class_to_tab.pl
+END
+solr_performance.pl
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/ANNOTATION/!svn/ver/32685/metagenomics-reports/trunk/scripts/perl/solr_performance.pl
+END
+generate_metarep_index.pl
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/ANNOTATION/!svn/ver/32685/metagenomics-reports/trunk/scripts/perl/generate_metarep_index.pl
+END
+solr_performance_benchmark.pl
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/ANNOTATION/!svn/ver/32685/metagenomics-reports/trunk/scripts/perl/solr_performance_benchmark.pl
+END
+metarep_sequence_load.pl
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/ANNOTATION/!svn/ver/32685/metagenomics-reports/trunk/scripts/perl/metarep_sequence_load.pl
+END

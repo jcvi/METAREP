@@ -1,0 +1,101 @@
+##################################################################
+# Description: metarep_ftp_put.pl
+# --------------
+# Author: jgoll 
+# Email:  jgoll@jcvi.org
+# Date:   May 14, 2010  
+##################################################################
+
+BEGIN {
+   #unshift(@INC, '/local/annotation_metagenomic/METAREP/parser/lib');
+  unshift(@INC, '/export/projects/metagenomics-reports/parsers/solr/lib');
+}
+use MetarepDAO;
+use strict;
+use Net::FTP;
+
+my $projectId = $ARGV[0];
+
+my $metarepDao  = MetarepDAO->new();
+my %paths = $metarepDao->getPaths();
+
+foreach my $library ( keys %paths) {	
+
+	my $result = $paths{$library};
+	
+	my @tmp = split('\t',$result,2);
+	
+	my $projectId = $tmp[0];
+	my $libraryPath = $tmp[1];
+	
+	
+#	#print "ls -t $libraryPath/orf-calling/input/*.fa*  | head -n 1\n";
+#	my $readFile = `ls -t $libraryPath/orf-calling/input/*.fa*  | head -n 1`;
+#	chomp $readFile;
+#	
+#	#print $readFile ."\n";
+#	
+#	if($readFile) {
+#		if($readFile =~ m/.gz$/) {
+#			#print "du -sh $readFile\n";
+#			my $size = `du -sh $readFile`;
+#			#my $count = `zgrep -c '^>' $readFile`;
+#			chomp $size;
+#			#chomp $count;
+#			
+#			my @tmp = split(' ',$size,2);
+#			print "$projectId\t$readFile\t$tmp[0]\n";
+#		}
+#		else {
+#			#print "gzip $readFile\n";
+#		}
+#	}
+
+	my $pepFile = `ls -t $libraryPath/annotation/input/metagene_mapped_pep.* | head -n 1`;
+	chomp $pepFile;
+
+	if($pepFile) {
+		if($pepFile =~ m/.gz$/) {
+			#print "du -sh $readFile\n";
+			my $size = `du -sh $pepFile`;
+			#my $count = `zgrep -c '^>' $pepFile`;
+			chomp $size;
+			#chomp $count;
+			
+			my @tmp = split(' ',$size,2);
+			print "$projectId\t$pepFile\t$tmp[0]\n";
+		}
+		else {
+			#print "gzip $pepFile\n";
+		}
+	}
+	
+
+##	print "du -sh $readFile\n";
+#	my $size = `du -sh $readFile`;
+#	chomp $size;
+#	print "$readFile\tsize\n";
+#	
+#	chomp $readFile;
+	
+	
+	
+	#if(-e "$libraryPath/orf-calling/input/*.fasta)
+	
+	#print "$libraryPath\n";
+
+}
+
+sub clean {
+	my ($self,$tmp) = @_;
+	chomp($tmp);
+	#remove white spaced
+	$tmp =~ s/^\s+//g;
+	$tmp =~ s/\s+$//g;
+		
+	return $tmp;
+}
+
+
+
+
