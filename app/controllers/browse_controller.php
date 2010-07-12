@@ -1,12 +1,30 @@
 <?php
-
 /***********************************************************
-*  File: browse_controller.php
-*  Description:
+* File: browse_controller.php
+* Description: Metagenomics annotations can be browsed using 
+* four distinct hierarchies: NCBI Taxonomy, Gene Ontology, 
+* Enzyme Classification and KEGG metabolic pathways. The number
+* of hits are displayed for each node in the tree, and a user 
+* can click on a tree node and expand further. On click a 
+* summary of that node is shown featuring a pie chart calculated
+* from its sub-nodes and top lists of functional and taxonomic
+* assignments.
 *
-*  Author: jgoll
-*  Date:   Feb 16, 2010
-************************************************************/
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 
 define('BLAST_TAXONOMY', 'Blast Taxonomy');
 define('APIS_TAXONOMY', 'Apis Taxonomy');
@@ -15,14 +33,11 @@ define('GENE_ONTOLOGY', 'Gene Ontology');
 define('PATHWAY', 'Pathway');
 
 class BrowseController extends AppController {
-	var $name = 'Browse';
-
-	var $limit = 10;
-
-	var $helpers = array('Facet','Tree','Ajax','Dialog');
 	
-	var $uses = array('Project','Taxonomy','GoTerm','GoGraph','Enzymes','Population','Library','Pathway','Kegg');
-	
+	var $name 		= 'Browse';
+	var $limit 		= 10;
+	var $helpers 	= array('Facet','Tree','Ajax','Dialog');	
+	var $uses 		= array('Project','Taxonomy','GoTerm','GoGraph','Enzymes','Population','Library','Pathway','Kegg');	
 	var $components = array('Session','RequestHandler','Solr','Format');
 	
 	function blastTaxonomy($dataset='CBAYVIR',$expandTaxon=1) {
@@ -45,8 +60,6 @@ class BrowseController extends AppController {
 		$childArray = array();
 		$childCounts = array();
 		$numChildHits =0;
-			
-		#debug($displayedTree);
 		
 		//for each child get solr count
 		foreach($taxaChildren as $taxon) {
@@ -522,10 +535,7 @@ class BrowseController extends AppController {
 			$level 	= $node['Pathway']['level'];
 			$nodeId = $node['Pathway']['id'];
 			$ecId 	= $node['Pathway']['ec_id'];
-			
-//			if($level == '')
-//			$pathwayEnzymeCount = $node['Pathway']['child_count'];
-			
+					
 			$childCount = $this->Solr->getPathwayCount('*:*',$dataset,$level,$nodeId,0,$ecId);
 				
 			//filter for children
@@ -578,8 +588,7 @@ class BrowseController extends AppController {
 		$this->set('facets',$parentSolrResults['facets']);	
 		$this->set('mode',PATHWAY);	
 	}
-		
-	
+			
 	public function downloadChildCounts($dataset,$node,$mode,$numHits,$query="*:*") {
 		$this->autoRender=false; 
 
@@ -614,11 +623,9 @@ class BrowseController extends AppController {
 	}	
 	
 	// Recursively traverses a multi-dimensional array.
-	private function traverseArray(&$array,&$childArray,$taxon)
-	{ 		
+	private function traverseArray(&$array,&$childArray,$taxon)	{ 		
 		// Loops through each element. If element again is array, function is recalled. If not, result is echoed.
-		foreach($array as $key=>&$value)
-		{ 
+		foreach($array as $key=>&$value) { 
 			if($key == $taxon) {
 					$value['children'] =  $childArray;
 			} 

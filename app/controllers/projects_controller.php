@@ -1,50 +1,61 @@
 <?php
-
 /***********************************************************
-*  File: projects_controller.php
-*  Description: 
+* File: projects_controller.php
+* Description: Controller that handles all project related 
+* actions.
 *
-*  Author: jgoll
-*  Date:   May 2, 2010
-************************************************************/
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 
 class ProjectsController extends AppController {
-	var $name = 'Projects';
 	
-	var $uses 	= array('Project','User');
+	var $name 		= 'Projects';
+	var $uses 		= array('Project','User');
 	var $components = array('Solr','Format');
-	//var $helpers = array('Cache');
 	
-//	var $cacheAction = array(
-//		'index/' => 48000,
-//		'view/' => 48000
-//	);
-
+	/**
+	 * List all projects
+	 * 
+	 * @return void
+	 * @access public
+	 */	
 	function index() {
+		
 		$currentUser	= Authsome::get();
 		$currentUserId 	= $currentUser['User']['id'];	    	        	
         $userGroup  	= $currentUser['UserGroup']['name'];			
 
-		if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {
-		
+		if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {		
 			$this->Project->findAll();
 			$this->set('projects', $this->paginate());
 		}   
 		else {
 			$projects = $this->Project->findUserProjects();	  
-			
-			
-			if($userGroup === EXTERNAL_USER_GROUP) {     	
-				$this->set('projects', $projects);
-				$this->render('index_no_pagination');
-			}
-			elseif($userGroup === GUEST_USER_GROUP) {
-				$this->set('projects', $projects);
-				$this->render('index_no_pagination');
-			}
+			$this->set('projects', $projects);							
+			$this->render('index_no_pagination');
         }		
 	}
-
+	
+	/**
+	 * View project
+	 * 
+	 * @param int $projectId project id
+	 * @return void
+	 * @access public
+	 */
 	function view($id = null) {
 		if (!$id) {
 			$this->Session->setFlash(__('Invalid Project.', true));
@@ -53,6 +64,12 @@ class ProjectsController extends AppController {
 		$this->set('project', $this->Project->read(null, $id));
 	}
 	
+	/**
+	 * Add new project 
+	 * 
+	 * @return void
+	 * @access public
+	 */	
 	function add() {
 		if (!empty($this->data)) {
 			$this->Project->create();
@@ -79,7 +96,14 @@ class ProjectsController extends AppController {
 			$this->set(compact('userSelectArray','projectUserId'));		
 		}
 	}
-
+	
+	/**
+	 * Edit project details 
+	 * 
+	 * @param int $projectId project id
+	 * @return void
+	 * @access public
+	 */
 	function edit($id = null) {
 		if (!$id && empty($this->data)) {
 			$this->Session->setFlash(__('Invalid Project', true));
@@ -113,7 +137,14 @@ class ProjectsController extends AppController {
 			$this->set(compact('userSelectArray','projectUserId'));		
 		}
 	}
-
+	
+	/**
+	 * Delete project 
+	 * 
+	 * @param int $projectId project id
+	 * @return void
+	 * @access public
+	 */
 	function delete($id = null) {
 		if (!$id) {
 			$this->Session->setFlash(__('Invalid id for Project', true));
@@ -124,21 +155,38 @@ class ProjectsController extends AppController {
 			$this->redirect(array('action'=>'index'));
 		}
 	}
+	
+	/**
+	 * Sets and activates ftp link on the project view page
+	 * 
+	 * @param int $projectId project id
+	 * @param String $dataset dataset name
+	 */
+	function ftp($projectId,$dataset) {
+		$fileName = "$dataset.tgz";
+		$filePath = "ftp://".FTP_USERNAME.":".FTP_PASSWORD."@".FTP_HOST."/$projectId/$fileName";	
+		$this->set('ftpLink',$filePath);
+		$this->set('project', $this->Project->read(null,$projectId));
+		$this->render('view');
+	}
 
-	function download($id) {
-		$project = $this->Project->findById($id);
-		debug($project);
-		
-		$this->autoRender=false;
-
-		$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);
-		$content.= $this->Format->comparisonResultsToDownloadString($counts,$selectedDatasets,$option);
-
-		$fileName = "jcvi_metagenomics_report_".time().'.txt';
-
-		header("Content-type: text/plain");
-		header("Content-Disposition: attachment;filename=$fileName");
-		echo $content;
-	}	
+	/**
+	 * Under development | export project information
+	 */	
+//	function download($id) {
+//		$project = $this->Project->findById($id);
+//		#debug($project);
+//		
+//		$this->autoRender=false;
+//
+//		$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);
+//		$content.= $this->Format->comparisonResultsToDownloadString($counts,$selectedDatasets,$option);
+//
+//		$fileName = "jcvi_metagenomics_report_".time().'.txt';
+//
+//		header("Content-type: text/plain");
+//		header("Content-Disposition: attachment;filename=$fileName");
+//		echo $content;
+//	}		
 }
 ?>

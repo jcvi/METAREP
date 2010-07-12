@@ -1,13 +1,23 @@
 <?php
 /***********************************************************
-*  File: download.php
-*  Description: Helps to format data returned from solr
+* File: download.php
+* Description: Used for formatting results for download.
 *
-*  Author: jgoll
-*  Date:   Feb 24, 2010
-************************************************************/
-
-
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 class FormatComponent extends Object {
 	
 	public function facetToDownloadString($heading,$facets,$numHits) {			
@@ -52,7 +62,7 @@ class FormatComponent extends Object {
 	public function infoString($title,$dataset,$query,$numHits,$node=''){
 		$content ="----------------------------------------------------------\n";
 		$timestamp =$today = date("F j, Y, g:i a"); 
-		$content .="JCVI Metagenomics Report - $title\n";
+		$content .= METAREP_RUNNING_TITLE." - $title\n";
 		#for browse data add node
 		$content .= "Date:\t\t$timestamp\nQuery:\t\t$query\n";
 		if(!empty($node)) {
@@ -172,7 +182,7 @@ class FormatComponent extends Object {
 					$pvalue = $row['pvalue'];
 					$adjPValue= $pvalue * count($counts);
 					
-					if($adjPValue>1) {
+					if($adjPValue > 1) {
 						$adjPValue=1;
 					}					
 					

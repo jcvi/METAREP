@@ -1,24 +1,52 @@
 <?php
 /***********************************************************
-*  File: populations_controller.php
-*  Description:
+* File: populations_controller.php
+* Description: The population Controller handles all population
+* actions. To get higher level summaries, users are able to 
+* create a new dataset by merging multiple existing datasets.
+* Populations also provide a better basis for statistical inference.
+* For example, METASTS a modified non-parametric t-test is available for
+* comparing two populations.
 *
-*  Author: jgoll
-*  Date:   Mar 4, 2010
-************************************************************/
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 
 class PopulationsController extends AppController {
 
-	var $helpers = array('Html', 'Form','Ajax');
-	var $uses 	= array('Population','Library','Project');
-	
+	var $helpers 	= array('Html', 'Form','Ajax');
+	var $uses 		= array('Population','Library','Project');	
 	var $components = array('Solr');
 
+	/**
+	 * Initializes index population page
+	 * 
+	 * @return void
+	 * @access public
+	 */		
 	function index() {
 		$this->Population->recursive = 1;
 		$this->set('population', $this->paginate());
 	}
 
+	/**
+	 * View population
+	 * 
+	 * @return void
+	 * @access public
+	 */	
 	function view($id = null) {		
 		if (!$id) {
 			$this->flash(__('Invalid Population', true), array('action'=>'index'));
@@ -26,6 +54,13 @@ class PopulationsController extends AppController {
 		$this->set('population', $this->Population->read(null, $id));
 	}
 
+	/**
+	 * View population after a new index has been created. Executed by ajax call.
+	 * 
+	 * @param int $id population id
+	 * @return void
+	 * @access public
+	 */	
 	function ajaxView($id = null) {
 		
 		if (!$id) {
@@ -36,9 +71,18 @@ class PopulationsController extends AppController {
 		$this->set('status','Created');
 		$this->render('view','ajax');
 	}	
-	
-	function add($projectId=0) {	
+
+	/**
+	 * Add new population to a project
+	 * 
+	 * @param int $id population id
+	 * @return void
+	 * @access public
+	 */		
+	function add($projectId = 0) {	
+		
 		if (!empty($this->data)) {
+			
 			$this->Population->create();
 			$projectId= $this->data['Population']['project_id'];
 			
@@ -91,6 +135,13 @@ class PopulationsController extends AppController {
 		$this->set(compact('projectId','projects','datasets'));
 	}
 
+	/**
+	 * Edit population
+	 * 
+	 * @param int $id population id
+	 * @return void
+	 * @access public
+	 */		
 	function edit($id = null) {
 		if (!$id && empty($this->data)) {
 			$this->flash(__('Invalid Population', true), array('action'=>'index'));
@@ -116,6 +167,13 @@ class PopulationsController extends AppController {
 		$this->set(compact('projectId','projects','datasets'));
 	}
 
+	/**
+	 * Delete population
+	 * 
+	 * @param int $id population id
+	 * @return void
+	 * @access public
+	 */		
 	function delete($id = null) {
 		if (!$id) {
 			$this->flash(__('Invalid Population', true), array('action'=>'index'));

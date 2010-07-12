@@ -1,36 +1,48 @@
 <?php
 /***********************************************************
-*  File: database.php
-*  Description: configuration file for cakephp datasources
+* File: database.php
+* Description: configuration file for METAREP datasources
 *
-*  Author: jgoll
-*  Date:   Feb 16, 2010
-************************************************************/
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 
 class DATABASE_CONFIG {
 	
-	//METAREP database connection parameters
+	//METAREP MySQL database connection parameters
 	var $default = array(
 		'driver' => 'mysqli',
 		'persistent' => true,
-		'host' => 'mysql51-dmz-pro',
-		'login' => 'ifx_mg_reports',
-		'password' => 'mgano',
-		'database' => 'ifx_metagenomics_reports',
+		'host' => 'localhost',
+		'login' => '<your-login>',
+		'password' => '<your-password>',
+		'database' => 'metarep',
 	);
 	
-	//GO database connection parameters
+	//GO MySQL database connection parameters
 	var $go = array(
 		'driver' => 'mysqli',
 		'persistent' => true,
-		'host' => 'mysql51-dmz-pro',
-		'login' => 'access',
-		'password' => 'access',
+		'host' => 'localhost',
+		'login' =>  '<your-login>',
+		'password' =>  '<your-password>',
 		'database' => 'gene_ontology',
 	);
 	
-	//GOS Blog connection parameters
-	var $gosBlog = array(
+	//METAREP Blog connection parameters
+	var $blog = array(
 		'datasource' => 'rss',
 		'feedUrl' => 'http://blogs.jcvi.org/tag/gos/feed/',
 		'encoding' => 'UTF-8',

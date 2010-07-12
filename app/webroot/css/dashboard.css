@@ -29,7 +29,7 @@ CSS for dash board page
 	top: 175px;
 	left:650px;
 	width:300px;
-	height:320px;
+	height:260px;
 	font-size: 1em;	
 }
 
@@ -40,6 +40,16 @@ CSS for dash board page
 	height:400px;
 	overflow: automactic;
 }
+
+/*.dash-board-links-panel {
+	position: absolute;
+	top: 420px;
+	left:650px;
+	width:300px;
+	height:150px;
+	font-size: 1em;	
+	scroll: auto;
+}*/
 
 .dash-board-news-panel {
 	position: absolute;

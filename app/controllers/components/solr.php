@@ -1,13 +1,24 @@
 <?php
 /***********************************************************
-*  File: solr.php
-*  Description: Handles communication with Solr server
+* File: solr.php
+* Description: Handles communication between METAREP and
+* the Solr/Lucene server
 *
-*  Author: jgoll
-*  Date:   Feb 16, 2010
-*  
-/***********************************************************/
-
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 require_once('baseModel.php');
 
 require_once( '../../vendors/SolrPhpClient/Apache/Solr/Service.php' );
@@ -16,7 +27,7 @@ define('SOLR_CONNECT_EXCEPTION', "There was a problem with fetching data from th
 
 class SolrComponent extends BaseModelComponent {
 
- 	var $uses 		= array('GoTerm','Enzymes','Hmm','Population','Pathway'); 
+ 	var $uses = array('GoTerm','Enzymes','Hmm','Population','Pathway','Library'); 
 	
 	/**
 	 * Searches Solr core/index
@@ -38,6 +49,7 @@ class SolrComponent extends BaseModelComponent {
 		if(defined('SOLR_BIG_IP_HOST')) {
 			$solr = new Apache_Solr_Service( SOLR_BIG_IP_HOST, SOLR_PORT,"/solr/$dataset" );
 		}
+		//otherwise use the Solr master host
 		else {
 			$solr = new Apache_Solr_Service( SOLR_MASTER_HOST, SOLR_PORT,"/solr/$dataset" );
 		}
@@ -45,13 +57,14 @@ class SolrComponent extends BaseModelComponent {
 		try {
 			$result= $solr->search($query, $offset,$limit,$params,$method);			
 		}
-		catch (Exception $e) {			
+		catch (Exception $e) {	
+			
 			//rethrow exception
 			throw new Exception($e);
 		}
 	
 		#if documents are being returned
-		if($limit>0) {
+		if($limit > 0) {
 			$hits = $result->response->docs;		
 			$this->removeUnassignedValues($hits);
 		}
@@ -67,6 +80,9 @@ class SolrComponent extends BaseModelComponent {
 			if(!empty($facets->facet_fields->hmm_id)) {
 				$this->addHmmDescriptions($facets);
 			}
+			if(!empty($facets->facet_fields->library_id)) {
+				$this->addLibraryDescriptions($facets);
+			}			
 		}		
 				
 		return $result;
@@ -139,7 +155,7 @@ class SolrComponent extends BaseModelComponent {
 	private function unloadCore($dataset) {
 		$this->executeUrl($this->getSolrUrl(SOLR_MASTER_HOST,SOLR_PORT)."/solr/admin/cores?action=UNLOAD&core=$dataset");
 		
-		//unload slave core if a Solr slave host has been defined in the metarep configuration file
+		//unload slave core if a Solr slave host has been defined in the METAREP configuration file
 		if(defined('SOLR_SLAVE_HOST')) {
 			$this->executeUrl($this->getSolrUrl(SOLR_SLAVE_HOST,SOLR_PORT)."/solr/admin/cores?action=UNLOAD&core=$dataset");
 		}
@@ -157,7 +173,7 @@ class SolrComponent extends BaseModelComponent {
 	private function createCore($projectId,$dataset) {
 		$this->executeUrl($this->getSolrUrl(SOLR_MASTER_HOST,SOLR_PORT)."/solr/admin/cores?action=CREATE&name=$dataset&instanceDir=".SOLR_INSTANCE_DIR."&dataDir=".SOLR_DATA_DIR."/$projectId/$dataset");
 		
-		//create slave core if a Solr slave host has been defined in the metarep configuration file
+		//create slave core if a Solr slave host has been defined in the METAREP configuration file
 		if(defined('SOLR_SLAVE_HOST')) {
 			$this->executeUrl($this->getSolrUrl(SOLR_SLAVE_HOST,SOLR_PORT)."/solr/admin/cores?action=CREATE&name=$dataset&instanceDir=".SOLR_INSTANCE_DIR."&dataDir=".SOLR_DATA_DIR."/$projectId/$dataset");
 		}
@@ -206,9 +222,11 @@ class SolrComponent extends BaseModelComponent {
 		#populate newly created core with existing cores
 		$url = $this->getSolrUrl(SOLR_MASTER_HOST,SOLR_PORT)."/solr/admin/cores?action=mergeindexes&core=$core";
 		
+		#add index information for cores that are going to be merged
 		foreach($datasets as $dataset) {
 			$url .= "&indexDir=".SOLR_DATA_DIR."/$projectId/$dataset/index";
 		}
+		
 		$this->executeUrl($url);	
 		$this->commitAndOptimize($core);
 	}
@@ -224,6 +242,7 @@ class SolrComponent extends BaseModelComponent {
 		
 		//write request to log file
 		$this->log("solr request: $url",LOG_DEBUG);
+		
 		try {
 			$solr = new Apache_Solr_Service();
 			$response = $solr->_sendRawGet($url);
@@ -236,6 +255,32 @@ class SolrComponent extends BaseModelComponent {
 			throw new Exception($e);
 		}
 	}	
+	
+	/**
+	 * Returns facets counts for a certain field
+	 *
+	 * @param String $dataset Dataset/Core/Index name to search 
+	 * @param String $facetField String that specifies the field to generate facets for 
+	 * @param Integer $limit Integer that specifies the nunber of top facets to return (default is set to -1 which returns all facets
+	 * @return Array Associateive array containing the facet field as key and counts as values
+	 * @access public
+	 */	
+	public function facet($dataset,$facetField,$query='*:*',$limit=-1) {
+		
+		$solrArguments = array(	"facet" => "true",
+						'facet.field' => $facetField,
+						'facet.sort' =>'count',
+						'facet.mincount' => 1,
+						"facet.limit" => $limit);			
+		try {
+			$result = $this->search($dataset,$query,0,0,$solrArguments,false);
+			$facets = $result->facet_counts;			
+			return (array) $facets->facet_fields->{$facetField};
+		}
+		catch (Exception $e) {
+			throw new Exception($e);
+		}
+	}		
 	
 	/**
 	 * Pathway helper function
@@ -415,7 +460,28 @@ class SolrComponent extends BaseModelComponent {
 		$facets->facet_fields->ec_id = $ecHash;		
 	}	
 
-	
+	/**
+	* Mapps Library descriptions to Library IDs returned by Solr
+	**/
+	private function addLibraryDescriptions(&$facets) {
 		
+		$this->Library->unbindModel(array('belongsTo' => array('Project'),),false);
+		$this->Library->unbindModel(array('hasAndBelongsToMany' => array('Populations'),),false);
+		
+		$libraryHash = array();
+		foreach($facets->facet_fields->library_id as $acc => $count) {
+			//find go term descritpion
+			$result = $this->Library->find('all', array('fields'=> array('description'),'conditions' => array('name' => $acc)));
+			$description = 	$result[0]['Library']['description'];
+			
+			if(!empty($description)) {
+				//concatinate to accession
+				$acc = $acc." | ".$libraryDescription[0]['Library']['description'];
+			}
+			
+			$libraryHash[$acc]= $count;		
+		}
+		$facets->facet_fields->library_id = $libraryHash;		
+	}			
 }
 ?>

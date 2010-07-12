@@ -1,9 +1,31 @@
 <!----------------------------------------------------------
+  
   File: index.ctp
-  Description: Dashboard Index
+  Description: User Dashboard
+  
+  The User Dashboard pages allow users to modify their account
+  informationm and change their password. It also lists the 
+  projects of which the user is a Project Admin. Useers can 
+  adjust the project's user permissions and edit the project
+  description. The METAREP Admin user can get a list of all
+  registered users and sees all projects. The METAREP Admin
+  can edit projects to specify project Admin users.
 
-  Author: jgoll
-  Date:   Mar 22, 2010
+  PHP versions 4 and 5
+
+  METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+  Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+
+  Licensed under The MIT License
+  Redistributions of files must retain the above copyright notice.
+
+  @link http://www.jcvi.org/metarep METAREP Project
+  @package metarep
+  @version METAREP v 1.0.1
+  @author Johannes Goll
+  @lastmodified 2010-07-09
+  @license http://www.opensource.org/licenses/mit-license.php The MIT License
+  
 <!---------------------------------------------------------->
 
 <?php echo $html->css('user-dashboard.css'); ?>
@@ -20,32 +42,26 @@
 				    <?php
 				    $currentUser	=  Authsome::get();
 					$currentUserId	= $currentUser['User']['id'];	
-				    ?>
-				    <?if (Authsome::check('users/index')):?>
-				    <li>
-				        <?php echo($html->link('Manage Users','/users/index'))?>
-				    </li>
-				    <?endif;?>
-				    <?if (Authsome::check(' user_group_permissions/index')):?>
-				    <li>
-				        <?php echo($html->link('Manage Permissions','/user_group_permissions/index'))?>
-				    </li>
-				    <?endif;?>
-				    <li><?php echo($html->link('Change Account Information',"/users/edit/$currentUserId"))?></li>
-				    <li><?php echo($html->link('Change Password','/users/change_password'))?></li>
-				    <li><?php echo($html->link('Logout','/users/logout'))?></li>
-				</ul>
-			</p>
-		</fieldset>
+					$userGroup  	= $currentUser['UserGroup']['name'];	
+					
+				    if($userGroup === ADMIN_USER_GROUP) {
+				        echo("<li>".$html->link('Manage Users','/users/index'). "</li>");	
+				    }
+				    
+				   	echo("<li>".$html->link('Change Account Information',"/users/edit/$currentUserId"). "</li>");		
+				   	echo("<li>".$html->link('Change Password','/users/changePassword'). "</li>");		
+				    echo("<li>".$html->link('Logout','/users/logout'). "</li></ul></p></fieldset>");
+				    
+				    ?>	
 	</div>
 	
-	<?php if(count($projects)> 0):?>
-	<div class="user-dash-board-project-panel">
+	<?php if(count($projects)> 0) {
+		echo("<div class=\"user-dash-board-project-panel\">
 		<fieldset>
 		<legend >Manage Projects</legend>
 		
-		<div id="accordion">
-			<?php foreach($projects as $project) {	
+		<div id=\"accordion\">");
+			foreach($projects as $project) {	
 					
 						echo("<h3><a href=\"#\">{$project['Project']['name']}</a></h3><div><p>	
 						<strong>{$project['Project']['description']}</strong>			
@@ -55,17 +71,19 @@
 							<li>Libraries ".count($project['Library'])."</li>				
 							<ul></p><BR>
 							<p>
-								<ul>	
-									<li>".$html->link('Edit Project Information',"/projects/edit/{$project['Project']['id']}")."</li>
-									<li>".$html->link('Manage Project Permissions',"/users/editProjectUsers/{$project['Project']['id']}" )."</li>				    		
-						    	</li>
-							</ul></p>
-							</div>");
+								<ul>");
+							
+							echo("<li>".$html->link('Edit Project Information',"/projects/edit/{$project['Project']['id']}")."</li>");
+							echo("<li>".$html->link('Manage Project Permissions',"/users/editProjectUsers/{$project['Project']['id']}" )."</li>	");	
+							echo("</li></ul></p>");
+									    		
+						 	
+							echo("</div>");
 				}
-			?>
-		</div>
-	</div>
-	<?php endif;?>
+			
+		echo("</div>");
+	echo("</div>");}?>
+	
 	<div class="user-dash-board-feedback-panel"> 
 		<fieldset>
 		<legend >Feedback</legend>
@@ -78,20 +96,20 @@
 		?>		
 	</fieldset>
 	</div>
-<?php if (!empty($news)):?>	
-	<div class="user-dash-board-news-panel" > 
+	<?php if (!empty($news)) {
+		echo("<div class=\"user-dash-board-news-panel\">  
 		<fieldset >
-			<legend >News</legend>
-			<?php foreach( $news as $newsItem ) : ?>
-			        <?php echo $html->link($newsItem['GosBlog']['title'], $newsItem['GosBlog']['link']); ?><br/>
-			        <em><?php echo $newsItem['GosBlog']['pubDate']; ?></em>
-			        <hr>
-			<?php endforeach; ?>
-	
-		</fieldset>
-	</div>
+			<legend >News</legend>");
+			foreach( $news as $newsItem ) { 
+			        echo $html->link($newsItem['Blog']['title'], $newsItem['Blog']['link']); ?><br/>
+			        <?php echo "<em>{$newsItem['Blog']['pubDate']}</em><hr>";
+			        
+			}
+		echo("</fieldset>
+		</div>");
+	}
+	?>
 </div>
-<?php endif;?>
 
 <script type="text/javascript">
 	jQuery(function() {

@@ -1,4 +1,12 @@
 <?php
+/***********************************************************
+*  File: membership.php
+*  Description:
+*
+*  Author: jgoll
+*  Date:   Jun 30, 2010
+************************************************************/
+
 App::import('Vendor', 'phpmailer', array('file' => 'class.phpmailer.php'));
 
 class MembershipBehavior extends ModelBehavior
@@ -38,14 +46,14 @@ class MembershipBehavior extends ModelBehavior
 
 		$id = $Model->getLastInsertID();
 
-		$link = "www.jcvi.org/metarep/users/login?ident=$id&activate=$activate_key";
+		$link = METAREP_URL_ROOT."/users/login?ident=$id&activate=$activate_key";
 
 		$message.=$link;
 
 		$mail->Body = $message;
 
 		$mail->FromName = 'METAREP Administrator';
-		$mail->From 	= 'metarep-support@jcvi.org';
+		$mail->From 	=  METAREP_SUPPORT_EMAIL;
 		
 
 		$Model->lastRegisteredUser = array('id'=>$id,'activate_key'=>$activate_key);
@@ -57,10 +65,10 @@ class MembershipBehavior extends ModelBehavior
 		
 		$mail = new phpmailer();
 		$mail->AddAddress($userEmail,$userName);
-		$mail->AddBCC('metarep-support@jcvi.org');
+		$mail->AddBCC(METAREP_SUPPORT_EMAIL);
 		$mail->Subject 	= "METAREP Feedback Confirmation";
 		$mail->FromName = 'METAREP Administrator';
-		$mail->From 	= 'metarep-support@jcvi.org';
+		$mail->From 	= METAREP_SUPPORT_EMAIL;
 		$message 		= "Thank you very much for your METAREP feedback. Your feedback confirmation:\n\n";
 		$message 		.="Feedback Type: $feedbackType\n\n";
 		$message 		.="Feedback Description: \n$feedback";	
@@ -115,7 +123,7 @@ class MembershipBehavior extends ModelBehavior
 			$mail->AddAddress($user['User']['email'],$user['User']['username']);
 
 			$mail->FromName = 'METAREP Administrator';
-			$mail->From 	= 'metarep-support@jcvi.org';
+			$mail->From 	= METAREP_SUPPORT_EMAIL;
 			$mail->Subject  = 'Password Reset';
 
 			$password = $user['User']['password'];
@@ -123,7 +131,7 @@ class MembershipBehavior extends ModelBehavior
 			$salt = Configure::read ( "Security.salt" );
 			$activate_key = md5($password.$salt );
 
-			$link = "www.jcvi.org/metarep/users/activate_password?ident=$id&activate=$activate_key";
+			$link = METAREP_URL_ROOT."/users/activatePassword?ident=$id&activate=$activate_key";
 
 			$mail->Body = "Dear ".$user['User']['username'].",
 

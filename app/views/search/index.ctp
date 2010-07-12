@@ -1,9 +1,28 @@
 <!----------------------------------------------------------
+  
   File: index.ctp
   Description: Search Index Page
+  
+  The Search Index Page let's users enter search terms and 
+  specify the annotation field they would like to search in.
+  The search returns results as well as frequency count lists
+  and pie charts, that summarize the top functional and taxonomic
+  categories for the identified subset. Counts and identifiers 
+  can be exported as tab delimited files. 
 
-  Author: jgoll
-  Date:   Mar 4, 2010
+  METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+  Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+
+  Licensed under The MIT License
+  Redistributions of files must retain the above copyright notice.
+
+  @link http://www.jcvi.org/metarep METAREP Project
+  @package metarep
+  @version METAREP v 1.0.1
+  @author Johannes Goll
+  @lastmodified 2010-07-09
+  @license http://www.opensource.org/licenses/mit-license.php The MIT License
+  
 <!---------------------------------------------------------->
 
 <ul id="breadcrumb">

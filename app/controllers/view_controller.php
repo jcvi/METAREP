@@ -1,82 +1,133 @@
 <?php
 
 /***********************************************************
-*  File: view_controller.php
-*  Description: Controller to handle basic fact requests based
-*  on the full dataset.
+* File: view_controller.php
+* Description: The view pages provide high level summaries 
+* of metagenomics datasets. Summaries include top species, 
+* KEGG metabolic pathways, Gene Ontology terms, Enzyme Classi-
+* fication IDs, HMMs (such as TIGRFAM and Pfam HMMs) and 
+* functional names. For each of these data types, a tab with a
+* ranked list and a bar chart with the relative frequencies 
+* for the respective attribute is displayed. Users can adjust
+* the number of ranks displayed (up to 1,000 ranks)and download
+* the data in tab delimited format.
 *
-*  Author: jgoll
-*  Date:   Feb 16, 2010
-************************************************************/
-
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 class ViewController extends AppController {
-	var $name = 'View';
-
-	var $limit = 10;
-
-	//top number of classification returned
-	var $numFacetCounts=10;
-
-	var $helpers = array('LuceneResultPaginator','Facet','Ajax');
 	
-	var $uses = array('Project','Population','Library','GoTerm','GoGraph','Enzymes','Hmm','Pathway');
-	
+	var $name 		= 'View';
+	var $helpers 	= array('LuceneResultPaginator','Facet','Ajax');
+	var $uses 		= array('Project','Population','Library','GoTerm','GoGraph','Enzymes','Hmm','Pathway');
 	var $components = array('Solr','Format');
 	
 	//this function lets us view all detail of the lucene index
 	function index($dataset='CBAYVIR',$page=1) {
-	
-		
+			
+		//unset existing filter session variables		
+		if($this->Session->check('view.filter')) {
+			$this->Session->delete('view.filter');
+		}
+				
 		$this->Project->unbindModel(array('hasMany' => array('Population'),),false);
 		$this->Project->unbindModel(array('hasMany' => array('Library'),),false);
 		
 		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
 		
 		$displayLimit 	= 20;
-		$facetMaxCount 	= 50;
 				
-		//specify facet default behaviour
-		$solrArguments = array(	'fl' => 'peptide_id com_name com_name_src blast_species blast_evalue go_id go_src ec_id ec_src hmm_id');
+		//Solr query to fetch data rows (data tab)
+		$solrArguments = array(	'fl' => 'peptide_id com_name com_name_src blast_species blast_evalue go_id go_src ec_id ec_src hmm_id');		
+		$result = $this->Solr->search($dataset,"*:*", ($page-1)*$displayLimit,$displayLimit,$solrArguments);			
+		$numHits = (int) $result->response->numFound;
+		$hits = $result->response->docs;
+						
+		$filters = $this->Solr->facet($dataset,'filter');
 		
-		$result= $this->Solr->search($dataset,"*:*", ($page-1)*$displayLimit,$displayLimit,$solrArguments);
-			
-		$numHits= (int) $result->response->numFound;
-		$facets = $result->facet_counts;
-		$hits 	= $result->response->docs;
+		if(count($filters) > 1) {
+			foreach($filters as $filter=>$numPeptides) {
+				$filters[$filter] = "$filter (".number_format($numPeptides)." hits)";
+			}
+			$this->Session->write('view.filters',$filters);
+		}
+		else {
+			unset($filters);
+			if($this->Session->check('view.filters')) {
+				$this->Session->delete('view.filters');
+			}	
+		}
 		
-		$this->Session->write('optionalDatatypes',$optionalDatatypes);
-		
-		$this->set('projectId', $this->Project->getProjectId($dataset));
-		$this->set('projectName', $this->Project->getProjectName($dataset));
-		$this->set('hits',$hits);
+		//write session variables
+		$this->Session->write('view.optionalDatatypes',$optionalDatatypes);	
+		$this->Session->write('projectId',$this->Project->getProjectId($dataset));
+		$this->Session->write('projectName',$this->Project->getProjectName($dataset));
+		$this->Session->write('view.numHits',$numHits);
+		$this->Session->write('view.hits',$hits);
+
+		//set post variables
 		$this->set('dataset',$dataset);
-		$this->set('numHits',$numHits);
-		$this->set('facets',$facets);
 		$this->set('page',$page);
-		$this->set('limit',$this->limit);
 	}
 	
 	function facet($dataset='CBAYVIR',$facetField,$prefix ='',$limit=20) {		
 	
-		#if post data has not been selected use default level
-		if(!empty($this->data['Post']['limit'])) {
-			$limit = $this->data['Post']['limit'];
-		}		
-		
-		$facetArray = array($facetField);
+		if(empty($this->data['Post'])) {
+			if($this->Session->check('view.limit')) {
+				$limit = $this->Session->read('view.limit');
+			}
+			if($this->Session->check('view.filter')) {
+				$filter = $this->Session->read('view.filter');
+			}			
+		}
+		else {
+			if(!empty($this->data['Post']['limit'])) {
+				$limit = $this->data['Post']['limit'];
+				$this->Session->write('view.limit',$limit);
+			}
+			//reset filter variables if no option '-select filter--' has been selected
+			if(empty($this->data['Post']['filter'])) {	
+				if($this->Session->check('view.filter')) {
+					$this->Session->delete('view.filter');
+				}
+			}
+			elseif(!empty($this->data['Post']['filter'])) {
+				$filter = $this->data['Post']['filter'];
+				$this->Session->write('view.filter',$filter);
+			}
+		}
+
+		if(isset($filter)) {
+			$query = "filter:$filter";	
+		}
+		else {
+			$query = '*:*';
+		}
 		
 		//specify facet default behaviour
 		$solrArguments = array(	"facet" => "true",
-						'facet.field' => $facetArray,
+						'facet.field' => $facetField,
 						'facet.mincount' => 1,
 						"facet.limit" => $limit);
-		
-		if($prefix) {
+			
+		if(isset($prefix)) {
 			$solrArguments['facet.prefix'] =$prefix;
 		}
 		
 		try {
-			$result= $this->Solr->search($dataset,"*:*", 0,0,$solrArguments,true);
+			$result= $this->Solr->search($dataset,$query, 0,0,$solrArguments,true);
 		}
 		catch(Exception $e) {
 			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
@@ -84,27 +135,45 @@ class ViewController extends AppController {
 		}
 			
 		$numHits= (int) $result->response->numFound;
-		$facets = $result->facet_counts;
+		$facetCounts = $result->facet_counts;
 				
-		//store facet for download
-		$this->Session->write('facet',$facets);		
-		
-		$this->set('projectName', $this->Project->getProjectName($dataset));
-	
+		//write session variables
+		$this->Session->write('view.facetCounts',$facetCounts);		
+		$this->Session->write('view.limit',$limit);
+		$this->Session->write('view.numHits',$numHits);	
+						
 		$this->set('dataset',$dataset);
-		$this->set('numHits',$numHits);
-		$this->set('facets',$facets);
-		$this->set('limit',$limit);
 		$this->set('facetField',$facetField);
 		$this->render('facet_panel','ajax');
 	}
 	
-	function pathways($dataset,$facetField,$prefix ='',$limit=20) {	
+	function pathways($dataset,$facetField) {	
 		
-		#if post data has not been selected use default level
-		if(!empty($this->data['Post']['limit'])) {
-			$level= $this->data['Post']['limit'];
+		if(empty($this->data['Post'])) {
+			if($this->Session->check('view.filter')) {
+				$filter = $this->Session->read('view.filter');
+			}			
 		}
+		else {
+			//reset filter variables if no option '-select filter--' has been selected
+			if(empty($this->data['Post']['filter'])) {	
+				if($this->Session->check('view.filter')) {
+					$this->Session->delete('view.filter');
+				}
+			}
+			elseif(!empty($this->data['Post']['filter'])) {
+				$filter = $this->data['Post']['filter'];
+				$this->Session->write('view.filter',$filter);
+			}
+		}
+
+		if(isset($filter)) {
+			$query = "filter:$filter";	
+		}
+		else {
+			$query = '*:*';
+		}
+		
 		
 		//specify facet default behaviour
 		$solrArguments = array(	"facet" => "true",
@@ -112,7 +181,7 @@ class ViewController extends AppController {
 						'facet.mincount' => 1,
 						"facet.limit" => -1);		
 		try {
-			$result= $this->Solr->search($dataset,"*:*", 0,0,$solrArguments,false);
+			$result= $this->Solr->search($dataset,$query,0,0,$solrArguments,false);
 		}
 		catch(Exception $e) {
 			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
@@ -121,18 +190,12 @@ class ViewController extends AppController {
 			
 		$numHits= (int) $result->response->numFound;
 		
-		$facets = $result->facet_counts->facet_fields->ec_id;
+		$solrEcIdHash = (array) $result->facet_counts->facet_fields->ec_id;
 		
 		$pathways 	  = array();
-		$solrEcIdHash = array();
-				
-		#write ec facets into hash
-		foreach($facets as $ecId=>$count) {
-			$solrEcIdHash[$ecId]=$count;
-		}
-		#debug($solrEcIdHash);
-		#store found ecs in array for fuzzy matching
-		$solrEcIds = array_keys($solrEcIdHash);
+	
+		$solrEcIds 	  = array_keys($solrEcIdHash);
+		
 				
 		$level2Results= $this->Pathway->find('all', array('fields'=> array('id','name'),'conditions' => array('level' => 'level 2')));
 		
@@ -158,7 +221,7 @@ class ViewController extends AppController {
 				$pathwayEnzymeCount	= $level3Result['Pathway']['child_count'];
 				$pathwayLevel		= $level3Result['Pathway']['level'];
 
-				$results= $this->Solr->getPathwayCount('*:*',$dataset,$pathwayLevel,$pathwayId,$pathwayEnzymeCount,null);
+				$results= $this->Solr->getPathwayCount($query,$dataset,$pathwayLevel,$pathwayId,$pathwayEnzymeCount,null);
 
 				$percentEnzymes = round($numFoundEnzymes/$pathwayEnzymeCount,4)*100;
 				
@@ -178,70 +241,23 @@ class ViewController extends AppController {
 			$pathways[$level2Name]=$level2Results;		
 		}
 		
-		$this->Session->write('pathways',$pathways);				
-		$this->set('projectName', $this->Project->getProjectName($dataset));
+		$this->Session->write('view.pathways',$pathways);					
+		$this->Session->write('view.numHits',$numHits);	
+
 		$this->set('dataset',$dataset);
-		$this->set('numHits',$numHits);
-		$this->set('pathways',$pathways);
-		$this->set('limit',$limit);
 		$this->set('facetField',$facetField);
 		$this->render('facet_panel','ajax');
 	}
 	
 	#function comparePercentEnzymes($a, $b) { return strnatcmp($b['percFoundEnzymes'], $a['percFoundEnzymes']); } 
-	function comparePeptideCount($a, $b) { return strnatcmp($b['numPeptides'], $a['numPeptides']); } 
+	private function comparePeptideCount($a, $b) { return strnatcmp($b['numPeptides'], $a['numPeptides']); } 
 	
-	function apis($projectId,$link) {
-		$link = base64_decode($link);
-		$this->set('link',$link);
-		$this->set('projectId',$projectId);
-		$this->render('apis','empty');
-	}
-
-	function ftp($projectId,$dataset) {
-		#ob_end_clean();
-		
-		$fileName = "$dataset.tgz";
-		$filePath = "ftp://metarep:k54raCRepene@ftp.jcvi.org/$projectId/$fileName";
-		
-		//open binary file
-		$fp = fopen($filePath,"rb");
-		$fileSize = filesize($filePath);
-		//set timeout to a day
-		stream_set_timeout($fp,86400);		
-		
-		$userAgent = $_SERVER['HTTP_USER_AGENT'];
-
-		header('X-Sendfile: '.$filePath);
-		header('Content-Type: application/x-compressed');
-		header("Content-Length: " . $fileSize); 
-		header("Content-Transfer-Encoding: binary");
-			
-		if (strstr($userAgent,'IE')) {
-			header("Content-Disposition: inline; filename=\"" . $fileName ."\"");			
-			header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-			header('Pragma: public');
-		} else {
-			header("Content-Disposition: attachment; filename=\"" . $fileName ."\"");
-			header('Pragma: no-cache');
-		}
-		sleep(1);
-		ignore_user_abort();
-		set_time_limit(0);
-        while(!feof($fp) and (connection_status()==0)) {
-            print(fread($fp, 1024*8));
-            flush();
-        }
-        fclose($fp);
-		
-		exit(); 		
-//		fpassthru($fp);
-//		fclose($fp);
-		#exit();
-	}	
-	
-	function download($dataset,$facetField,$numHits,$limit) {
+	function download($dataset,$facetField) {
 		$this->autoRender=false; 
+		
+		$numHits = $this->Session->read('view.numHits');
+		$limit = $this->Session->read('view.limit');
+		
 		$facetName = '';
 		
 		switch ($facetField) {
@@ -271,15 +287,23 @@ class ViewController extends AppController {
 				break;				
 		}	
 		
+		if($this->Session->check('view.filter')) {
+			$filter = $this->Session->read('view.filter');
+			$query = "filter:$filter";	
+		}
+		else {
+			$query = '*:*';
+		}		
+		
 		#pathway data has to handled differently since it is not a lucene facet data type
 		if($facetField === 'pathway_id') {				
-			$pathways = $this->Session->read('pathways');
-			$content = $this->Format->infoString("$facetName Categories ",$dataset,'*:*',$numHits);	
+			$pathways = $this->Session->read('view.pathways');
+			$content = $this->Format->infoString("$facetName Categories ",$dataset,$query,$numHits);	
 			$content.= $this->Format->pathwayToDownloadString($pathways,$numHits);
 		}
 		else {			
-			$facets = $this->Session->read('facet');		
-			$content = $this->Format->infoString("Top $limit $facetName Categories ",$dataset,'*:*',$numHits);		
+			$facets = $this->Session->read('view.facetCounts');		
+			$content = $this->Format->infoString("Top $limit $facetName Categories ",$dataset,$query,$numHits);		
 			$content.= $this->Format->facetToDownloadString($facetName,$facets->facet_fields->{$facetField},$numHits);	
 		}
 

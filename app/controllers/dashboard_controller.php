@@ -1,37 +1,48 @@
 <?php
 /***********************************************************
-*  File: dash_board_controller.php
-*  Description:
+* File: dash_board_controller.php
+* Description: Home page. Handles user login, registration 
+* and briefly describes METAREP features.
 *
-*  Author: jgoll
-*  Date:   Feb 26, 2010
-************************************************************/
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 
 class DashboardController extends AppController {
 	
 	var $components = array('Solr');
     
-	var $uses = array('GosBlog','Project');
+	var $uses = array('Blog','Project');
 	
 	function index() {
 
-		#$this->layout = 'jcvi';
+		$this->Project->recursive = 2;
+		$this->User->recursive = 1;
+		$projects = array();
 		
-		$projects = $this->Project->recursive = 2;
-		$projects = $this->User->recursive = 1;
-		
-		if($this->Authsome->get()) {	
-			$news 	  = $this->GosBlog->find('all',array('limit' => 10));
+		if($this->Authsome->get()) {
+			$news 	  = $this->Blog->find('all',array('limit' => 10));
 			
-			$projects = $this->User->recursive = 1;
-			$projects = $this->Project->recursive = 2;
-			#$projects = $this->User->Group->recursive = 0;
+			$this->User->recursive = 1;
+			$this->Project->recursive = 2;
 			
 			$user 		= $this->Authsome->get();
 			$userId 	= $user['User']['id'];
 			$userGroup  = $user['UserGroup']['name'];
 
-			//full adminsitration controll for admin
+			//full administration controll for admin
 			if($userGroup === ADMIN_USER_GROUP) {
 				$projects = $this->Project->findAll();
 			}			
@@ -40,7 +51,6 @@ class DashboardController extends AppController {
 				$projects = $this->Project->find('all',array('conditions'=>array('Project.user_id'=>$userId)));				
 			}	
 			elseif($userGroup === GUEST_USER_GROUP) {
-				$projects = null;
 			}
 			
 			$this->set('projects', $projects);
@@ -48,7 +58,7 @@ class DashboardController extends AppController {
 			$this->render('user_dashboard');
 		}
 		else {			
-			$news 	  = $this->GosBlog->find('all',array('limit' => 10));
+			$news 	  = $this->Blog->find('all',array('limit' => 10));
 			$projects = $this->Project->find('all',array('order'=>array('updated DESC'),'limit' => 5));
 			$this->set('projects', $projects);			
 			$this->set('news', $news);

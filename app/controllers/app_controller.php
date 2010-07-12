@@ -1,224 +1,180 @@
 <?php
 /***********************************************************
-*  File: app_controller.php
-*  Description:
+* File: app_controller.php
+* Description: Parent class of all controllers. Handles data
+* access and other permissions based on login credentials.
+* Users that do no have access are redirected to the login
+* page.
 *
-*  Author: jgoll
-*  Date:   Mar 22, 2010
-************************************************************/
-
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 class AppController extends Controller {
-	
-	#global helpers 
+
+	#global helpers
 	var $helpers = array('Session','Html', 'Form','Crumb','Javascript','Ajax');
 	var $components = array('Session','Cookie','RequestHandler','Authsome' => array('model' => 'User'));
-	
-	
-	var $openUrls = array(	'users/login',
+
+	var $openAccessUrls = array(
+							'users/login',
 							'dashboard/index',
 							'users/register',
+							'users/feedback',
+							'users/logout',
 							'users/forgotPassword',
-							'users/activate_password');
+							'users/activatePassword',
+							'users/changePassword',
+
+	);
+	
+	var $loginUrls = array(
+							'projects/index',	
+							'populations/index',
+							'iframe/apis',
+							'menus/quick',
+							'compare/download',		
+	); 
+
+	var $userAccessUrl = array(
+							'users/edit',						
+	); 
+	
+	var $datasetAccessUrls = array(
+							'view/index',
+							'view/download',
+							'search/index',
+							'search/count',
+							'search/dowloadFacets',
+							'search/dowloadData',
+							'browse/blastTaxonomy',
+							'browse/apisTaxonomy',
+							'browse/enzymes',
+							'browse/geneOntology',
+							'browse/pathways',
+							'browse/downloadChildCounts',
+							'browse/dowloadFacets',
+							'compare/index',
+							'populations/view',	
+							'libraries/view',						
+	);		
+	
+	var $adminAccessUrls = array(
+							'projects/add',	
+							'projects/delete',
+							'users/editProjectUsers'						
+	);
+	
+	var $projectAccessUrls = array(
+							'projects/view',
+							'projects/ftp',												
+	);
+	
+	var $projectAdminUrls = array(
+							'projects/edit',	
+							'users/editProjectUsers',						
+							'populations/add',
+							'populations/edit',
+							'populations/delete',	
+							'libraries/edit',
+							'libraries/delete',	
+							'projects/editProjectUsers',						
+	);	
+		
 	//handle permissions
-	function beforeFilter() {	
-		if($this->RequestHandler->isAjax()) {
+	function beforeFilter() {
+	
+		//get current url
+		$controller 	= $this->params['controller'] ;
+		$action 		= $this->params['action'] ;
+		$url 			= "$controller/$action";
+
+		if(in_array($url,$this->openAccessUrls))  {	
 			return;
 		}		
 		
-		//get current url
-		$controller 	= $this->params['controller'] ;
-		$action 		= $this->params['action'] ;			
-		$url 			= "$controller/$action";
-
-		#check if url is publicly accessable	
-		if(in_array($url,$this->openUrls)) {
-			return;
-		}
-
 		#handle all other permissions
-		if($this->Authsome->get()) {			
-			$currentUser	= $this->Authsome->get();
-			$currentUserId 	= $currentUser['User']['id'];	
-			$userGroup  	= $currentUser['UserGroup']['name'];	
+		if($this->Authsome->get()) {
 			
+			if(in_array($url,$this->loginUrls))  {			
+				return;
+			}
+
+			//handles ajax requests
+			if($this->RequestHandler->isAjax()) {
+				return;
+			}
+					
+			//get parameters from URL
+			$parameters = $this->params['pass'];
+			
+			//get user authentification
+			$currentUser	= $this->Authsome->get();				
+			$currentUserId 	= $currentUser['User']['id'];
+			$userGroup  	= $currentUser['UserGroup']['name'];			
+
 			#admin users have access to all sites and data
 			if($userGroup === ADMIN_USER_GROUP) {
 				return;
 			}
-			else {				
-				#handle data access for view controller
-				if($controller==='view') {	
-					if($action==='index' || $action==='download' ) {				
-						$parameters 	= $this->params['pass'];
-						$dataset = 	$parameters[0];	
-						
-						if($userGroup === INTERNAL_USER_GROUP) {
-							return;
-						}
-						if($this->Project->hasDatasetAccess($dataset,$currentUserId)) {
-							return;
-						}
-					}
-					if($action==='facet' )	{
-						return;
-					}									
-				}	
-
-				#handle data access for search controller
-				if($controller==='search') {	
-					$parameters = $this->params['pass'];
-					$dataset 	= 	$parameters[0];	
-					
-					if($userGroup === INTERNAL_USER_GROUP) {
-						return;
-					}
-					if($this->Project->hasDatasetAccess($dataset,$currentUserId)) {
-							return;
-					}													
-				}					
-
-				#handle data access for browse controller
-				if($controller==='browse') {	
-					$parameters = $this->params['pass'];
-					$dataset 	= 	$parameters[0];	
-					
-					if($userGroup === INTERNAL_USER_GROUP) {
-						return;
-					}
-					if($this->Project->hasDatasetAccess($dataset,$currentUserId)) {
-						return;
-					}													
-				}	
-
-				#handle data access for browse controller
-				if($controller==='compare') {
-					if($action === 'index') {						
-						$parameters = $this->params['pass'];
-						$dataset 	= $parameters[0];	
-						
-						if($userGroup === INTERNAL_USER_GROUP) {
-							return;
-						}				
-						if($this->Project->hasDatasetAccess($dataset,$currentUserId)) {
-							return;
-						}
-					}	
-					else {
-						return;
-					}												
-				}					
-				
-				#handle data access for projects
-				if($controller==='projects') {					
-					if($action != 'index' && $action != 'add') {
-						#get project id
-						$parameters 	= $this->params['pass'];
-						$projectId 		= $parameters[0];						
-						
-						#only valid project ids can be passed
-						if($action==='view') {		
-							#JCVI users can see all data
-							if($userGroup === INTERNAL_USER_GROUP) {
-								return;
-							}
-							if($this->Project->hasProjectAccess($projectId,$currentUserId)) {
-								return;
-							}										
-						}
-						#edit only allowed for project managers
-						if($action==='edit') {	
-							if($this->Project->isProjectAdmin($projectId,$currentUserId)) {
-								return;
-							}
-						}	
-					}							
-				}	
-				
-				//handle population access
-				if($controller==='populations') {
-					if($action === 'index') {
-						if($userGroup === INTERNAL_USER_GROUP) {
-							return;
-						}
-					}
-					else {
-						$parameters = $this->params['pass'];
-						$arg1		= $parameters[0];
-												
-						if($action==='view') {
-							$population = $this->Population->findById($arg1);
-							#JCVI users can see all data
-							if($userGroup === INTERNAL_USER_GROUP) {
-								return;
-							}														
-							if($this->Project->hasDatasetAccess($population['Population']['name'],$currentUserId)) {
-								return;
-							}	
-						}						
-						if($action==='add') {							
-							#grant access for project admins		
-							if($this->Project->isProjectAdmin($arg1,$currentUserId)) {
-								return;
-							}
-						}
-						if($action==='delete') {
-							$population = $this->Population->findById($arg1);
-														
-							#grant access for dataset admins
-							if($this->Project->isDatasetAdmin($population['Population']['name'],$currentUserId)) {
-								return;
-							}
-						}						
-					}
-				}	
-				
-				//handle library access
-				if($controller==='libraries') {
-					if($action === 'index') {
-						#JCVI users can see all data
-						if($userGroup === INTERNAL_USER_GROUP) {
-							return;
-						}
-					}
-					else {							
-						if($action==='edit') {	
-							$parameters = $this->params['pass'];
-							$libraryId	= $parameters[0];
-							$library	= $this->Library->findById($libraryId);
-							
-							#grant access for project admins		
-							if($this->Project->isDatasetAdmin($library['Library']['name'],$currentUserId)) {
-								return;
-							}
-						}
-					}
-
-				}
-				
-				if($controller==='users') {					
-					if($action==='editProjectUsers') {							
-						$parameters 	= $this->params['pass'];
-						$projectId	 	= $parameters[0];						
-						#grant access for project admins		
-						if($this->Project->isProjectAdmin($projectId,$currentUserId)) {
-							return;
-						}
-					}
-				}	
-				if($controller === 'rest') {
+			else if(in_array($url,$this->userAccessUrl))  {	
+				$userId  = $parameters[0];		
+				if($userId == $currentUserId ) {
 					return;
 				}
+			}						
+			else if(in_array($url,$this->datasetAccessUrls))  {	
 				
-				if($this->Authsome->check($url)) {
+				if($controller === 'populations') {
+					$dataset = $this->Population->getNameById($parameters[0]);
+				}
+				elseif($controller === 'libraries') {
+					$dataset = $this->Library->getNameById($parameters[0]);
+				}
+				else {
+					$dataset = $parameters[0];
+				}
+				
+				if($this->Project->hasDatasetAccess($dataset,$currentUserId)) {
 					return;
-				}			
-				$this->Session->setFlash("You don't have permissions to view this page.");
-				$this->redirect("/dashboard");			
+				}				
+			}				
+			else if(in_array($url,$this->projectAccessUrls))  {	
+				$projectId  = $parameters[0];					
+				if($this->Project->hasProjectAccess($projectId,$currentUserId)) {
+					return;
+				}
 			}
-		}	
-		else {
+			else if(in_array($url,$this->projectAdminUrls))  {
+				$projectId  = $parameters[0];	
+				if($this->Project->isProjectAdmin($projectId,$currentUserId)) {
+					return;
+				}
+			}
+			else {
+				if($userGroup === INTERNAL_USER_GROUP) {
+					return;
+				}
+			}
+			die('not returned');
+			$this->Session->setFlash("You don't have permissions to view this page.");
+			$this->redirect("/dashboard/index");
+		}
+		else {	
 			$this->Session->setFlash("Please log in.");
-			$this->redirect("/dashboard");	
+			$this->redirect("/dashboard/index");
+			
 		}
 	}
 }

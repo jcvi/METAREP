@@ -1,34 +1,44 @@
 <?php
 /***********************************************************
-*  File: search_controller.php
-*  Description:
+* File: search_controller.php
+* Description: Users can use a SQL like query syntax including
+* logical combinations of annotation fields to filter datasets. 
+* For example a user may filter results based on the BLAST E-
+* Value or combination of BLAST E-Value and percent identity, 
+* search for only bacterial species, or choose to exclude results
+* that have BLAST hits to eukaryotes. The search returns results
+* as well as frequency count lists and pie charts, that summarize 
+* the top functional and taxonomic categories for the identified
+* subset. Counts and identiers can be exported as tab delimited
+* files.
 *
-*  Author: jgoll
-*  Date:   Feb 16, 2010
-************************************************************/
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 
 #increase php dowload limits on space and time
 ini_set('memory_limit','256M');
 ini_set('max_execution_time','3000');
 
 class SearchController extends AppController {
-	var $name = 'Search';
-
-	#FIXME define search field array
-	#var $searchFields = array('common name','com_name_src','go_id','go_id_evidence','ec_id','ec_src','blast_species','e_value_exponent');
-
-	var $helpers = array('LuceneResultPaginator','Facet','Tree','Ajax','Dialog');
 	
-	var $uses = array('Project','Population','Library');
-	
-	var $components = array('Session','RequestHandler','Solr','Format');
-
-	//this function lets us search the lucene index, by default it returns the first page of all results (*|*)
-	function index($dataset='CBAYVIR',$page=1,$sessionQueryId=null) {
-		
-		
-		#search field options array
-		$searchFields = array(1 => 'Combination of Fields',
+	var $name 			= 'Search';
+	var $helpers 		= array('LuceneResultPaginator','Facet','Tree','Ajax','Dialog');	
+	var $uses 			= array('Project','Population','Library');	
+	var $components 	= array('Session','RequestHandler','Solr','Format');
+	var $searchFields 	= array(1 => 'Combination of Fields',
 								'Core Fields' => array( 
 											'peptide_id' =>'Peptide ID',										
 											'com_name_txt' =>'Common Name',
@@ -48,7 +58,10 @@ class SearchController extends AppController {
 											'blast_pid'=>'Min. Percent Identity [between 0 and 1]',
 											'blast_cov' =>'Min. Percent Coverage [between 0 and 1]',
 											),);
-
+	
+	//this function lets us search the lucene index, by default it returns the first page of all results (*|*)
+	function index($dataset='CBAYVIR',$page=1,$sessionQueryId=null) {
+				
 		#add otpional datatypes				
 		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
 				
@@ -65,11 +78,11 @@ class SearchController extends AppController {
 			if($optionalDatatypes['filter']) {
 					$optionalFields['filter']= 'Filter';
 			}	
-			$searchFields['Optional Fields'] = $optionalFields;
+			$this->searchFields['Optional Fields'] = $optionalFields;
 						
 		}		
 		
-		$this->Session->write('searchFields',$searchFields);
+		$this->Session->write('searchFields',$this->searchFields);
 		
 		//for paging use existing query session
 		if($sessionQueryId) {
@@ -168,16 +181,16 @@ class SearchController extends AppController {
 		
 	}
 
-	public function clear($dataset,$sessionQueryId) {
-		$this->Session->read($sessionQueryId);		
-		$this->Session->write($sessionQueryId,'*:*');
-		$this->set('projectName', $this->Project->getProjectName($dataset));
-		$this->set('projectId', $this->Project->getProjectId($dataset));	
-		$this->set('numHits',0);	
-		$this->set('dataset',$dataset);
-		$this->set('sessionQueryId',$sessionQueryId);
-		$this->render('index');		
-	}
+//	public function all($query ="*:*") {
+//		$results = array();
+//				
+//		$datasets = $this->Project->findUserDatasets();
+//		debug($datasets);
+//		die();
+//		foreach($datasets as $dataset) {
+//			$this->Solr->count($query);
+//		}	
+//	}
 	
 	public function count($dataset) {
 		try {

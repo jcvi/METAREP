@@ -29,7 +29,7 @@
 
 <?php echo $html->charset(); ?>
 <title>
-	<?php __('JCVI Metagenomics Reports - '); ?>
+	<?php __(METAREP_RUNNING_TITLE.' - '); ?>
 	<?php echo $title_for_layout; ?>
 </title>
 
@@ -129,7 +129,7 @@
 <body>
 	<div id="container">
 		<div id="header">
-			<h1><?php echo $html->link(__('JCVI Metagenomics Reports', true), '/projects'); ?></h1>			
+			<h1><?php echo $html->link(__(METAREP_RUNNING_TITLE, true), '/projects'); ?></h1>			
 		</div>		
 		<? 
 		if (Authsome::get()):?>

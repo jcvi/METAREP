@@ -1,43 +1,40 @@
 <!----------------------------------------------------------
-  File: tab_panel.ctp
-  Description:
 
-  Author: jgoll
-  Date:   Mar 29, 2010
+  File: tab_panel.ctp
+  Description: Compare Tab Panel
+
+  The Compare Tab Panel generate several tabs that allows 
+  users to indicate the annotation data type they wish to
+  compare. Choices are NCBI Taxonomy, Gene Ontology terms,
+  KEGG metabolic pathways, Enzyme Classification, HMMs, and
+  functional descriptions.
+
+  PHP versions 4 and 5
+
+  METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+  Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+
+  Licensed under The MIT License
+  Redistributions of files must retain the above copyright notice.
+
+  @link http://www.jcvi.org/metarep METAREP Project
+  @package metarep
+  @version METAREP v 1.0.1
+  @author Johannes Goll
+  @lastmodified 2010-07-09
+  @license http://www.opensource.org/licenses/mit-license.php The MIT License
+  
 <!---------------------------------------------------------->
 
 <?php 
 
-
+//read session variables
 $selectedDatasets 	= $session->read('selectedDatasets'); 
 $option				= $session->read('option'); 
 $minCount			= $session->read('minCount'); 
 $optionalDatatypes	= $session->read('optionalDatatypes');
 $mode				= $session->read('mode');
 $tabs 				= $session->read('tabs');
-
-#debug($tabs);
-
-//switch($mode) {
-//	case "taxonomy":
-//		$tabPos = 1;
-//		break;
-//	case "geneOntology":
-//		$tabPos = 2;
-//	case "enzymes":
-//		$tabPos = 3;		
-//	case "hmms":
-//		$tabPos = 4;
-//		break;			
-//	case "commonNames":
-//		$tabPos = 5;		
-//}
-
-
-
-#debug($tabPos);
-
-#$tabPos =4;
 
 echo("
 <fieldset class=\"comparator-main-panel\">
@@ -50,6 +47,8 @@ echo("<ul>");
 $inactiveTabs = array();
 $currentTabPosition =0;
 $tabPosition = 0;
+
+//generate tabs
 foreach($tabs as $tab) {
 	
 	if($tab['function'] === $mode) {
@@ -65,51 +64,9 @@ foreach($tabs as $tab) {
 	$tabPosition ++;
 }
 
-echo("<ul>");
-#debug('['.explode(',',$inactiveTabs).']');
-
-
-//		echo("<li >");
-//			echo $ajax->link('<span>Taxonomy (Blast)</span>',array('action'=>'taxonomy','blast_tree'), array('update' => 'comparison-results', 'title' => 'comparison-results','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'comparison-results\',{ duration: 1.5 })', 'before' => 'Element.hide(\'comparison-results\')'), null, null, false); 
-//		echo("</li>");
-//
-//		echo("<li>");
-//			echo $ajax->link('<span>Gene Ontology</span>',array('action'=>'geneOntology'), array('update' => 'comparison-results', 'title' => 'comparison-results','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'comparison-results\',{ duration: 1.5 })', 'before' => 'Element.hide(\'comparison-results\')'), null, null, false); 
-//		echo("</li>");
-//		echo("<li >");
-//			echo $ajax->link('<span>Pathways</span>',array('action'=>'pathways'), array('update' => 'comparison-results', 'title' => 'comparison-results','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'comparison-results\',{ duration: 1.5 })', 'before' => 'Element.hide(\'comparison-results\')'), null, null, false);
-//		echo("</li>");
-//		echo("<li>");
-//			echo $ajax->link('<span>Enzymes</span>',array('action'=>'enzymes'), array('update' => 'comparison-results', 'title' => 'comparison-results','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'comparison-results\',{ duration: 1.5 })', 'before' => 'Element.hide(\'comparison-results\')'), null, null, false); 
-//		echo("</li>");
-//		echo("<li>");
-//		echo $ajax->link('<span>HMMs</span>',array('action'=>'hmms'), array('update' => 'comparison-results', 'title' => 'comparison-results','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'comparison-results\',{ duration: 1.5 })', 'before' => 'Element.hide(\'comparison-results\')'), null, null, false);
-//		echo("</li>");
-//		echo("<li>");		
-//		echo $ajax->link('<span>Common Names</span>',array('action'=>'commonNames'), array('update' => 'comparison-results', 'title' => 'comparison-results','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'comparison-results\',{ duration: 1.5 })', 'before' => 'Element.hide(\'comparison-results\')'), null, null, false); 				
-//		echo("</li>");		
-//		
-//		#if($optionalDatatypes['clusters']) {	
-//			echo("<li >");			
-//			echo $ajax->link('<span>Clusters</span>',array('action'=>'clusters'), array('update' => 'comparison-results', 'title' => 'comparison-results','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'comparison-results\',{ duration: 1.5 })', 'before' => 'Element.hide(\'comparison-results\')'), null, null, false);
-//			echo("</li>");
-//		#}
-//		#if($optionalDatatypes['apis']) {		
-//			echo("<li >");
-//			echo $ajax->link('<span>Taxonomy (Apis)</span>',array('action'=>'taxonomy','apis_tree'), array('update' => 'comparison-results', 'title' => 'comparison-results','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'comparison-results\',{ duration: 1.5 })', 'before' => 'Element.hide(\'comparison-results\')'), null, null, false); 
-//			echo("</li>");
-//		#}				
-//		#if($optionalDatatypes['viral']) {	
-//			echo("<li >");			
-//			echo $ajax->link('<span>Environmental Libraries</span>',array('action'=>'environmentalLibraries'), array('update' => 'comparison-results', 'title' => 'comparison-results','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'comparison-results\',{ duration: 1.5 })', 'before' => 'Element.hide(\'comparison-results\')'), null, null, false);
-//			echo("</li>");
-//		#}		
-//	echo("</ul>");
-		
+echo("<ul>");	
 echo $ajax->divEnd('tabs');	
-
 echo $html->div('comparator-download', $html->link($html->image("download-large.png"), array('controller'=> 'compare','action'=>'download'),array('escape' => false)));	
-
 echo("</fieldset>");
 ?>
 

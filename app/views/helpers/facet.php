@@ -1,10 +1,30 @@
 <?php
+/***********************************************************
+* File: facet.php
+* Description: The facet Helper class defines methods
+* that help to visualize Solr facet results. It supports
+* facet tables, bar charts, pie charts and other special
+* layouts.
+*
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 
 class FacetHelper extends AppHelper {
 
 	var $uses = array('Go');
-
-	
 	
 	//private $pieChartColor = "4D89F9";
 	//private $pieChartColor = "999900";
@@ -20,14 +40,12 @@ class FacetHelper extends AppHelper {
 		foreach($results as $class=>$count) {	
 			$class = str_replace('_empty_','unassigned',$class);
 			$perc = (float) round(($count/$hits)*100,2);
-			#$html.= $this->barChartSlice($perc,(1-$perc));
 			$html.= "<li>$class <B>($count)</B> ($perc%)  </li>";
 		}
 		$html.= "</ol>";
 		return $html; 
 	}
-	
-	
+		
 	//returns an image for once count/slice
 	function barChartSlice($percPos,$percNeg) {
 		$fgColor='cccccc';
@@ -402,8 +420,6 @@ class FacetHelper extends AppHelper {
 				</fieldset>
 			</div>";
 	}
-
-
 }
 
 ?>

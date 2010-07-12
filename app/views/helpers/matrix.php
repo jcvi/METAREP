@@ -1,11 +1,24 @@
 <?php
 /***********************************************************
-*  File: matrix.php
-*  Description:
+* File: matrix.php
+* Description: The Matrix Helper class helps to layout compare
+* results and provides a HTML-based heatmap.
 *
-*  Author: jgoll
-*  Date:   Mar 29, 2010
-************************************************************/
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 
 define('HEATMAP_YELLOW_RED_START', 'F03B20');
 define('HEATMAP_YELLOW_RED_END', 'FFEDA0');
@@ -23,7 +36,6 @@ define('HEATMAP_GREEN_END', 'E5F5E0');
 class MatrixHelper extends AppHelper {
 
 	var $uses = array('Library');
-
 		
 	function printTable($datasets,$counts,$option,$mode) {
 			

@@ -1,9 +1,26 @@
 <!----------------------------------------------------------
+  
   File: view.ctp
-  Description:
+  Description: View Project Page
+  
+  The View Project Page displays project information, project
+  populations and libraries.
 
-  Author: jgoll
-  Date:   Apr 1, 2010
+  PHP versions 4 and 5
+
+  METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+  Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+
+  Licensed under The MIT License
+  Redistributions of files must retain the above copyright notice.
+
+  @link http://www.jcvi.org/metarep METAREP Project
+  @package metarep
+  @version METAREP v 1.0.1
+  @author Johannes Goll
+  @lastmodified 2010-07-09
+  @license http://www.opensource.org/licenses/mit-license.php The MIT License
+  
 <!---------------------------------------------------------->
 
 <ul id="breadcrumb">
@@ -25,6 +42,13 @@
 	top: 160px;
 }	
 </style>
+<?php
+if(isset($ftpLink)) {
+	echo("<p><iframe src=\"$ftpLink\" height=\"1px\" width=\"1px\" frameborder=\"0\" align=\"center\" scrolling=\"no\"
+>[Your browser does <em>not</em> support <code>iframe</code>,
+or has been configured not to display inline frames.]</iframe></p>");
+};
+?>
 
 <h2><?php  __('View Project');?><span class="selected_library"><?php echo "{$project['Project']['name']}"; ?></span></h2>
 <?php #echo $html->div('download', $html->link($html->image("download-large.png",array("title" => "Download Project Information")), array('controller'=> 'projects','action'=>'download',$project['Project']['id']),array('escape' => false)));?>
@@ -62,7 +86,7 @@
 			}
 			if($project['Project']['has_ftp']) {				
 				echo $html->link(__('Download All Libraries', true), 
-				array('controller'=>'view','action'=>'ftp', $project['Project']['id'],
+				array('controller'=>'projects','action'=>'ftp', $project['Project']['id'],
 				$project['Project']['id']."_all"));} 
 		echo "</dd></dl>";
     }
@@ -236,11 +260,11 @@
 					<option value=\"/metarep/browse/enzymes/{$library['name']}\">Browse Enzymes</option>
 					<option value=\"/metarep/browse/geneOntology/{$library['name']}\">Browse Gene Ontology</option>");
 					if($library['has_ftp']) {	
-						echo("<option value=\"/metarep/view/ftp/{$project['Project']['id']}/{$library['name']}\">Download</option>");
+						echo("<option value=\"/metarep/projects/ftp/{$project['Project']['id']}/{$library['name']}\">Download</option>");
 					}
-					if($library['apis_dataset']) {	
+					if($library['apis_dataset'] && JCVI_INSTALLATION) {	
 						echo("<optgroup label=\"External Links\">");									
-						echo("<option value=\"/metarep/view/apis/{$project['Project']['id']}/".base64_encode("http://www.jcvi.org/apis/".$library['apis_database']."/".$library['apis_dataset'])."\">APIS</option>");
+						echo("<option value=\"/metarep/iframe/apis/{$project['Project']['id']}/".base64_encode("http://www.jcvi.org/apis/".$library['apis_database']."/".$library['apis_dataset'])."\">APIS</option>");
 					}					
 					echo("</select>");?>
 		</td>						

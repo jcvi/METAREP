@@ -1,2 +1,3 @@
-<?php echo $xml->serialize($entries);
-?> 
+<projects>
+	<?php echo $xml->serialize($projects); ?>
+</projects>

@@ -21,10 +21,16 @@
  * THE SOFTWARE.
  */
 
+
 define('ADMIN_USER_GROUP','Admin');
 define('INTERNAL_USER_GROUP','JCVI');
 define('EXTERNAL_USER_GROUP','User');
 define('GUEST_USER_GROUP','Guest');
+
+//define('ADMIN_USER_GROUP','ADMIN');
+//define('INTERNAL_USER_GROUP','INTERNAL');
+//define('EXTERNAL_USER_GROUP','EXTERNAL');
+//define('GUEST_USER_GROUP','GUEST');
 
 class AuthsomeComponent extends Object{
 	public $components = array(
@@ -55,14 +61,7 @@ class AuthsomeComponent extends Object{
 			}
 		}
 	}
-	public function check($access=null) {
-		$user = $this->__getActiveUser();
 
-        $userModel = $this->__getUserModel();
-       	return $userModel->UserGroup->isUserGroupAccess($user['User']['user_group_id'],$access);
-        return true;
-    }
-    
 	public function get($field = null) {
 		$user = $this->__getActiveUser();
 
@@ -76,7 +75,7 @@ class AuthsomeComponent extends Object{
 			}
 			$field = $this->settings['model'].'.'.$field;
 		}
-
+		
 		return Set::extract($user, $field);
 	}
 
@@ -186,7 +185,7 @@ class AuthsomeComponent extends Object{
 		$token = join(':', $tokenParts);
 
 		$user = $this->login('cookie', compact('token', 'duration'));
-		#debug($this->Cookie);
+	
 		// Delete the cookie once its been used
 		$this->Cookie->del($this->settings['cookieKey']);
 
@@ -220,11 +219,6 @@ class Authsome{
 		}
 
 		return $instance;
-	}
-
-	public static function check($access=null)
-	{
-		return self::instance()->check($access);
 	}
 	public static function get($field = null) {
 		return self::instance()->get($field);

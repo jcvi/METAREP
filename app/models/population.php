@@ -1,12 +1,23 @@
 <?php
 /***********************************************************
-*  File: population.php
-*  Description: Model for populations
+* File: population.php
+* Description: Population Model
 *
-*  Author: jgoll
-*  Date:   Mar 16, 2010
-************************************************************/
-
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 class Population extends AppModel {
 
 	var $name = 'Population';
@@ -47,5 +58,11 @@ class Population extends AppModel {
 		}
 		return $libraries;
 	}
+	
+	public function getNameById($id) {
+		$this->unbindModel(array('belongsTo' => array('Project'),),false);	
+		$population = $this>findById($populationId);	
+		return $population['Population']['name'];	
+	} 
 }
 ?>

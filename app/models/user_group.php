@@ -1,65 +1,25 @@
 <?php
+/***********************************************************
+* File: user_group.php
+* Description: User Group Model
+*
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 
-
-
-class UserGroup extends AppModel
-{
+class UserGroup extends AppModel {
 	var $name = 'UserGroup';
-	var $hasMany = array('UserGroupPermission');
-
-	function isUserGroupAccess($userGroupID,$access,$includeGuestPermission=true) {
-		if (empty($access) || $access=='/' || substr($access,0,4)=='css/')
-			return true;
-
-		$permissions = $this->getPermissions($userGroupID,$includeGuestPermission);
-		
-        $paths = explode('/',$access);
-        if (count($paths) > 2) {
-            //strip the arguments
-            $access = $paths[0].'/'.$paths[1];
-        }
-        
-		if (!in_array(ucwords($access), $permissions)) {
-			//check if permission is a wildcard
-			foreach ($permissions as $permission)
-			{
-				//must match Websites/* == Websites/settings
-				if (strpos($permission,'/*') !== false)
-				{
-					$accessController = explode('/',$access);
-
-					if (rtrim($permission,'/*')==Inflector::camelize($accessController[0]))
-					{
-						return true;
-					}
-				}
-			}
-            
-			return false;
-		}
-
-		return true;
-	}
-	
-	function isGuestAccess($access)
-	{
-		return $this->isUserGroupAccess(3, $access, false);
-	}
-	function getPermissions($userGroupID=3,$includeGuestPermission=false)
-	{
-		//todo: need to file or memory cache beacuse this is going to get executed every page refresh.
-
-		//get public controller actions
-		$permissions[] = '/'; 
-		if ($includeGuestPermission)
-            $actions = $this->UserGroupPermission->find('all',array('conditions'=>'(UserGroupPermission.user_group_id = '.$userGroupID.' OR UserGroupPermission.user_group_id = 3) AND UserGroupPermission.allowed = 1'));
-        else
-            $actions = $this->UserGroupPermission->find('all',array('conditions'=>'UserGroupPermission.user_group_id = '.$userGroupID.' AND UserGroupPermission.allowed = 1'));
-		foreach ($actions as $action)
-		{
-			$permissions[] = $action['UserGroupPermission']['controller'].'/'.$action['UserGroupPermission']['action'];
-		}
-		return $permissions;
-	}
 }
 ?>

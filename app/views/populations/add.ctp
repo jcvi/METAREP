@@ -1,3 +1,30 @@
+<!----------------------------------------------------------
+  
+  File: add.ctp
+  Description: Add Population Page
+  
+  To get higher level summaries, users are able to create a
+  population dataset by merging multiple existing datasets.
+  The page featurs a text input form to enter name and description
+  of the new population and a multi-dataset select box to select
+  existing datasets to be merged.
+  
+  PHP versions 4 and 5
+
+  METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+  Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+
+  Licensed under The MIT License
+  Redistributions of files must retain the above copyright notice.
+
+  @link http://www.jcvi.org/metarep METAREP Project
+  @package metarep
+  @version METAREP v 1.0.1
+  @author Johannes Goll
+  @lastmodified 2010-07-09
+  @license http://www.opensource.org/licenses/mit-license.php The MIT License
+  
+<!---------------------------------------------------------->
 
 <?php echo $html->css('population.css'); ?>
 <?php echo $javascript->link(array('michael-multiselect-2a0569f/js/jquery-1.3.2.min.js')); ?>
@@ -30,7 +57,6 @@
 				echo $form->input('Population.project_id',array('type'=>'hidden', 'value' => $projectId));		
 				echo $form->input('name');
 				echo $form->input('description',array('type' => 'textaerea'));
-				#echo $form->input('is_viral',array('label' => 'Viral Population'));
 				?>		
 
 		</fieldset>

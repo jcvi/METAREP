@@ -27,6 +27,9 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
+#Router::parseExtensions('xml');
+#Router::mapResources('rest');
+
 //redirect all root level pages
 Router::connect('/', array('controller' => 'dashboard', 'action' => 'index'));
 

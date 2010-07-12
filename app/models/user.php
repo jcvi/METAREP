@@ -1,36 +1,23 @@
 <?php
-
 /***********************************************************
-*  File: user.php
-*  Description:
+* File: user.php
+* Description: User Model
 *
-*  Author: jgoll
-*  Date:   Mar 25, 2010
-************************************************************/
-
-//[User] => Array (
-//	 [id] => 54
-// 	 [user_group_id] => 2 
-//	 [username] => jgoll
-//         [password] => 098f6bcd4621d373cade4e832627b4f6
-//         [email] => jgoll@jcvi.org
-//	 [phone] => 
-//	 [active] => 1
-//	 [first_name] =>
-//	 [last_name] =>
-//	 [country] =>
-//	 [city] =>
-//	 [state] => 
-//	 [zip_code] =>
-//	 [created] => 2010-03-23 13:16:59
-//	 [modified] => 2010-03-23 13:16:59 )
-//
-//[UserGroup] => Array (
-//	 [id] => 2 
-//	 [name] => User 
-//	 [rank] => 2 ) 
-//
-//[LoginToken] => Array ( ) [id] => 54 ) 1	
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 
 class User extends AppModel {
 	
@@ -89,22 +76,33 @@ class User extends AppModel {
 							'message' => 'This field cannot be left blank'
 				)					
 			);
-
+	/**
+	 * Set user group before saving the user
+	 * based on Email extension and username admin 
+	 * 
+	 * @return void
+	 * @access public
+	 */
 	function beforeSave() 	{
-			if(!empty($this->data)) {
-						
-					$email  =  	$this->data['User']['email'];
-					$tmp 	= split('@',$email);
-					$emailExtension = $tmp[1];
-					
-					if($emailExtension === INTERNAL_EMAIL_EXTENSION) {
-						 $this->data['User']['user_group_id'] = 4;
-					}
-					else {
-						 $this->data['User']['user_group_id'] = 2;
-					}
-			}	
-			return true;
+		if(!empty($this->data)) {						
+			$email  =  	$this->data['User']['email'];
+			$tmp 	= split('@',$email);
+			$emailExtension = $tmp[1];
+
+			//set admin privileges
+			if($this->data['User']['username'] === 'admin') {
+				 $this->data['User']['user_group_id'] = 1;
+			}
+			//set internal privileges
+			else if($emailExtension === INTERNAL_EMAIL_EXTENSION) {
+				 $this->data['User']['user_group_id'] = 4;
+			}
+			//set external privileges
+			else {
+				$this->data['User']['user_group_id'] = 2;
+			}
+		}	
+		return true;
 	}
 			
 			
@@ -113,7 +111,6 @@ class User extends AppModel {
 			$this->sendRegistrationEmail();
 		}
 	}
-
 	
     function hashPasswords($data) {
 		if (!isset($data['User']['confirm_password']))

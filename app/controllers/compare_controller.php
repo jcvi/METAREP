@@ -1,11 +1,26 @@
 <?php
 /***********************************************************
- *  File: compare_controller.php
- *  Description:
- *
- *  Author: jgoll
- *  Date:   Feb 17, 2010
- ************************************************************/
+* File: compare_controller.php
+* Description: The Compare controller handles all
+* multi-dataset comparisons. Choices are NCBI Taxonomy
+* Gene Ontology terms, KEGG metabolic pathways, Enzyme 
+* Classifcation, HMMs, and functional descriptions.
+*
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 
 #define heatmap colors
 define('HEATMAP_COLOR_YELLOW_RED', 0);
@@ -30,21 +45,25 @@ define('CENTROID_CLUSTER_PLOT', 12);
 define('MDS_PLOT', 13);
 define('HEATMAP_PLOT', 14);
 
-#increase memory to handle larger result sets
-$x = ini_set('memory_limit', '556M');
-
 class CompareController extends AppController {
 
-	var $name = 'Compare';
-	
+	var $name 		= 'Compare';	
 	var $helpers 	= array('Matrix','Dialog','Ajax');
 	var $uses 		= array('Project','Taxonomy','GoGraph','Enzymes','Hmm','Library','Population','Pathway','EnvironmentalLibrary');
 	var $components = array('Solr','RequestHandler','Session','Matrix','Format');
 
-	function index($dataset = null,$filter="*:*") {
-		ini_set('memory_limit', '556M');
-
+	/**
+	 * Initializes index compare page
+	 * 
+	 * @param String $dataset Initial dataset to compare others against
+	 * @return void
+	 * @access public
+	 */			
+	function index($dataset = null) {
 		
+		//increase memory size
+		ini_set('memory_limit', '556M');
+				
 		$this->pageTitle = 'Compare Multiple Datasets';
 
 		if(!$this->Session->check('filter')) {
@@ -61,7 +80,7 @@ class CompareController extends AppController {
 		
 		$selectedDatasets = array($dataset);
 		
-		$allDatasets = $this->Project->findUserDatasets($projectId);
+		$allDatasets = $this->Project->findUserDatasets();
 		$this->Session->write('allDatasets',$allDatasets);
 		
 		$this->set('projectId', $projectId);
@@ -69,6 +88,13 @@ class CompareController extends AppController {
 		$this->set('dataset', $dataset);		
 	}
 	
+	/**
+	 * Function activates the tab panel though an ajax call. The function is executed via an ajax call 
+	 * when the use clicks on the update button on the compare index page
+	 * 
+	 * @return void
+	 * @access public
+	 */		
 	function ajaxTabPanel() {
 			
 		#get compare form data
@@ -88,25 +114,27 @@ class CompareController extends AppController {
 						  array('function'=>'hmms','isActive'=>1,'tabName' => 'HMMs','dbTable' => 'Hmm','sorlField' => 'hmm_id'),
 						  array('function'=>'commonNames','isActive'=>1,'tabName' => 'Common Names','dbTable' => null,'sorlField' => 'com_name'));
 
-			//optional data types						  
-			if($optionalDatatypes['apis']) {
-				array_push($tabs,array('function'=>'apisTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Apis)','dbTable' => 'Taxonomy','sorlField' => 'apis_tree'));
+			//set optional data types for JCVI-only installation					  
+			if(JCVI_INSTALLATION) {			  							  
+				if($optionalDatatypes['apis']) {
+					array_push($tabs,array('function'=>'apisTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Apis)','dbTable' => 'Taxonomy','sorlField' => 'apis_tree'));
+				}
+				else {
+					array_push($tabs,array('function'=>'apisTaxonomy','isActive'=>0,'tabName' => 'Taxonomy (Apis)','dbTable' => 'Taxonomy','sorlField' => 'apis_tree'));
+				}	
+				if($optionalDatatypes['clusters']) {
+					array_push($tabs,array('function'=>'clusters','isActive'=>1,'tabName' => 'Clusters','dbTable' => null,'sorlField' => 'cluster_id'));
+				}	
+				else {
+					array_push($tabs,array('function'=>'clusters','isActive'=>0,'tabName' => 'Clusters','dbTable' => null,'sorlField' => 'cluster_id'));
+				}		
+				if($optionalDatatypes['viral']) {
+					array_push($tabs,array('function'=>'environmentalLibraries','isActive'=>1,'tabName' => 'Environmental Libraries','dbTable' => 'environemental_libraries','sorlField' => 'env_lib'));
+				}					  
+				else {
+					array_push($tabs,array('function'=>'environmentalLibraries','isActive'=>0,'tabName' => 'Environmental Libraries','dbTable' => 'environemental_libraries','sorlField' => 'env_lib'));				
+				}						  
 			}
-			else {
-				array_push($tabs,array('function'=>'apisTaxonomy','isActive'=>0,'tabName' => 'Taxonomy (Apis)','dbTable' => 'Taxonomy','sorlField' => 'apis_tree'));
-			}	
-			if($optionalDatatypes['clusters']) {
-				array_push($tabs,array('function'=>'clusters','isActive'=>1,'tabName' => 'Clusters','dbTable' => null,'sorlField' => 'cluster_id'));
-			}	
-			else {
-				array_push($tabs,array('function'=>'clusters','isActive'=>0,'tabName' => 'Clusters','dbTable' => null,'sorlField' => 'cluster_id'));
-			}		
-			if($optionalDatatypes['viral']) {
-				array_push($tabs,array('function'=>'environmentalLibraries','isActive'=>1,'tabName' => 'Environmental Libraries','dbTable' => 'environemental_libraries','sorlField' => 'env_lib'));
-			}					  
-			else {
-				array_push($tabs,array('function'=>'environmentalLibraries','isActive'=>0,'tabName' => 'Environmental Libraries','dbTable' => 'environemental_libraries','sorlField' => 'env_lib'));				
-			}						  
 			
 			#set default variables
 			if(empty($option)) {
@@ -159,15 +187,35 @@ class CompareController extends AppController {
 			$this->render('/compare/result_panel','ajax');
 		}
 	}
-	
-	public function apisTaxonomy() {
-		$this->taxonomy('apis_tree');
-	}
 
+	/**
+	 * Compare NCBI taxonomic assignments assigned by Blast
+	 * 
+	 * @return void
+	 * @access private
+	 */	
 	public function blastTaxonomy() {
 		$this->taxonomy('blast_tree');
+	}
+
+	/**
+	 * Compare NCBI taxonomic assignments assigned by Apis
+	 * 
+	 * @return void
+	 * @access private
+	 */	
+	public function apisTaxonomy() {
+		$this->taxonomy('apis_tree');
 	}	
-	
+
+	/**
+	 * Compare NCBI taxonomic assignments across selected datasets
+	 * 
+	 * @param String $facetField 	equals blast_tree for Blast taxonomic assignments
+	 * 								or apis_tree for Apis taxonomic assignments
+	 * @return void
+	 * @access private
+	 */	
 	private function taxonomy($facetField = 'blast_tree') {
 		
 		if($facetField === 'blast_tree') {
@@ -277,8 +325,6 @@ class CompareController extends AppController {
 				}
 			}
 		}
-
-		
 		
 		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$counts);
 		
@@ -288,7 +334,13 @@ class CompareController extends AppController {
 		
 		$this->render('/compare/result_panel','ajax');
 	}
-
+	
+	/**
+	 * Compare Gene Ontology terms across selected datasets
+	 * 
+	 * @return void
+	 * @access public
+	 */
 	function geneOntology() {
 		$mode 			= __FUNCTION__;
 		$counts			= array();
@@ -380,9 +432,7 @@ class CompareController extends AppController {
 			$counts[$category]['name'] = $goChild['Descendant']['name'];
 			$counts[$category]['sum'] = 0;
 				
-			//parse solr compatible go id (integer portion of goAcc)
-
-
+			
 			array_push($facetQueries,"go_tree:$category");	
 		}
 		
@@ -419,39 +469,6 @@ class CompareController extends AppController {
 			}
 		}
 		
-			////populate count matrix with solr facet counts using solr's filter query
-//			foreach($selectedDatasets as $dataset) {
-//				$solrArgs = array(	"fq" => "go_tree:$goId");
-//
-//				try	{
-//					$count 	  = $this->Solr->count($dataset,$filter,$solrArgs);
-//				}
-//				catch(Exception $e){
-//					$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-//					$this->redirect('/projects/index');
-//				}
-//
-//				#FIXME	temporary fix for GO parsing error
-//				if($count==0) {
-//					$goIdFix = str_pad($goId,7,"0",STR_PAD_LEFT);
-//					$solrArgs = array(	"fq" => "go_tree:$goIdFix");
-//						
-//					try {
-//						$count 	  = $this->Solr->count($dataset,$filter,$solrArgs);
-//					}
-//					catch(Exception $e){
-//						$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-//						$this->redirect('/projects/index');
-//					}
-//				}
-//
-//				$counts[$category][$dataset] = $count;
-//				if($count>0) {
-//					$counts[$category]['sum'] += $count;
-//				}
-//			}
-//		}
-
 		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$counts);
 
 
@@ -462,7 +479,13 @@ class CompareController extends AppController {
 		$this->set(compact('mode','counts','filter','option','minCount','selectedDatasets','level','levels','test'));
 		$this->render('/compare/result_panel','ajax');
 	}
-
+	
+	/**
+	 * Compare enzymes across selected datasets
+	 * 
+	 * @return void
+	 * @access public
+	 */
 	function enzymes() {
 		$mode = __FUNCTION__;
 		$counts	= array();
@@ -565,7 +588,13 @@ class CompareController extends AppController {
 
 		$this->render('/compare/result_panel','ajax');
 	}
-
+	
+	/**
+	 * Compare HMMs across selected datasets
+	 * 
+	 * @return void
+	 * @access public
+	 */
 	function hmms() {
 		$mode = __FUNCTION__;
 		$counts	= array();
@@ -658,6 +687,12 @@ class CompareController extends AppController {
 		$this->render('/compare/result_panel','ajax');
 	}
 
+	/**
+	 * Compare clusters across selected datasets
+	 * 
+	 * @return void
+	 * @access public
+	 */	
 	function clusters() {
 		$mode   = __FUNCTION__;
 		$counts	= array();
@@ -752,7 +787,13 @@ class CompareController extends AppController {
 
 		$this->render('/compare/result_panel','ajax');
 	}
-
+	
+	/**
+	 * Compare environmental libraries across selected datasets
+	 * 
+	 * @return void
+	 * @access public
+	 */
 	function environmentalLibraries() {
 		$mode   = __FUNCTION__;
 		$counts	= array();
@@ -866,7 +907,13 @@ class CompareController extends AppController {
 
 		$this->render('/compare/result_panel','ajax');
 	}
-
+	
+	/**
+	 * Compare pathways across selected datasets
+	 * 
+	 * @return void
+	 * @access public
+	 */
 	function pathways() {
 		$mode   = __FUNCTION__;
 		$counts	= array();
@@ -950,7 +997,12 @@ class CompareController extends AppController {
 		$this->render('/compare/result_panel','ajax');
 	}
 	
-
+	/**
+	 * Compare common names across selected datasets
+	 * 
+	 * @return void
+	 * @access public
+	 */	
 	function commonNames() {
 		$mode   = __FUNCTION__;
 		$counts = array();
@@ -1043,7 +1095,13 @@ class CompareController extends AppController {
 
 		$this->render('/compare/result_panel','ajax');
 	}
-
+	
+	/**
+	 * Opens download dialog to export the current compare result matrix
+	 * 
+	 * @return void
+	 * @access public
+	 */	
 	function download() {
 
 		$this->autoRender=false;
@@ -1083,6 +1141,12 @@ class CompareController extends AppController {
 		echo $content;
 	}
 
+	/**
+	 * Chnages the heatmap color of the HTML heatmap
+	 * 
+	 * @return void
+	 * @access public
+	 */	
 	function changeHeatmapColor() {
 
 		if(!empty($this->data['Post']['heatmap'])) {
@@ -1093,8 +1157,14 @@ class CompareController extends AppController {
 		$this->render('/compare/result_panel','ajax');
 	}
 
+	
+	/**
+	 * Flipps compare result matrix
+	 * 
+	 * @return void
+	 * @access public
+	 */	
 	function flipAxis() {
-
 		$flipAxis= $this->Session->read('flipAxis');
 
 		#switch flipAxis
@@ -1107,12 +1177,6 @@ class CompareController extends AppController {
 
 		$this->Session->write('flipAxis',$flipAxis);
 
-		$this->render('/compare/result_panel','ajax');
-	}
-
-	function chiSquare($selectedDatasets,$mode,$level,$option,$minCount,$flipAxis) {
-		$filter = $this->Session->read('filter');
-		$this->set(compact('counts','filter','option','minCount','allDatasets','selectedDatasets','mode','levels','level','categories','flipAxis'));
 		$this->render('/compare/result_panel','ajax');
 	}
 }

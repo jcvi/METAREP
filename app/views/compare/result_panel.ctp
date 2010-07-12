@@ -1,9 +1,30 @@
 <!----------------------------------------------------------
-  File: result_panel.ctp
-  Description:
 
-  Author: jgoll
-  Date:   Mar 29, 2010
+  File: result_panel.ctp
+  Description: Compare Result Panel
+ 
+  The Compare Result Panel displays the comparison results 
+  within the Compare Tab Panel. It provides options to change
+  the category level at which datasets are being compared, 
+  flip the axis of the result matrix, change the font size, 
+  change the color of the HTML heatmap, download data and 
+  layouts PDF graphics within an iFrame.
+  
+  PHP versions 4 and 5
+
+  METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+  Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+
+  Licensed under The MIT License
+  Redistributions of files must retain the above copyright notice.
+
+  @link http://www.jcvi.org/metarep METAREP Project
+  @package metarep
+  @version METAREP v 1.0.1
+  @author Johannes Goll
+  @lastmodified 2010-07-09
+  @license http://www.opensource.org/licenses/mit-license.php The MIT License
+  
 <!---------------------------------------------------------->
 
 
@@ -78,38 +99,7 @@ jQuery(document).ready(function(){
 });
 </script>
    
-    
-
 <?php
-
-
-#handle empty results
-//if(count($counts) == 0) {
-	
-//	$exception = "No hits found. Please try again with different options.";
-//	echo "<span id=\"spinner\" style=\"display: none;\">";
-//	echo $form->create( 'Post' );
-//	echo $form->input( 'level', array( 'options' => $levels, 'selected' => $level,'label' => false, 'empty'=>'--select level--','div'=>'comparator-level-select'));
-//	echo $form->end();	
-//				
-//	#to track changes in the drop down
-//	echo $ajax->observeField( 'PostLevel', 
-//	    array(
-//	        'url' => array( 'controller' => 'compare','action'=>$mode),
-//	        'frequency' => 0.2,
-//	    	'update' => 'comparison-results', 'loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Element.hide(\'comparison-results\');Effect.Appear(\'comparison-results\',{ duration: 0.5 })',
-//	    	'with' => 'Form.serialize(\'PostAddForm\')'
-//	    ) 
-//	);	
-	
-//}
-
-#print message in tab error
-//if(isset($exception)) {	
-//	
-//	die();
-//	exit();
-//}
 
 #print message above multi-select box
 if(isset($multiSelectException)) {	
@@ -147,9 +137,6 @@ else {
 	if($option == HEATMAP) {
 		echo $form->input( 'heatmap', array( 'options' => array(0=>'red-yellow (default)',1=>'yellow-blue',2=>'blue',3=>'green'),'label' => false, 'empty'=>'--Select Heatmap Color--','div'=>'comparator-heatmap-color-select'));
 	}
-//	elseif($test === METASTATS) {
-//		echo $form->input( 'heatmap', array( 'options' => array(0=>'red-yellow (default)',1=>'yellow-blue',2=>'blue',3=>'green'),'label' => false, 'empty'=>'--Select Heatmap Color--','div'=>'comparator-heatmap-color-select'));
-//	}
 	
 	echo $form->end();	
 				

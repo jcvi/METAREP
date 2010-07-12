@@ -1,4 +1,24 @@
 <?php
+/***********************************************************
+* File: dialog.php
+* Description: The Dialog Helper class defines methods
+* to print help dialog messages.
+*
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 
 class DialogHelper extends AppHelper {
 
@@ -114,12 +134,49 @@ class DialogHelper extends AppHelper {
 				</p>
 				<BR>	
 				<b>Options</b>
+				<BR>	
 				<p>
-				Checking <strong>Absolute Counts</strong> displays the absolute number of peptides that fall into a certain category. 
-				Checking <strong>Relative Counts</strong> displays the absolute number of peptides that fall into a certain category 
-				devided by the dataset's overall number of peptides. The <strong>Heatmap</strong> option displays a colored representation
+				<table>
+				<tr><td valign=\"top\">
+				<ul>
+				<h5>Summary</h5>
+				<BR>
+					<li><strong>absolute counts</strong> displays the absolute number of peptides that fall into a certain category.</li>
+					<li><strong>relative count</strong> displays the absolute number of peptides that fall into a certain category 
+				devided by the dataset's overall number of peptides.</li>
+					<li><strong>heatmap</strong> displays a colored representation
 				of relative row peptide counts. The relative row peptide count is the relative peptide count devided by the sum of all relative
-				peptide counts of a category in a row. The minumum absolute count (<strong>Min. Abs. Count</strong>) allows to filter for categories with equal or more peptides than specified (accross all datasets).
+				peptide counts of a category in a row.</li>
+				</ul>
+				</td><td valign=\"top\">
+				<h5>Statistical Test</h5>
+				<BR>
+					<li><strong>Chi-Square test of independence</strong> Blast species.</li>
+					<li><strong>METASTATS</strong> NCBI taxonomy lineage for blast species.</i></li>
+					<li><strong>blast_evalue_exp</strong> Negative Blast E-Value exponent.</li>
+					<li><strong>blast_pid</strong> Blast percent identiy.</li>
+					<li><strong>blast_cov</strong> Blast coverage of shortest sequence.</li>
+				</ul>
+				</td><td valign=\"top\">
+				<h5>Optional Fields</h5>
+				<BR>
+				<ul>	
+					<li><strong>filter</strong> Sequence filter, e.g. Schmidt et al.</li>
+					<li><strong>apis_tree</strong> NCBI taxonomy lineage for most precise Apis classification.</li>
+					<li><strong>env_lib</strong> Environmental library that has been hit (only available for viral libraries).</li>
+					<li><strong>scaff_id</strong> Scaffold id.</li>
+					<li><strong>scaff_tree</strong> NCBI taxonomy lineage for most precise scaffold classification.</li>
+					</li>
+				</ul></td></tr>
+				</p>
+				<BR>
+				</table>				
+				
+				
+				&#160;&#160;&#160;<strong>Absolute Counts</strong>
+				&#160;&#160;&#160;displays the absolute number of peptides that fall into a certain category. 
+				&#160;<strong>Relative Counts</strong> displays the absolute number of peptides that fall into a certain category 
+				devided by the dataset's overall number of peptides. The <strong>Heatmap</strong> option  The minumum absolute count (<strong>Min. Abs. Count</strong>) allows to filter for categories with equal or more peptides than specified (accross all datasets).
 				</p>
 				<BR>	
 				<b>Tabs</b><BR>

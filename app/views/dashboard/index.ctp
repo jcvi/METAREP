@@ -1,9 +1,28 @@
 <!----------------------------------------------------------
+
   File: index.ctp
   Description: Dashboard Index
+  
+  The Dashboard Index page allows users to login, register, 
+  and reset their password if they have forgotten it. It also
+  features general information about METAREP and links to the
+  METAREP JCVI blog.
 
-  Author: jgoll
-  Date:   Mar 22, 2010
+  PHP versions 4 and 5
+
+  METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+  Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+
+  Licensed under The MIT License
+  Redistributions of files must retain the above copyright notice.
+
+  @link http://www.jcvi.org/metarep METAREP Project
+  @package metarep
+  @version METAREP v 1.0.1
+  @author Johannes Goll
+  @lastmodified 2010-07-09
+  @license http://www.opensource.org/licenses/mit-license.php The MIT License
+  
 <!---------------------------------------------------------->
 
 <?php echo $html->css('dashboard.css'); ?>
@@ -13,10 +32,10 @@
 	<h2><?php __('Dash Board')?></h2>
 	<div class="dash-board-main-panel">
 	<fieldset>
-	<legend >JCVI Metagenomics Reports (v. 1.0.0 beta)</legend>
+	<legend >JCVI Metagenomics Reports (v. 1.0.1 beta)</legend>
 	<div class="dash-board-abstract">	
-		<p>JCVI Metagenomics Reports (METAREP) provides a suite of web based tools 
-		to help scientists to <strong>view, query, browse</strong> and <strong>compare</strong> metagenomics annotation data
+		<p>JCVI Metagenomics Reports (METAREP) is a new <strong>open source</strong> tool for <strong>high-performance</strong> comparative metagenomics. 
+		It provides a suite of web based tools to help scientists to <strong>view, query, browse</strong> and <strong>compare</strong> metagenomics annotation data
 		derived from ORFs called on metagenomics reads.</p><BR>
 		<p>
 		METAREP supports browsing of functional and taxonomic
@@ -28,6 +47,7 @@
 		For each of these features, METAREP provides download options to <strong>export
 		tab delimited files</strong> for downstream analysis. The web site is
 		optimized to be <strong>user friendly and fast</strong>.</p>
+				
 	</div>
 	</fieldset>	
 	
@@ -71,18 +91,28 @@
 	echo('<p>');
 	echo $html->link("Forgot password?","/users/forgotPassword");
 	echo('</p>');
+	
 	echo $html->link("Register","/users/register",array('class'=>'button')); 
+	
 	?>
 </fieldset>
 </div>
 
-<?php if (!empty($news)):?>
+<!--<div class="dash-board-links-panel" > 
+<fieldset >
+		<legend >Links</legend>
+		testme
+		<?php #echo $html->div('download', $html->link($html->image("source.png",array('width'=>'35px','title'=>'test')), 'http://github.com/jcvi/METAREP',array('escape' => false))); ?> Downlod Source
+</fieldset>		
+</div>
+
+--><?php if (!empty($news)):?>
 <div class="dash-board-news-panel" > 
 	<fieldset >
 		<legend >News</legend>
 		<?php foreach( $news as $newsItem ) : ?>
-		        <?php echo $html->link($newsItem['GosBlog']['title'], $newsItem['GosBlog']['link']); ?><br/>
-		        <em><?php echo $newsItem['GosBlog']['pubDate']; ?></em>
+		        <?php echo $html->link($newsItem['Blog']['title'], $newsItem['Blog']['link']); ?><br/>
+		        <em><?php echo $newsItem['Blog']['pubDate']; ?></em>
 		        <hr>
 		<?php endforeach; ?>
 	</fieldset>

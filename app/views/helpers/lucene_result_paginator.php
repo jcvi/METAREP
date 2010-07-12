@@ -1,24 +1,32 @@
 <?php
 /***********************************************************
-*  File: lucene_result_paginator.php
-*  Description: Class to print pagination links for Lucene 
-*  search results
+* File: lucene_result_paginator.php
+* Description: The Lucene Result Paginator Helper class, 
+* provides result pagination support for Solr search results.
 *
-*  Author: jgoll
-*  Date:   Feb 17, 2010
-************************************************************/
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 
 class LuceneResultPaginatorHelper extends AppHelper {
 
-	var $limit = 10;
+	var $limit = NUM_SEARCH_RESULTS;
 	var $helpers = array('Html');
 	
 	function addPagination($page,$numHits,$dataset,$controller,$sessionQueryId) {
-		
-		//we need to replace : with another symbol since it is used by cakephp to
-		//add variable names along their value
-
-		
+	
 		//calculate the number of pages	
 		$pageLimit = ceil($numHits/($this->limit));
 		

@@ -1,6 +1,6 @@
 <!----------------------------------------------------------
   File: quick.ctp
-  Description: builds a quick navigation menu using the jquery based jGlideMenu
+  Description: Quick Navigation Menu. Builds a quick navigation menu using the jquery based jGlideMenu
   library [http://www.sonicradish.com/labs/jGlideMenu/current]. The menu contains 
   three levels: the first level displays projects, the second datasets 
   (populations and libraries), the third displays datasets options.
@@ -8,8 +8,21 @@
   css: glide-menu.css
   js:  jGlideMenu.069/jQuery.jGlideMenu.069.js
 
-  Author: jgoll
-  Date:   Apr 26, 2010
+  PHP versions 4 and 5
+
+  METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+  Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+
+  Licensed under The MIT License
+  Redistributions of files must retain the above copyright notice.
+
+  @link http://www.jcvi.org/metarep METAREP Project
+  @package metarep
+  @version METAREP v 1.0.1
+  @author Johannes Goll
+  @lastmodified 2010-07-09
+  @license http://www.opensource.org/licenses/mit-license.php The MIT License
+  
 <!---------------------------------------------------------->
 
 <?php echo $javascript->link(array('jGlideMenu.069/jQuery.jGlideMenu.069.js')) ;echo $html->css('glide-menu.css');?>
@@ -73,8 +86,11 @@ foreach ($projects as $project) {
 		echo("<li>".$html->link(__('Browse Pathways', true), array('controller'=> 'browse', 'action'=>'pathways',$library['name']))."</li>");		      
 		echo("<li>".$html->link(__('Browse Enzymes', true), array('controller'=> 'browse', 'action'=>'enzymes',$library['name']))."</li>");
 		echo("<li>".$html->link(__('Browse Gene Ontology', true), array('controller'=> 'browse', 'action'=>'geneOntology',$library['name']))."</li>");  	               			
+		if($library['apis_dataset'] && JCVI_INSTALLATION) {	
+			echo("<li>".$html->link(__('View External APIS Page', true), array('controller'=> 'iframe', 'action'=>'apis',$library['project_id'],base64_encode("http://www.jcvi.org/apis/".$library['apis_database']."/".$library['apis_dataset'])))."</li>");  	               			
+		}
 		if($library['has_ftp']) {	
-			echo("<li>".$html->link(__('Download', true), array('controller'=> 'view', 'action'=>'ftp',$project['Project']['id'],$library['name']))."</li>");  	
+			echo("<li>".$html->link(__('Download', true), array('controller'=> 'projects', 'action'=>'ftp',$project['Project']['id'],$library['name']))."</li>");  	
 		}			
 		echo('</ul>');             			
 	} 

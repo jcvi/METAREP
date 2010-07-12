@@ -1,9 +1,24 @@
 <!----------------------------------------------------------
+  
   File: register.ctp
-  Description:
+  Description: User Registration Page
+  
+  The User Registration Page provides a form that allows new
+  users to enter their account information.
 
-  Author: jgoll
-  Date:   Mar 24, 2010
+  METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+  Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+
+  Licensed under The MIT License
+  Redistributions of files must retain the above copyright notice.
+
+  @link http://www.jcvi.org/metarep METAREP Project
+  @package metarep
+  @version METAREP v 1.0.1
+  @author Johannes Goll
+  @lastmodified 2010-07-09
+  @license http://www.opensource.org/licenses/mit-license.php The MIT License
+  
 <!---------------------------------------------------------->
 
 <style type="text/css">

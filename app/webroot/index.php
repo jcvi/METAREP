@@ -37,8 +37,6 @@
  * The full path to the directory which holds "app", WITHOUT a trailing DS.
  *
  */
-	
-	
 	if (!defined('ROOT')) {
 		define('ROOT', dirname(dirname(dirname(__FILE__))));
 	}
@@ -67,7 +65,6 @@
 		
 	}
 	if (!defined('WWW_ROOT')) {
-		//define('WWW_ROOT', 'www.jcvi.org/metarep' . DS);
 		define('WWW_ROOT', dirname(__FILE__) . DS);
 		
 	}

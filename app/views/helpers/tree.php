@@ -1,11 +1,25 @@
 <?php
 /***********************************************************
- *  File: tree.php
- *  Description:
- *
- *  Author: jgoll
- *  Date:   Jun 8, 2010
- ************************************************************/
+* File: tree.php
+* Description: The Tree Helper class helps to layout browse
+* results. It generates the tree and ajax links for each tree
+* node.
+* 
+* PHP versions 4 and 5
+*
+* METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+* Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+*
+* Licensed under The MIT License
+* Redistributions of files must retain the above copyright notice.
+*
+* @link http://www.jcvi.org/metarep METAREP Project
+* @package metarep
+* @version METAREP v 1.0.1
+* @author Johannes Goll
+* @lastmodified 2010-07-09
+* @license http://www.opensource.org/licenses/mit-license.php The MIT License
+**/
 
 class TreeHelper extends AppHelper {
 
@@ -44,28 +58,16 @@ class TreeHelper extends AppHelper {
 			
 		$counter=1;
 		foreach($level as $taxonId=>$taxonEntry) {
-			//$count=$taxonEntry['count'];
-			#$html .= $this->Javascript->link(array('prototype'));
-			#$ajaxLink= $this->Ajax->link($taxonEntry['name'], array('controller'=> 'searches','action'=>'browse',$dataset,$taxonEntry['taxon_id']), array('update' => 'BrowseData', 'indicator' => 'spinner','loading' => 'Effect.Appear(\'BrowseData\')'));
-			#$ajaxLink= $this->Ajax->link($taxonEntry['name'], array('controller'=> 'searches','action'=>'browse',$dataset,$taxonEntry['taxon_id']), array('update' => 'BrowseData', 'loading' => 'Element.show(\'spinner\'); Effect.BlindDown(\'BrowseData\')', 'complete' => 'Element.hide(\'spinner\')', 'before' => 'Element.hide(\'BrowseData\')'));
-			//
 			$ajaxLink= $this->Ajax->link($taxonEntry['name'], array('controller'=> 'browse','action'=>$mode,$dataset,$taxonEntry['taxon_id']), array('update' => 'Browse', 'loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'browse-main-panel\',{ duration: 1.5 })', 'before' => 'Element.hide(\'browse-main-panel\')'));
-
-			//$ajaxLink= $this->Ajax->link($taxonEntry['name'], array('controller'=> 'browse','action'=>'browse',$dataset,$taxonEntry['taxon_id']),
-			//array('update' => 'BrowseData'),null,false);
-
-
+			
 			if($taxonEntry['name'] == $selectedTaxon) {
 				$link = "<span class=\"selected_taxon\">".$taxonEntry['name']."</span>";
 			}
 			else if ($taxonEntry['rank']=='blast_species') {
-				//$link = $this->Html->link($taxonEntry['name'], '', array('class'=>'_class', 'id'=>'_id'));
 				$link = "<i>".$taxonEntry['name']."</i>";
 			}
 			else {
 				$link = $ajaxLink;
-				//$link = $this->Html->link($taxonEntry['name'], array('controller'=>'searches', 'action'=>'browse',$dataset,$taxonEntry['taxon_id']), array('class'=>'_class', 'id'=>'_id'));
-				//$link = $ajaxLink;
 			}
 
 			$class = null;
@@ -73,10 +75,6 @@ class TreeHelper extends AppHelper {
 			if($counter==count($level)) {
 				$class ="class=\"last\"";
 			}
-			//				if($taxonEntry['name'] == $selectedTaxon) {
-			//					$class .=" selected";
-			//				}
-			//				$class .= "\\\"";
 
 			$html .="<li $class><span style=\"white-space: nowrap\">".$link." (".$taxonEntry['rank'].") <strong>[".number_format($taxonEntry['count'])." peptides]</strong></span>";
 
@@ -84,7 +82,6 @@ class TreeHelper extends AppHelper {
 			if($taxonEntry['children'] !=null){
 				$html .="<ul>";
 				$this->taxonNode($dataset,$html,$level[$taxonId]['children'],$selectedTaxon,$mode);
-				//die($this->printLevel($html,$level[$taxonId]['children']));
 				$html .="</ul>";
 			}
 			else {
@@ -102,8 +99,6 @@ class TreeHelper extends AppHelper {
 			
 		foreach($level as $taxonId=>$taxonEntry) {
 			$ajaxLink= $this->Ajax->link($taxonEntry['name'], array('controller'=> 'browse','action'=>'pathways',$dataset,$taxonEntry['id']), array('update' => 'Browse', 'loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'browse-main-panel\',{ duration: 1.5 })', 'before' => 'Element.hide(\'browse-main-panel\')'));
-
-			
 		
 			if($taxonEntry['name'] == $selectedEc) {
 				$link = "<span class=\"selected_taxon\">".$taxonEntry['name']."</span>";
@@ -128,7 +123,6 @@ class TreeHelper extends AppHelper {
 			if($taxonEntry['children'] !=null){
 				$html .="<ul>";
 				$this->pathwayNode($dataset,$html,$level[$taxonId]['children'],$selectedEc);
-				//die($this->printLevel($html,$level[$taxonId]['children']));
 				$html .="</ul>";
 			}
 			else {
@@ -145,28 +139,16 @@ class TreeHelper extends AppHelper {
 		$counter=1;
 			
 		foreach($level as $taxonId=>$taxonEntry) {
-			//$count=$taxonEntry['count'];
-			#$html .= $this->Javascript->link(array('prototype'));
-			#$ajaxLink= $this->Ajax->link($taxonEntry['name'], array('controller'=> 'browse','action'=>'browse',$dataset,$taxonEntry['taxon_id']), array('update' => 'BrowseData', 'indicator' => 'spinner','loading' => 'Effect.Appear(\'BrowseData\')'));
-			#$ajaxLink= $this->Ajax->link($taxonEntry['name'], array('controller'=> 'browse','action'=>'browse',$dataset,$taxonEntry['taxon_id']), array('update' => 'BrowseData', 'loading' => 'Element.show(\'spinner\'); Effect.BlindDown(\'BrowseData\')', 'complete' => 'Element.hide(\'spinner\')', 'before' => 'Element.hide(\'BrowseData\')'));
 			$ajaxLink= $this->Ajax->link($taxonEntry['name'], array('controller'=> 'browse','action'=>'enzymes',$dataset,$taxonEntry['ec_id']), array('update' => 'Browse', 'loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'browse-main-panel\',{ duration: 1.5 })', 'before' => 'Element.hide(\'browse-main-panel\')'));
-			#$ajaxLink= $this->Ajax->link($taxonEntry['name'], array('controller'=> 'browse','action'=>'enzymes',$dataset,$taxonEntry['ec_id']), array('update' => 'Browse', 'loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'BrowseTable\',{ duration: 10 })', 'before' => 'Element.hide(\'BrowseTable\')'));
-
-			//$ajaxLink= $this->Ajax->link($taxonEntry['name'], array('controller'=> 'browse','action'=>'browse',$dataset,$taxonEntry['taxon_id']),
-			//array('update' => 'BrowseData'),null,false);
-
 
 			if($taxonEntry['name'] == $selectedEc) {
 				$link = "<span class=\"selected_taxon\">".$taxonEntry['name']."</span>";
 			}
 			else if ($taxonEntry['rank']=='level 4') {
-				//$link = $this->Html->link($taxonEntry['name'], '', array('class'=>'_class', 'id'=>'_id'));
 				$link = "<b>".$taxonEntry['name']."</b>";
 			}
 			else {
 				$link = $ajaxLink;
-				//$link = $this->Html->link($taxonEntry['name'], array('controller'=>'searches', 'action'=>'browse',$dataset,$taxonEntry['taxon_id']), array('class'=>'_class', 'id'=>'_id'));
-				//$link = $ajaxLink;
 			}
 
 			$class = null;
@@ -174,10 +156,6 @@ class TreeHelper extends AppHelper {
 			if($counter==count($level)) {
 				$class ="class=\"last\"";
 			}
-			//				if($taxonEntry['name'] == $selectedEc) {
-			//					$class .=" selected";
-			//				}
-			//				$class .= "\\\"";
 
 			$html .="<li $class><span style=\"white-space: nowrap\">".$link." (".$taxonEntry['rank'].") <strong>[".number_format($taxonEntry['count'])." peptides]</strong></span>";
 
@@ -185,7 +163,6 @@ class TreeHelper extends AppHelper {
 			if($taxonEntry['children'] !=null){
 				$html .="<ul>";
 				$this->ecNode($dataset,$html,$level[$taxonId]['children'],$selectedEc);
-				//die($this->printLevel($html,$level[$taxonId]['children']));
 				$html .="</ul>";
 			}
 			else {

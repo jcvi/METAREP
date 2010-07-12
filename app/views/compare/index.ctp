@@ -1,9 +1,39 @@
 <!----------------------------------------------------------
-  File: index.ctp
-  Description: Comparison index page
 
-  Author: jgoll
-  Date:   Mar 9, 2010
+  File: index.ctp
+  Description: Compare Index Page
+  
+  The compare pages allow users to compare multiple datasets.  
+  Users can filter available datasets by their name (using a
+  ajax-driven text box) or by their annotation content (using
+  the Lucene query language). A minimum absolute count can be
+  entered by users to filter out categories with only a few 
+  hits. Compare options include absolute and relative counts,
+  statistical tests, multidimensional scaling, heatmap and 
+  hierarchical cluster plots. 
+ 
+  Similar to the View pages, users can choose from several tabs
+  to indicate the annotation data type they wish to compare 
+  (see tab_panel.ctp). Choices are NCBI Taxonomy, Gene Ontology
+  KEGG metabolic pathways, Enzyme Classification, HMMs, and
+  functional descriptions. The level of comparison be adjusted
+  and statistics ad graphics can be exported (see result_panel.ctp).
+
+  PHP versions 4 and 5
+
+  METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
+  Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
+
+  Licensed under The MIT License
+  Redistributions of files must retain the above copyright notice.
+
+  @link http://www.jcvi.org/metarep METAREP Project
+  @package metarep
+  @version METAREP v 1.0.1
+  @author Johannes Goll
+  @lastmodified 2010-07-09
+  @license http://www.opensource.org/licenses/mit-license.php The MIT License
+
 <!---------------------------------------------------------->
 
 <?php echo $html->css('comparator.css'); ?>
