@@ -3,8 +3,8 @@ METAREP DIRECTORIES
 /app     web application files
 /cake    cake framework files
 /data    example dataset*
-/loader  index generation scripts
-/mysql   mysql database files/dump
+/scripts perl and R scripts
+/mysql   mysql database dump
 /solr    solr/lucene configuration files
 /vendors 3rd-party php tools
 
