@@ -23,7 +23,6 @@ use DBI();
 use File::Basename;
 use Encode;
 use utf8;
-use Unicode::String;
 use Getopt::Long qw(:config no_ignore_case no_auto_abbrev);
 use Pod::Usage;
 
