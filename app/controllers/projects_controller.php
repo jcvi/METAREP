@@ -34,6 +34,16 @@ class ProjectsController extends AppController {
 	 */	
 	function index() {
 		
+//		$this->Project->unbindModel(array('hasMany' => array('Library')));
+//		$this->Project->unbindModel(array('hasMany' => array('Population')));
+//		
+//		$this->Project->bindModel(array('hasOne' => array(
+//        							'User' => array(
+//            						'foreignKey' => false,
+//            						'conditions' => array('User.id = Project.user_id'),
+//									)))
+//        );
+		
 		$currentUser	= Authsome::get();
 		$currentUserId 	= $currentUser['User']['id'];	    	        	
         $userGroup  	= $currentUser['UserGroup']['name'];			

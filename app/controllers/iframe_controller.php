@@ -22,6 +22,17 @@
 
 class IframeController extends AppController {	
 	
+	var $uses = array();
+	
+	/**
+	 * Generates an iFrame that points to the specified
+	 * Apis page
+	 * 
+	 * @param int $projectId 
+	 * @param String $link absolute link the Apis page
+	 * @return void
+	 * @access public
+	 */	
 	function apis($projectId,$link) {
 		$link = base64_decode($link);
 		$this->set('link',$link);

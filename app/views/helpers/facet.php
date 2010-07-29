@@ -99,8 +99,7 @@ class FacetHelper extends AppHelper {
 			
 			if ($i++ % 2 == 0) {
 				$class = ' class="altrow"';
-			}			
-			
+			}						
 			
 			$html.="<tr  $class>";
 			$html.="<td>".$counter."</td>";
@@ -130,6 +129,7 @@ class FacetHelper extends AppHelper {
 					<th>Rank</th>
 					<th>Class</th>
 					<th>#Peptides</th>
+					<th>%Peptides</th>
 					<th>#Pathway Enzymes</th>
 					<th>#Found Enzymes</th>
 					<th>%Found Enzymes</th>
@@ -152,10 +152,11 @@ class FacetHelper extends AppHelper {
 				$html.="<tr  $class>";
 				$html.="<td style=\"width:2%;text-align:right\">$counter</td>";
 				$html.="<td style=\"width:30%;text-align:left\"><a href=\"javascript: void(0)\"onclick=\"window.open('{$pathway['link']}')\" class=\"tooltip\" title=\"Open Kegg Pathway Map\">{$pathway['pathway']}</a></td>";
-				$html.="<td style=\"width:8%;text-align:right\">{$pathway['numPeptides']}</td>";
-				$html.="<td style=\"width:8%;text-align:right\">{$pathway['numPathwayEnzymes']}</td>";
-				$html.="<td style=\"width:8%;text-align:right\">{$pathway['numFoundEnzymes']}</td>";
-				$html.="<td style=\"width:8%;text-align:right\">{$pathway['percFoundEnzymes']}  %</td>";
+				$html.="<td style=\"width:6%;text-align:right\">{$pathway['numPeptides']}</td>";
+				$html.="<td style=\"width:6%;text-align:right\">{$pathway['percPeptides']}</td>";
+				$html.="<td style=\"width:6%;text-align:right\">{$pathway['numPathwayEnzymes']}</td>";
+				$html.="<td style=\"width:6%;text-align:right\">{$pathway['numFoundEnzymes']}</td>";
+				$html.="<td style=\"width:6%;text-align:right\">{$pathway['percFoundEnzymes']}  %</td>";
 				$html.="<td style=\"width:30%\"align=\"center\" width=\"0px\">".$this->barChartSlice($pathway['percFoundEnzymes'],100)."</td>";	
 				$html.='</tr>';
 				$counter++;
@@ -357,7 +358,7 @@ class FacetHelper extends AppHelper {
 		}
 		
 		$html .= "&chl=";
-		foreach($sortedResults as $class=>$count) {
+		foreach($sortedResults as $class => $count) {
 			
 			
 			$class = split('\\|',$class);
@@ -387,12 +388,12 @@ class FacetHelper extends AppHelper {
 	}
 	function topTenList($facets,$numHits) {
 		return "
-		<div class=\"top 3 facets form\">
+		<div class=\"top 10 facets form\">
 			<fieldset>
 				<legend>Top Ten Functional Classifications</legend>
 					<table cellpadding=\"0\" cellspacing=\"10\" border =0 valign=\"TOP\">
 						<tr>
-							<td valign=\"TOP\">".$this->printFacet('Blast Species ',$facets->facet_fields->blast_species,$numHits)."</td>
+							<td valign=\"TOP\">".$this->printFacet('Species (Blast)',$facets->facet_fields->blast_species,$numHits)."</td>
 							<td valign=\"TOP\">".$this->printFacet('Common Name',$facets->facet_fields->com_name,$numHits)."</td>
 							<td valign=\"TOP\">".$this->printFacet('Go Term',$facets->facet_fields->go_id,$numHits)."</td>
 							<td valign=\"TOP\">".$this->printFacet('Ec number',$facets->facet_fields->ec_id,$numHits)."</td>
@@ -402,13 +403,15 @@ class FacetHelper extends AppHelper {
 			</fieldset>
 		</div>";
 	}
+	
+
 	function topTenPieCharts($facets,$numHits,$sizeLarge="600x200",$sizeSmall="600x150") {
-		return "<div class=\"top 3 facets form\">
+		return "<div class=\"top 10 facets form\">
 				<fieldset>
 					<legend>Top Ten Functional Pie Charts</legend>
 						<table cellpadding=\"0\" cellspacing=\"0\" border=0>
 							<tr>
-								<td valign=\"TOP\">".$this->pieChart('Blast Species',$facets->facet_fields->blast_species,$numHits,$sizeLarge)
+								<td valign=\"TOP\">".$this->pieChart('Species (Blast)',$facets->facet_fields->blast_species,$numHits,$sizeLarge)
 										.$this->pieChart('Common Name',$facets->facet_fields->com_name,$numHits,$sizeLarge)."</td>
 								<td>"	.$this->pieChart('Ec number',$facets->facet_fields->ec_id,$numHits,$sizeSmall)
 										.$this->pieChart('Go Term',$facets->facet_fields->go_id,$numHits,$sizeSmall)
@@ -420,6 +423,43 @@ class FacetHelper extends AppHelper {
 				</fieldset>
 			</div>";
 	}
+	
+	function topTenMetaInformationList($facets,$numHits) {
+		return "
+		<div class=\"top 10 facets form\">
+			<fieldset>
+				<legend>Top Ten Meta-Information</legend>
+					<table cellpadding=\"0\" cellspacing=\"10\" border =0 valign=\"TOP\">
+						<tr>
+							<td valign=\"TOP\">".$this->printFacet('Project',$facets['project'],$numHits)."</td>
+							<td valign=\"TOP\">".$this->printFacet('Sample Habitat',$facets['habitat'],$numHits)."</td>
+							<td valign=\"TOP\">".$this->printFacet('Sample Filter',$facets['filter'],$numHits)."</td>
+							<td valign=\"TOP\">".$this->printFacet('Sample Depth',$facets['depth'],$numHits)."</td>
+							<td valign=\"TOP\">".$this->printFacet('Sample Location',$facets['location'],$numHits)."</td>
+			</tr>
+			</table>
+			</fieldset>
+		</div>";
+	}		
+	
+	function topTenMetaInformationPieCharts($facets,$numHits,$sizeLarge="600x200",$sizeSmall="600x150") {
+		return "<div class=\"top 10 facets form\">
+				<fieldset>
+					<legend>Top Ten Meta-Information Pie Charts</legend>
+						<table cellpadding=\"0\" cellspacing=\"0\" border=0>
+							<tr>
+								<td valign=\"TOP\">"
+										.$this->pieChart('Project',$facets['project'],$numHits,$sizeLarge)
+										.$this->pieChart('Sample Habitat',$facets['habitat'],$numHits,$sizeLarge)."</td>
+								<td>"	.$this->pieChart('Sample Filter',$facets['filter'],$numHits,$sizeSmall).
+										 $this->pieChart('Sample Depth',$facets['depth'],$numHits,$sizeSmall)."</td>".
+								"</td>
+								</tr>
+						</table>
+						</legend>
+				</fieldset>
+			</div>";
+	}	
 }
 
 ?>

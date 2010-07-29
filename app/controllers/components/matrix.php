@@ -33,7 +33,7 @@ class MatrixComponent extends Object {
 	public function formatCounts($option,$filter,$minCount,$selectedDatasets,&$counts) {
 
 
-		#lety's get the totoal peptide counts for each dataset and make it accessable as a class variable
+		#get total peptide counts for each dataset and store them in totalCounts class variable
 		$this->totalCounts = $this->getTotalCounts($filter,$selectedDatasets,$counts);
 
 		#filter out empty categories
@@ -42,20 +42,22 @@ class MatrixComponent extends Object {
 		#add another category that contains 'unclassified' counts
 		#unclassified contains the total count - classified counts
 		#$this->addUnclassifiedCategory($selectedDatasets,$counts);
-
-		#if plot option
-		if($option > 5) {
-			$this->R->writeRPlotMatrix($selectedDatasets,$counts,$option);
-		}
-
+		
 		if($option == CHISQUARE || $option === FISHER) {
 			#add p-values to the counts matrix
 			$this->R->writeContingencyMatrix($selectedDatasets,$counts,$this->totalCounts,$option);
 			return;
 		}
+		elseif($option == WILCOXON) {
+			$this->absoluteToRelativeCounts($selectedDatasets,$counts,6);
+			$this->R->writeWilcoxonMatrix($selectedDatasets,$counts);
+		}
 		elseif($option == METASTATS) {
-			$this->R->writeMetastatsMatrix($selectedDatasets,$counts);
-				
+			$this->R->writeMetastatsMatrix($selectedDatasets,$counts);				
+		}
+		#handle all plot options
+		elseif($option > 6) {
+			$this->R->writeRPlotMatrix($selectedDatasets,$counts,$option);
 		}
 
 		#transform matrix into relative counts
@@ -160,7 +162,7 @@ class MatrixComponent extends Object {
 	}
 
 	#transforms absolute counts to relative counts
-	private function absoluteToRelativeCounts($datasets,&$counts) {
+	private function absoluteToRelativeCounts($datasets,&$counts,$precision = 4) {
 
 		#loop through counts, row by row [dimension 1]
 		foreach($counts as $category => $row) {
@@ -181,7 +183,7 @@ class MatrixComponent extends Object {
 					$relativeCount = 0;
 				}
 				else {
-					$relativeCount = round(($absoluteCount/$totalCount),4);
+					$relativeCount = round(($absoluteCount/$totalCount),$precision);
 				}
 					
 				#replace absolute count with relative count

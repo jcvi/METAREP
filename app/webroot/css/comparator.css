@@ -85,6 +85,26 @@ input[type="submit"] {
 	height: 25px;
 }
 
+.compare-radio-box {
+	display: inline !important;
+	position:absolute;
+	top:203px;
+	left:850px;
+	font-size: 0.9em;
+	width:200px;
+	line-height:11px;
+	vertical-align: midle;
+}
+
+
+
+.compare-radio-box label {
+    display:inline !important;
+    padding-left: 15px;
+    text-indent: -15px;
+    padding:10px;
+}
+
 input[type="text"] {
 	position: absolute;
 	top: 0px;

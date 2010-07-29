@@ -498,6 +498,14 @@ class BrowseController extends AppController {
 		$this->set('mode',GENE_ONTOLOGY);
 	}
 	
+	/**
+	 * Browse Pathways
+	 * 
+	 * @param String $dataset dataset 
+	 * @param String $expandNode selected node; default is the root node, here 16905 (Metabolism)
+	 * @return void
+	 * @access public
+	 */	
 	function pathways($dataset='CBAYVIR',$expandNode = 16905) {
 		
 		$this->pageTitle = 'Browse Pathways';
@@ -517,6 +525,7 @@ class BrowseController extends AppController {
 		$parentLevel = $parent['Pathway']['level'];	
 		$pathwayUrl  = "http://www.genome.jp/kegg-bin/show_pathway?ec".str_pad($parent['Pathway']['kegg_id'],5,0,STR_PAD_LEFT);		
 		
+		//get pathway facets and overall counts 
 		if($parentLevel === 'enzyme') {
 			$parentSolrResults = $this->Solr->getPathwayFacets('*:*',$dataset,$parentLevel,$expandNode,$children,$parent['Pathway']['ec_id']);
 			$parentName = $parent['Pathway']['name']." (".$parent['Pathway']['ec_id'].")";	
@@ -524,6 +533,8 @@ class BrowseController extends AppController {
 		else {
 			$parentSolrResults = $this->Solr->getPathwayFacets('*:*',$dataset,$parentLevel,$expandNode,$children);
 		}
+		
+		
 		
 		$childArray 	= array();
 		$childCounts 	= array();
@@ -570,7 +581,7 @@ class BrowseController extends AppController {
 		else {
 			$this->traverseArray($displayedTree,$childArray,$expandNode);
 		}
-		#debug($displayedTree);
+		
 			
 		$this->Session->write(PATHWAY.'.tree', $displayedTree);
 		$this->Session->write(PATHWAY.'.childCounts', $childCounts);
@@ -580,7 +591,7 @@ class BrowseController extends AppController {
 		$this->set('projectId', $this->Project->getProjectId($dataset));
 		$this->set('dataset',$dataset);
 		$this->set('childCounts',$childCounts);
-		$this->set('node',$parentName);
+		$this->set('node',base64_encode($parentName));
 		$this->set('level',$parentLevel);
 		$this->set('url',$pathwayUrl);
 		$this->set('numHits',$parentSolrResults['numHits']);
@@ -592,10 +603,13 @@ class BrowseController extends AppController {
 	public function downloadChildCounts($dataset,$node,$mode,$numHits,$query="*:*") {
 		$this->autoRender=false; 
 
+		if($mode === PATHWAY) {
+			$node = urldecode($node);
+		}
+		
 		#get childCounts
 		$childCounts = $this->Session->read($mode.".childCounts");
-		
-		$content=$this->Format->infoString("Browse $mode Results",$dataset,$query,$numHits,$node);
+		$content = $this->Format->infoString("Browse $mode Results",$dataset,$query,$numHits,$node);
 		$content.=$this->Format->facetToDownloadString($node,$childCounts,$numHits);
 		
 		$fileName = "jcvi_metagenomics_report_".time().'.txt';

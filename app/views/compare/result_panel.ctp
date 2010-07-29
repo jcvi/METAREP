@@ -61,6 +61,9 @@ jQuery(document).ready(function(){
   	if($option == METASTATS){ 
   		echo(", sortList: [[8,0]]");
   	}
+  	else if($option == WILCOXON){ 
+  		echo(", sortList: [[6,0]]");
+  	}  	
   	elseif($option == CHISQUARE) {
   		echo(", sortList: [[4,0]]");
   	}
@@ -117,8 +120,8 @@ else {
 		$heatmapColor =  HEATMAP_COLOR_YELLOW_RED;
 	}
 	
-	if($option < 6) {
-		if($option == METASTATS) {
+	if($option < 7) {
+		if($option == METASTATS || $option == WILCOXON) {
 			$flipLink= "";
 		}
 		else {
@@ -130,9 +133,6 @@ else {
 	
 	echo $form->create( 'Post' );
 	echo $form->input( 'level', array( 'options' => $levels, 'selected' => $level,'label' => false, 'empty'=>'--select level--','div'=>'comparator-level-select'));
-	#debug(":$plot:");
-	
-	
 	
 	if($option == HEATMAP) {
 		echo $form->input( 'heatmap', array( 'options' => array(0=>'red-yellow (default)',1=>'yellow-blue',2=>'blue',3=>'green'),'label' => false, 'empty'=>'--Select Heatmap Color--','div'=>'comparator-heatmap-color-select'));
@@ -161,11 +161,15 @@ else {
 	}
 	
 	if(count($counts) == 0) {
-			echo("<div id=\"flashMessage\" class=\"message\" style=\"position:absolute;font-size:1.4em;top:90px;text-align:center;left:305px\">No hits found. Please try again with different options.</div>");
+			echo("<div id=\"flashMessage\" class=\"message\" style=\"position:absolute;font-size:1.4em;top:90px;text-align:center;left:200px\">No hits found. Please try again with different options.</div>");
+		exit();
+	}
+	if(count($counts) < 3 && $option > 6) {
+		echo("<div id=\"flashMessage\" class=\"message\" style=\"position:absolute;font-size:1.4em;top:90px;text-align:center;left:200px\">Too few categories found for selected plot option. Please try again with different options.</div>");
 		exit();
 	}
 		
-	if($option > 5) {	
+	if($option > 6) {	
 		
 		switch($option) {
 				case COMPLETE_LINKAGE_CLUSTER_PLOT:

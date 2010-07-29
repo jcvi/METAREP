@@ -1,8 +1,8 @@
 <!----------------------------------------------------------
  
-  File: enzymes.ctp
+  File: pathways.ctp
   Description: View page to browse KEGG metabolic pathways 
-  based on the go_id field.
+  based on the ec_id field.
 
   PHP versions 4 and 5
 
@@ -21,7 +21,9 @@
     
 <!---------------------------------------------------------->
 
-<?php echo $html->css('browse.css'); ?>
+<?php echo $html->css('browse.css'); 
+	
+?>
 <div id="Browse">
 	<ul id="breadcrumb">
 	 	<li><a href="/metarep/dashboard/index" title="Dashboard"><img src="/metarep/img/home.png" alt="Dashboard" class="home" /></a></li>
@@ -56,7 +58,7 @@
 				<?php echo $html->div('browse-download-classification', $html->link($html->image("download-medium.png"), array('controller'=> 'browse','action'=>'downloadChildCounts',$dataset,$node,$mode,$numHits),array('escape' => false)));?>						
 				<?php endif;?>
 				
-				<h2 <span class="selected_library"><?php echo($node)?></h2>
+				<h2 <span class="selected_library"><?php echo(base64_decode($node))?></h2>
 				<?php 				
 					if($level === 'level 3') {						
 						echo("<p><iframe src=\"$url\" target=\"_blank\"  width=\"100%\"

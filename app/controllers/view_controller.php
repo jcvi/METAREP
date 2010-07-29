@@ -149,6 +149,8 @@ class ViewController extends AppController {
 	
 	function pathways($dataset,$facetField) {	
 		
+		$numHits  = $this->Session->read('view.numHits');
+		
 		if(empty($this->data['Post'])) {
 			if($this->Session->check('view.filter')) {
 				$filter = $this->Session->read('view.filter');
@@ -173,8 +175,7 @@ class ViewController extends AppController {
 		else {
 			$query = '*:*';
 		}
-		
-		
+				
 		//specify facet default behaviour
 		$solrArguments = array(	"facet" => "true",
 						'facet.field' => 'ec_id',
@@ -225,6 +226,8 @@ class ViewController extends AppController {
 
 				$percentEnzymes = round($numFoundEnzymes/$pathwayEnzymeCount,4)*100;
 				
+				$percentPeptides = round($results['count']/$numHits,4)*100;	
+				
 				array_push($level2Results,array('id'=>$pathwayKeggId,
 												'pathway'=>$pathwayName,
 												'link'=>$results['pathwayLink'],
@@ -232,6 +235,7 @@ class ViewController extends AppController {
 												'numFoundEnzymes'=>$results['numFoundEnzymes'],
 												'percFoundEnzymes'=>$results['percFoundEnzymes'],
 												'numPeptides'=>$results['count'],
+												'percPeptides'=>$percentPeptides,
 				));
 			}
 			
@@ -242,7 +246,7 @@ class ViewController extends AppController {
 		}
 		
 		$this->Session->write('view.pathways',$pathways);					
-		$this->Session->write('view.numHits',$numHits);	
+		
 
 		$this->set('dataset',$dataset);
 		$this->set('facetField',$facetField);

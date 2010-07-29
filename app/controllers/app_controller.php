@@ -24,7 +24,7 @@
 class AppController extends Controller {
 
 	#global helpers
-	var $helpers = array('Session','Html', 'Form','Crumb','Javascript','Ajax');
+	var $helpers 	= array('Session','Html', 'Form','Crumb','Javascript','Ajax');
 	var $components = array('Session','Cookie','RequestHandler','Authsome' => array('model' => 'User'));
 
 	var $openAccessUrls = array(
@@ -36,7 +36,7 @@ class AppController extends Controller {
 							'users/forgotPassword',
 							'users/activatePassword',
 							'users/changePassword',
-
+							'users/guestLogin',
 	);
 	
 	var $loginUrls = array(
@@ -44,13 +44,17 @@ class AppController extends Controller {
 							'populations/index',
 							'iframe/apis',
 							'menus/quick',
-							'compare/download',		
+							'compare/download',	
+							'search/all',
+							'search/downloadMetaInformationFacets',	
 	); 
 
+	//urls that need to be checked for matching user id
 	var $userAccessUrl = array(
 							'users/edit',						
 	); 
 	
+	//urls that need to be checked for dataset permissions
 	var $datasetAccessUrls = array(
 							'view/index',
 							'view/download',
@@ -78,6 +82,7 @@ class AppController extends Controller {
 	
 	var $projectAccessUrls = array(
 							'projects/view',
+							'projects/delete',
 							'projects/ftp',												
 	);
 	
@@ -107,7 +112,9 @@ class AppController extends Controller {
 		#handle all other permissions
 		if($this->Authsome->get()) {
 			
-			if(in_array($url,$this->loginUrls))  {			
+			
+			
+			if(in_array($url,$this->loginUrls))  {		
 				return;
 			}
 
@@ -135,25 +142,34 @@ class AppController extends Controller {
 				}
 			}						
 			else if(in_array($url,$this->datasetAccessUrls))  {	
-				
-				if($controller === 'populations') {
-					$dataset = $this->Population->getNameById($parameters[0]);
-				}
-				elseif($controller === 'libraries') {
-					$dataset = $this->Library->getNameById($parameters[0]);
+				if($userGroup === INTERNAL_USER_GROUP) {
+					return;
 				}
 				else {
-					$dataset = $parameters[0];
-				}
-				
-				if($this->Project->hasDatasetAccess($dataset,$currentUserId)) {
-					return;
-				}				
+					if($controller === 'populations') {
+						$dataset = $this->Population->getNameById($parameters[0]);
+					}
+					elseif($controller === 'libraries') {
+						$dataset = $this->Library->getNameById($parameters[0]);
+					}
+					else {
+						$dataset = $parameters[0];
+					}
+					
+					if($this->Project->hasDatasetAccess($dataset,$currentUserId)) {
+						return;
+					}	
+				}			
 			}				
 			else if(in_array($url,$this->projectAccessUrls))  {	
-				$projectId  = $parameters[0];					
-				if($this->Project->hasProjectAccess($projectId,$currentUserId)) {
+				if($userGroup === INTERNAL_USER_GROUP) {
 					return;
+				}	
+				else {			
+					$projectId  = $parameters[0];					
+					if($this->Project->hasProjectAccess($projectId,$currentUserId)) {
+						return;
+					}
 				}
 			}
 			else if(in_array($url,$this->projectAdminUrls))  {
@@ -162,12 +178,12 @@ class AppController extends Controller {
 					return;
 				}
 			}
-			else {
+			else {				
 				if($userGroup === INTERNAL_USER_GROUP) {
 					return;
 				}
 			}
-			die('not returned');
+
 			$this->Session->setFlash("You don't have permissions to view this page.");
 			$this->redirect("/dashboard/index");
 		}
@@ -177,5 +193,18 @@ class AppController extends Controller {
 			
 		}
 	}
+	
+	function redirect($url, $status = null, $exit = false) {
+	    $temp = $url;
+	    if(is_array($url)) {
+	        $temp = '/';
+	        $temp .= isset($url['controller']) ? $url['controller'] : $this->params['controller'];
+	        $temp .= '/';
+	        $temp .= isset($url['action']) ? $url['action'] : $this->params['action'];
+	        $url = '';
+	    }
+	    $ajax = ($this->RequestHandler->isAjax()) ? ($temp{0} != '/') ? '/ajax/' : '/ajax' : null;
+	    parent::redirect($ajax.$temp, $status, $exit);
+	} 
 }
 ?>

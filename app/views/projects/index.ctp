@@ -43,11 +43,28 @@ echo $paginator->counter(array(
 	<th class="actions"><?php __('Action');?></th>
 	<th>#Populations</th>
 	<th>#Libraries</th>
-	<th><?php echo $paginator->sort('project_code');?></th>
-	<th><?php echo $paginator->sort('jira_link');?></th>
 	
+	<?php 
+	
+	
+	$currentUser 	= Authsome::get();
+	$currentUserId 	= $currentUser['User']['id'];	    	        	
+	$userGroup  	= $currentUser['UserGroup']['name'];	
+	
+	if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {
+		echo('<th>');
+			echo $paginator->sort('project_code');
+		echo('</th>');
+		echo('<th>');
+			echo $paginator->sort('jira_link');
+		echo('</th>');
+	}?>
 </tr>
+
 <?php
+
+
+
 $i = 0;
 foreach ($projects as $project):
 	$class = null;
@@ -57,10 +74,10 @@ foreach ($projects as $project):
 	}
 ?>
 	<tr<?php echo $class;?>>
-		<td>
-			<?php echo $project['Project']['id']; ?>
+		<td style="width:3%;text-align:right">
+			<?php echo $project['Project']['id'];?>
 		</td>
-		<td>
+		<td style="width:6%;text-align:center">
 			<?php echo $project['Project']['updated']; ?>
 		</td>		
 		<td>
@@ -69,18 +86,23 @@ foreach ($projects as $project):
 		<td class="actions">
 			<?php echo $html->link(__('View', true), array('action'=>'view', $project['Project']['id'])); ?>
 		</td>
-		<td>
+		<td style="width:8%;text-align:right">
 			<?php echo  count($project['Population']); ?>
 		</td>	
-		<td>
+		<td style="width:8%;text-align:right">
 			<?php echo  count($project['Library']); ?>
 		</td>				
-		<td>
-			<?php echo $project['Project']['charge_code']; ?>
-		</td>
-		<td>
-			<?php echo $html->link($project['Project']['jira_link'], $project['Project']['jira_link'], array('target'=>'_blank')); ?>
-		</td>
+		<?php 
+		if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {
+			echo('<td style="width:10%;text-align:center">');
+				echo $project['Project']['charge_code'];
+			echo('</td>');
+			
+			echo('<td>');
+				echo $html->link($project['Project']['jira_link'], $project['Project']['jira_link'], array('target'=>'_blank')); 
+			echo('</td>');
+		}
+		?>
 	</tr>
 <?php endforeach; ?>
 </table>

@@ -34,16 +34,21 @@ define('ABSOLUTE_COUNTS', 1);
 define('RELATIVE_COUNTS', 2);
 define('HEATMAP', 3);
 define('CHISQUARE', 4);
-define('METASTATS', 5);
-define('COMPLETE_LINKAGE_CLUSTER_PLOT', 6);
-define('AVERAGE_LINKAGE_CLUSTER_PLOT', 7);
-define('SINGLE_LINKAGE_CLUSTER_PLOT', 8);
-define('WARDS_CLUSTER_PLOT', 9);
-define('MEDIAN_CLUSTER_PLOT', 10);
-define('MCQUITTY_CLUSTER_PLOT', 11);
-define('CENTROID_CLUSTER_PLOT', 12);
-define('MDS_PLOT', 13);
-define('HEATMAP_PLOT', 14);
+define('WILCOXON', 5);
+define('METASTATS', 6);
+define('COMPLETE_LINKAGE_CLUSTER_PLOT', 7);
+define('AVERAGE_LINKAGE_CLUSTER_PLOT', 8);
+define('SINGLE_LINKAGE_CLUSTER_PLOT', 9);
+define('WARDS_CLUSTER_PLOT', 10);
+define('MEDIAN_CLUSTER_PLOT', 11);
+define('MCQUITTY_CLUSTER_PLOT', 12);
+define('CENTROID_CLUSTER_PLOT', 13);
+define('MDS_PLOT', 14);
+define('HEATMAP_PLOT', 15);
+
+
+define('SHOW_ALL_DATASETS',0);
+define('SHOW_PROJECT_DATASETS',1);
 
 class CompareController extends AppController {
 
@@ -59,10 +64,10 @@ class CompareController extends AppController {
 	 * @return void
 	 * @access public
 	 */			
-	function index($dataset = null) {
+	function index($dataset = null,$mode = SHOW_PROJECT_DATASETS) {
 		
 		//increase memory size
-		ini_set('memory_limit', '556M');
+		ini_set('memory_limit', '856M');
 				
 		$this->pageTitle = 'Compare Multiple Datasets';
 
@@ -80,12 +85,19 @@ class CompareController extends AppController {
 		
 		$selectedDatasets = array($dataset);
 		
-		$allDatasets = $this->Project->findUserDatasets();
+		if($mode == SHOW_ALL_DATASETS) {
+			$allDatasets = $this->Project->findUserDatasetsCompareFormat(POPULATION_AND_LIBRARY_DATASETS);
+		}
+		else if($mode == SHOW_PROJECT_DATASETS) {
+			$allDatasets = $this->Project->findUserDatasetsCompareFormat(POPULATION_AND_LIBRARY_DATASETS,$projectId);
+		}
+		
 		$this->Session->write('allDatasets',$allDatasets);
 		
 		$this->set('projectId', $projectId);
 		$this->set('selectedDatasets', $selectedDatasets);
-		$this->set('dataset', $dataset);		
+		$this->set('dataset', $dataset);	
+		$this->set('mode', $mode);		
 	}
 	
 	/**
@@ -151,7 +163,7 @@ class CompareController extends AppController {
 			if($option == CHISQUARE) {
 				$minCount = 5;
 			}
-			else if($option == METASTATS) {
+			else if($option == METASTATS || $option == WILCOXON) {
 				#handle metastats exception (fewer than 3 datasets)				
 				if(count($selectedDatasets) != 2 || !$optionalDatatypes['population']) {
 					$this->set('multiSelectException','Please select 2 populations for this statistical test.');
@@ -163,7 +175,7 @@ class CompareController extends AppController {
 			$heatMapColor = HEATMAP_COLOR_YELLOW_RED;
 			
 			#handle plot exception (fewer than 3 datasets)
-			if(count($selectedDatasets) < 3 && $option > 5 ) {				
+			if(count($selectedDatasets) < 3 && $option > 6 ) {				
 				$this->set('multiSelectException','Please select at least 3 datasets for this plot option.');
 				$this->set('filter',$filter);
 				$this->render('/compare/result_panel','ajax');
@@ -254,14 +266,15 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 		
-		if($option == METASTATS) {
+		if($option == METASTATS || $option == WILCOXON) {
 			#split the two populations into their libraries; store population 
 			#names and start position of secontd population
-			$this->Session->write('metastatsPopulations',$selectedDatasets);
+			$this->Session->write('comparePopulations',$selectedDatasets);
 			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
 			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
+			
 			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('metastatsStartSecondPopulation',count($librariesA)+1);
+			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);
 		}		
 		
 		#write session variables
@@ -400,14 +413,14 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 
-		if($option == METASTATS) {
+		if($option == METASTATS || $option == WILCOXON) {
 			#split the two populations into their libraries; store population 
 			#names and start position of secontd population
-			$this->Session->write('metastatsPopulations',$selectedDatasets);
+			$this->Session->write('comparePopulations',$selectedDatasets);
 			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
 			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
 			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('metastatsStartSecondPopulation',count($librariesA)+1);		
+			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);		
 		}			
 		
 		#write session variables
@@ -514,14 +527,14 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 
-		if($option == METASTATS) {
+		if($option == METASTATS || $option == WILCOXON) {
 			#split the two populations into their libraries; store population 
 			#names and start position of secontd population
-			$this->Session->write('metastatsPopulations',$selectedDatasets);
+			$this->Session->write('comparePopulations',$selectedDatasets);
 			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
 			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
 			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('metastatsStartSecondPopulation',count($librariesA)+1);
+			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);
 		}	
 
 		#write session variables
@@ -622,14 +635,14 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 
-		if($option == METASTATS) {
+		if($option == METASTATS || $option == WILCOXON) {
 			#split the two populations into their libraries; store population 
 			#names and start position of secontd population
-			$this->Session->write('metastatsPopulations',$selectedDatasets);
+			$this->Session->write('comparePopulations',$selectedDatasets);
 			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
 			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
 			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('metastatsStartSecondPopulation',count($librariesA)+1);
+			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);
 		}			
 		
 		#write session variables
@@ -720,14 +733,14 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 
-		if($option == METASTATS) {
+		if($option == METASTATS || $option == WILCOXON) {
 			#split the two populations into their libraries; store population 
 			#names and start position of secontd population
-			$this->Session->write('metastatsPopulations',$selectedDatasets);
+			$this->Session->write('comparePopulations',$selectedDatasets);
 			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
 			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
 			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('metastatsStartSecondPopulation',count($librariesA)+1);
+			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);
 		}			
 		
 		if($minCount==0) {
@@ -847,14 +860,14 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');		
 
-		if($option == METASTATS) {
+		if($option == METASTATS || $option == WILCOXON) {
 			#split the two populations into their libraries; store population 
 			#names and start position of secontd population
-			$this->Session->write('metastatsPopulations',$selectedDatasets);
+			$this->Session->write('comparePopulations',$selectedDatasets);
 			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
 			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
 			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('metastatsStartSecondPopulation',count($librariesA)+1);
+			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);
 		}			
 		
 		//specify facet behaviour (fetch all facets)
@@ -942,14 +955,14 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 
-		if($option == METASTATS) {
+		if($option == METASTATS || $option == WILCOXON) {
 			#split the two populations into their libraries; store population 
 			#names and start position of second population
-			$this->Session->write('metastatsPopulations',$selectedDatasets);
+			$this->Session->write('comparePopulations',$selectedDatasets);
 			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
 			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
 			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('metastatsStartSecondPopulation',count($librariesA)+1);
+			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);
 		}			
 				
 		#write session variables
@@ -1030,14 +1043,14 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 
-		if($option == METASTATS) {
+		if($option == METASTATS || $option == WILCOXON) {
 			#split the two populations into their libraries; store population 
 			#names and start position of secontd population
-			$this->Session->write('metastatsPopulations',$selectedDatasets);
+			$this->Session->write('comparePopulations',$selectedDatasets);
 			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
 			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
 			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('metastatsStartSecondPopulation',count($librariesA)+1);	
+			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);	
 		}			
 		
 		#write session variables
@@ -1089,8 +1102,7 @@ class CompareController extends AppController {
 		}
 
 		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$counts);
-
-
+		
 		$this->Session->write('counts',$counts);
 
 		$this->render('/compare/result_panel','ajax');
@@ -1118,7 +1130,7 @@ class CompareController extends AppController {
 			$content.= $this->Format->comparisonResultsToDownloadString($counts,$selectedDatasets,$option);
 		}
 		elseif($option == FISHER) {			
-			$title = "Comparison Results - Fisher's Exact Test";#ylab="Datasets"
+			$title = "Comparison Results - Fisher's Exact Test";
 			$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);
 			$content.= $this->Format->comparisonResultsToDownloadString($counts,$selectedDatasets,$option);
 		}
@@ -1126,7 +1138,18 @@ class CompareController extends AppController {
 			$title = "Comparison Results - METASTATS non-parametric t-test";
 			$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);
 			$content.= $this->Format->metatstatsResultsToDonwloadString($counts,$selectedDatasets);
-		}		
+		}	
+		elseif($option == WILCOXON) {
+			$title = "Comparison Results - Wilcoxon Signed Rank Test";
+			$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);
+			$content.= $this->Format->wilcoxonResultsToDonwloadString($counts,$selectedDatasets);
+		}	
+		//plot options
+		elseif($option > 6) {
+			$title = "Comparison Results - Euclidean Distance Matrix";
+			$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);
+			$content .= $this->Session->read('distantMatrices');		
+		}				
 		else{
 			$title = "Comparison Results";
 			$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);

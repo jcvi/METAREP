@@ -18,6 +18,7 @@
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
+
 class FormatComponent extends Object {
 	
 	public function facetToDownloadString($heading,$facets,$numHits) {			
@@ -95,14 +96,23 @@ class FormatComponent extends Object {
 			}
 	}
 		
-	public function facetListToDownloadString($title,$dataset,$facets,$query,$numHits,$node='') {
-		
+	public function facetListToDownloadString($title,$dataset,$facets,$query,$numHits,$node = '') {		
 		$content =$this->infoString($title,$dataset,$query,$numHits,$node);	
 		$content.=$this->facetToDownloadString('Blast Species',$facets->facet_fields->blast_species,$numHits);	
 		$content.=$this->facetToDownloadString('Common Name',$facets->facet_fields->com_name,$numHits);		
 		$content.=$this->facetToDownloadString('Gene Ontology',$facets->facet_fields->go_id,$numHits);		
 		$content.=$this->facetToDownloadString('Enzyme',$facets->facet_fields->ec_id,$numHits);
 		$content.=$this->facetToDownloadString('HMM',$facets->facet_fields->hmm_id,$numHits);
+		return $content;
+	}	
+	
+	public function facetMetaInformationListToDownloadString($title,$facets,$query,$numHits,$numDatasets,$node = ''){		
+		$content =$this->infoString($title,"$numDatasets datasets",$query,$numHits,$node);	
+		$content.=$this->facetToDownloadString('Project',$facets['project'],$numHits);	
+		$content.=$this->facetToDownloadString('Sample Habitat',$facets['habitat'],$numHits);		
+		$content.=$this->facetToDownloadString('Sample Filter',$facets['filter'],$numHits);		
+		$content.=$this->facetToDownloadString('Sample Depth',$facets['depth'],$numHits);		
+		$content.=$this->facetToDownloadString('Sample Location',$facets['location'],$numHits);
 		return $content;
 	}	
 	
@@ -150,6 +160,32 @@ class FormatComponent extends Object {
 		
 		return $content;	
 	}
+
+	public function wilcoxonResultsToDonwloadString($counts,$selectedDatasets) {
+		
+		$content 	="Catgeory\t";
+		
+		foreach($selectedDatasets as $dataset) {
+			$content .= "Median ($dataset)\t";
+			$content .= "MAD ($dataset)\t";
+		}
+		$content .= "Median Ratio\t";
+		$content .= "p value\t";
+		$content .= "p value (bonf. corr.)\n";
+		
+		foreach($counts as $category => $row) {				
+			$content .= $row['name']."\t";
+			foreach($selectedDatasets as $dataset) {			
+				$content .= $row[$dataset]['median']."\t";
+				$content .= $row[$dataset]['mad']."\t";
+			}
+			$content .= $row['mratio']."\t";
+			$content .= $row['pvalue']."\t";
+			$content .= $row['bonf-pvalue']."\n";
+		}
+		
+		return $content;	
+	}	
 	
 	public function comparisonResultsToDownloadString($counts,$selectedDatasets,$option) {
 		$content 	="Catgeory\t";

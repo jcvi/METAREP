@@ -195,9 +195,11 @@ or has been configured not to display inline frames.]</iframe></p>");
 		<th class="actions"><?php __('Analyze');?></th>
 	</tr>
 	<?php
+		
 		$i = 0;
 		foreach ($project['Library'] as $library):
 			$class = null;
+			
 			if ($i++ % 2 == 0) {
 				$class = ' class="altrow"';
 			}

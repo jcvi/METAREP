@@ -66,7 +66,18 @@ foreach($tabs as $tab) {
 
 echo("<ul>");	
 echo $ajax->divEnd('tabs');	
-echo $html->div('comparator-download', $html->link($html->image("download-large.png"), array('controller'=> 'compare','action'=>'download'),array('escape' => false)));	
+
+if($option == ABSOLUTE_COUNTS || $option == RELATIVE_COUNTS || $option == HEATMAP) {
+$downloadTitle = 'Download Counts';
+}
+elseif($option == CHISQUARE  || $option == FISHER || $option == METASTATS || $option == WILCOXON) {
+	$downloadTitle = 'Download Statistics';
+}
+elseif($option > 6) {
+	$downloadTitle = 'Download Distance Matrix';
+}
+
+echo $html->div('comparator-download', $html->link($html->image("download-large.png",array("title" => $downloadTitle)), array('controller'=> 'compare','action'=>'download'),array('escape' => false)));	
 echo("</fieldset>");
 ?>
 

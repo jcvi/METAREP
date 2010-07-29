@@ -41,34 +41,57 @@ class MatrixHelper extends AppHelper {
 			
 		$html='';
 			
-		if($option == METASTATS) {			
-				$html .= "<table style=\"border:1px; padding-bottom:5px; border-bottom-style:solid;border-width:1px;\">
-					<tr>"	;
-				$html .= "<th style=\"padding-right:5px; width:30%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\"></th>";			
-				$html .= "<th style=\"padding-center:5px; width:21%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[0]}</th>";
-				$html .= "<th style=\"padding-center:5px; width:21%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[1]}</th>";
-				$html .= "<th style=\"padding-center:5px; width:27%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">Significance</th>";
-				$html .= "</tr></table>";
-				
-				$html .= "<table cellpadding=\"0px\" cellspacing=\"0\", id=\"myTable\" class=\"tablesorter comparison-results-table\"><thead> 	
-					<tr><th style=\"padding-right:5px;width:30%;\">Category</th>";
-				
-				foreach($datasets as $dataset) {	
-					$html .= "<th style=\"padding-right:5px;width:7%;\">Total</th>";			
-					$html .= "<th style=\"padding-right:5px;width:7%;\">Mean %</th>";
-					#$html .= "<th style=\"padding-right:5px;width:6%;\">Variance</th>";
-					$html .= "<th style=\"padding-right:5px;width:7%;\">SE %</th>";					
+		#debug($datasets);
+		if($option == METASTATS || $option == WILCOXON) {	
+				if($option == METASTATS) {		
+					$html .= "<table style=\"border:1px; padding-bottom:5px; border-bottom-style:solid;border-width:1px;\">
+						<tr>"	;
+					$html .= "<th style=\"padding-right:5px; width:30%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\"></th>";			
+					$html .= "<th style=\"padding-center:5px; width:21%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[0]}</th>";
+					$html .= "<th style=\"padding-center:5px; width:21%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[1]}</th>";
+					$html .= "<th style=\"padding-center:5px; width:27%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">Significance</th>";
+					$html .= "</tr></table>";
+					
+					$html .= "<table cellpadding=\"0px\" cellspacing=\"0\", id=\"myTable\" class=\"tablesorter comparison-results-table\"><thead> 	
+						<tr><th style=\"padding-right:5px;width:30%;\">Category</th>";
+					
+					foreach($datasets as $dataset) {	
+						$html .= "<th style=\"padding-right:5px;width:7%;\">#Total</th>";			
+						$html .= "<th style=\"padding-right:5px;width:7%;\">%Mean</th>";
+						#$html .= "<th style=\"padding-right:5px;width:6%;\">Variance</th>";
+						$html .= "<th style=\"padding-right:5px;width:7%;\">%SE</th>";					
+					}
+					
+					$html .= "<th style=\"padding-right:5px;width:7%;\">Mean Ratio</th>";
+					$html .= "<th style=\"padding-right:5px;width:7%;\">p-value</th>";
+					$html .= "<th style=\"padding-right:5px;width:7%;\">p-value (bonf. corr.)</th>";					
+					$html .= "<th style=\"padding-right:5px;width:21%;\">CI (%Mean +/- %SE)</th>";	
 				}
-				$html .= "<th style=\"padding-right:5px;width:7%;\">Mean Ratio</th>";
-				$html .= "<th style=\"padding-right:5px;width:7%;\">p value</th>";
-				$html .= "<th style=\"padding-right:5px;width:7%;\">p value (bonf. corr.)</th>";					
-				$html .= "<th style=\"padding-right:5px;width:21%;\">CI (Mean +/- SE)</th>";				
+				elseif($option == WILCOXON) {
+					$html .= "<table style=\"border:1px; padding-bottom:5px; border-bottom-style:solid;border-width:1px;\">
+						<tr>"	;
+					$html .= "<th style=\"padding-right:5px; width:35%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\"></th>";			
+					$html .= "<th style=\"padding-center:5px; width:20%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[0]}</th>";
+					$html .= "<th style=\"padding-center:5px; width:20%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[1]}</th>";
+					$html .= "<th style=\"padding-center:5px; width:25%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">Significance</th>";
+					$html .= "</tr></table>";
+					
+					$html .= "<table cellpadding=\"0px\" cellspacing=\"0\", id=\"myTable\" class=\"tablesorter comparison-results-table\"><thead> 	
+						<tr><th style=\"padding-right:5px;width:35%;\">Category</th>";
+					
+					foreach($datasets as $dataset) {	
+						$html .= "<th style=\"padding-right:8px;width:10%;\">%Median</th>";
+						$html .= "<th style=\"padding-right:8px;width:10%;\">%MAD</th>";		
+					}
+					
+					$html .= "<th style=\"padding-right:5px;width:9%;\">Median Ratio</th>";
+					$html .= "<th style=\"padding-right:5px;width:8%;\">p-value</th>";
+					$html .= "<th style=\"padding-right:5px;width:8%;\">p-value (bonf. corr.)</th>";					
+					#$html .= "<th style=\"padding-right:5px;width:14%;\">CI (Mean +/- SE)</th>";
+				}		
 		}
 		else {
-//			$html .= "<table style=\"border:1px; padding-bottom:5px; border-bottom-style:solid;border-width:1px;\">
-//				<tr>"	;
-//			$html .= "<th style=\"padding-right:5px; width:100%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">Query:$filter/th>";			
-//			$html .= "</tr></table>";			
+		
 			$html .= "<table cellpadding=\"0px\" cellspacing=\"0\", id=\"myTable\" class=\"tablesorter comparison-results-table\"><thead> 	
 						<tr>	
 							<th>Category</th>";			
@@ -92,7 +115,7 @@ class MatrixHelper extends AppHelper {
 		$i = 0;
 		#debug($counts);
 		foreach($counts as $category => $row) {				
-				if($row['sum'] > 0 || $option == METASTATS) {					
+				if($row['sum'] > 0 || $option == METASTATS || $option == WILCOXON) {					
 									
 					if ($i++ % 2 == 0) {
 						$color = '#FFFFFF';
@@ -160,6 +183,35 @@ class MatrixHelper extends AppHelper {
 						$html .="<td style=\"text-align:center;\"><img src=\"$chartUrl\" name=\"ci_chart\">";
 						$html .="</td>";
 					}
+					elseif($option == WILCOXON) {
+						
+						foreach($datasets as $dataset) {			
+							$html .= "<td style=\"text-align:right;\">".($row[$dataset]['median']*100)."</td>";
+							#$html .= "<td style=\"text-align:right;\">{$row[$dataset]['variance']}</td>";
+							$html .= "<td style=\"text-align:right;\">".($row[$dataset]['mad']*100)."</td>";
+						}	
+						
+						//get confidence intervals
+						$medianA 		= $row[$datasets[0]]['median']*100;
+						#$lowBoundA 		= $row[$datasets[0]]['ci_low']*100;
+						#$upperBoundA 	= $row[$datasets[0]]['ci_high']*100;					
+						$medianB 		= $row[$datasets[1]]['median']*100;
+						#$lowBoundB 		= $row[$datasets[1]]['ci_low']*100;
+						#$upperBoundB 	= $row[$datasets[1]]['ci_high']*100;
+											
+						$html .= "<td style=\"text-align:right;\">{$row['mratio']}</td>";	
+						$html .= "<td style=\"text-align:right;\">{$row['pvalue']}</td>";	
+						$html .= "<td style=\"text-align:right;\">{$row['bonf-pvalue']}</td>";	
+						
+						#$chartUrl 	= "http://chart.apis.google.com/chart?chs=140x18&cht=bhs&chd=t0:-1,";
+						#$chartUrl  .= "{$lowBoundA},{$lowBoundB},-1|-1,{$medianA},{$medianB},-1|-1,{$medianA},{$medianB},";
+						#$chartUrl  .= "-1|-1,{$upperBoundA},{$upperBoundB},-1|-1,{$medianA},{$medianB},-1&chm=F,C00000,0,1:4,5&chxr=0,0,1,100&chbh=1,5,1";
+						
+						#$largeChart 	= "http://chart.apis.google.com/chart?chs=325x48&cht=bhs&chd=t0:-1,{$lowBoundA},{$lowBoundB},-1|-1,{$meanA},{$meanB},-1|-1,{$meanA},{$meanB},-1|-1,{$upperBoundA},{$upperBoundB},-1|-1,{$meanA},{$meanB},-1&chm=F,808080,0,1:4,5&chxr=0,0,1,100&chbh=1,5,1";
+						
+						#$html .="<td style=\"text-align:center;\"><img src=\"$chartUrl\" name=\"ci_chart\">";
+						$html .="</td>";
+					}
 					else {
 						#set the individual counts
 						foreach($datasets as $dataset) {	
@@ -195,151 +247,99 @@ class MatrixHelper extends AppHelper {
 	
 
 	function printFlippedTable($datasets,$counts,$option,$mode) {
-//		if($option == METASTATS) {	
-					#generate table heading
-//			$html = "<table cellpadding=\"0px\" cellspacing=\"0\", id=\"myTable\" class=\"tablesorter comparison-results-table\"><thead> 	
-//						<tr>	
-//							<th  style=\"text-align:left;font-weight:bold; width:200px;\">Dataset</th>";
-//			
-//			foreach($counts as $category => $row) {	
-//
-//				$html .= "<th style=\"padding-right:5px; \">{$row['name']}</th>";	
-//							
-//			}
-//			$html .= '</tr></thead><tbody> ';
-//			
-//			foreach($datasets as $dataset) {	
-//				$html .= "<tr style=\"text-align:left;\"><td style=\"text-align:left;font-weight:bold;width:18%;\">Mean ($dataset)</td>";				
-//				foreach($counts as $category => $row) {	
-//					$html .= "<td style=\"text-align:right;\">{$row[$dataset]['mean']}</td>";
-//				}
-//				$html .= '</tr>';				
-//				$html .= "<tr style=\"text-align:left;\"><td  style=\"text-align:left;font-weight:bold;\">Variance ($dataset)</td>";				
-//				foreach($counts as $category => $row) {	
-//					$html .= "<td style=\"text-align:right;\">{$row[$dataset]['variance']}</td>";
-//				}
-//				$html .= '</tr>';		
-//				$html .= "<tr style=\"text-align:left;\"><td  style=\"text-align:left;font-weight:bold;\">SE ($dataset)</td>";		
-//				foreach($counts as $category => $row) {	
-//					$html .= "<td style=\"text-align:right;\">{$row[$dataset]['se']}</td>";
-//				}					
-//				$html .= '</tr>';	
-//			}
-//		
-//			
-//			$html .= "<tr style=\"text-align:left;\"><td  style=\"text-align:left;font-weight:bold;\">Mean Diff.</td>";		
-//			foreach($counts as $category => $row) {	
-//				$meanDiff = abs($row[$datasets[0]]['mean'] - $row[$datasets[1]]['mean']);
-//				$html .= "<td style=\"text-align:right;\">$meanDiff</td>";
-//			}					
-//			$html .= '</tr>';				
-//			$html .= "<tr style=\"text-align:left;\"><td  style=\"text-align:left;font-weight:bold;\">p-value</td>";		
-//			foreach($counts as $category => $row) {	
-//				$meanDiff = abs($row[$datasets[0]]['mean'] - $row[$datasets[1]]['mean']);
-//				$html .= "<td style=\"text-align:right;\">{$row['pvalue']}</td>";
-//			}					
-//			$html .= '</tr>';				
-//			$html .= "<tr style=\"text-align:left;\"><td  style=\"text-align:left;font-weight:bold;\">q-value</td>";		
-//			foreach($counts as $category => $row) {	
-//				$meanDiff = abs($row[$datasets[0]]['mean'] - $row[$datasets[1]]['mean']);
-//				$html .= "<td style=\"text-align:right;\">{$row['qvalue']}</td>";
-//			}					
-//			$html .= '</tr>';					
-//		}
-//		else {				
-			#generate table heading
-			$html = "<table cellpadding=\"0px\" cellspacing=\"0\", id=\"myTable\" class=\"tablesorter comparison-results-table\"><thead> 	
-						<tr>	
-							<th>Dataset</th>";
-			
-			foreach($counts as $category => $row) {	
-				
-				
-				if(!empty($row['name'])  && $row['sum'] > 0 ) {
-					$html .= "<th style=\"padding-right:5px; \">{$row['name']}</th>";	
-				}				
-			}
-			
-			$html .= '</tr></thead><tbody> ';
 	
-			#add total column of absolute counts
-			if($option == ABSOLUTE_COUNTS) {	
+		#generate table heading
+		$html = "<table cellpadding=\"0px\" cellspacing=\"0\", id=\"myTable\" class=\"tablesorter comparison-results-table\"><thead> 	
+					<tr>	
+						<th>Dataset</th>";
+		
+		foreach($counts as $category => $row) {	
+			
+			
+			if(!empty($row['name'])  && $row['sum'] > 0 ) {
+				$html .= "<th style=\"padding-right:5px; \">{$row['name']}</th>";	
+			}				
+		}
+		
+		$html .= '</tr></thead><tbody> ';
+
+		#add total column of absolute counts
+		if($option == ABSOLUTE_COUNTS) {	
+			array_push($datasets,'Total')	;
+		}
+
+		#add p-value and adj. p-value if user has selected a test
+		if($option == CHISQUARE || $option == FISHER) {	
 				array_push($datasets,'Total')	;
-			}
-	
-			#add p-value and adj. p-value if user has selected a test
-			if($option == CHISQUARE || $option == FISHER) {	
-					array_push($datasets,'Total')	;
-					array_push($datasets,'P-Value')	;
-					array_push($datasets,'P-Value (Bonf. Corr.)')	;
+				array_push($datasets,'P-Value')	;
+				array_push($datasets,'P-Value (Bonf. Corr.)')	;
+		}
+		
+		#loop through each dataset [dimension 1]	
+		foreach($datasets as $dataset) {		
+				
+			$rowValue = '';
+								
+			switch ($mode) {
+				case 'taxonomy':
+					$rowValue = "{$row['name']} (taxid:$category)";
+					break;
+				case 'commonNames':
+					$rowValue = $row['name'];
+					break;
+				case 'clusters':
+					$rowValue = $row['name'];
+					break;		
+				case 'pathways':
+					$rowValue = "{$row['name']} (map$category)";
+					break;							
+				case 'environmentalLibraries':
+					$rowValue = $row['name'];
+					break;										
+				default:
+					$rowValue = "{$row['name']} ($category)";
+					break;
 			}
 			
-			#loop through each dataset [dimension 1]	
-			foreach($datasets as $dataset) {		
-					
-				$rowValue = '';
-									
-				switch ($mode) {
-					case 'taxonomy':
-						$rowValue = "{$row['name']} (taxid:$category)";
-						break;
-					case 'commonNames':
-						$rowValue = $row['name'];
-						break;
-					case 'clusters':
-						$rowValue = $row['name'];
-						break;		
-					case 'pathways':
-						$rowValue = "{$row['name']} (map$category)";
-						break;							
-					case 'environmentalLibraries':
-						$rowValue = $row['name'];
-						break;										
-					default:
-						$rowValue = "{$row['name']} ($category)";
-						break;
-				}
+			//set font weight to bold for total 
+			if($dataset === 'Total') {
+				$html .= "<tr style=\"text-align:left;font-weight:bold;\"><td >$dataset</td>";
+			}
+			else {
+				$html .= "<tr style=\"text-align:left;\"><td>$dataset</td>";				
+			}
+			
+			#set the individual counts
+			foreach($counts as $category => $row) {	
+				#exclude unclassified
+				if($row['sum'] > 0) { 
+					if($dataset==='P-Value') {
+						$count = $row['pvalue'];	
+					}
+					elseif($dataset==='P-Value (Bonf. Corr.)') {
+						$adjPValue= $row['pvalue'] * count($counts);
 				
-				//set font weight to bold for total 
-				if($dataset === 'Total') {
-					$html .= "<tr style=\"text-align:left;font-weight:bold;\"><td >$dataset</td>";
-				}
-				else {
-					$html .= "<tr style=\"text-align:left;\"><td>$dataset</td>";				
-				}
-				
-				#set the individual counts
-				foreach($counts as $category => $row) {	
-					#exclude unclassified
-					if($row['sum'] > 0) { 
-						if($dataset==='P-Value') {
-							$count = $row['pvalue'];	
+						if($adjPValue>1) {
+							$adjPValue=1;
 						}
-						elseif($dataset==='P-Value (Bonf. Corr.)') {
-							$adjPValue= $row['pvalue'] * count($counts);
-					
-							if($adjPValue>1) {
-								$adjPValue=1;
-							}
-							$count = $adjPValue;
-						}
-						elseif($dataset==='Total') {
-							$count  = $row['sum'];
-							
-						}
-						else {
-							$count = $row[$dataset];		
-						}	
-						$html .= "<td style=\"text-align:right;\">$count</td>";
-					}													
-				}
+						$count = $adjPValue;
+					}
+					elseif($dataset==='Total') {
+						$count  = $row['sum'];
 						
-				$html .= '</tr>';		
+					}
+					else {
+						$count = $row[$dataset];		
+					}	
+					$html .= "<td style=\"text-align:right;\">$count</td>";
+				}													
 			}
 					
-			
-			$html .= '<tbody></table>';
-		//}
+			$html .= '</tr>';		
+		}
+				
+		
+		$html .= '<tbody></table>';
 		
 		return $html;
 	}	

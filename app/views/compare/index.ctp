@@ -54,6 +54,7 @@ $option 	= $session->read('option');
 $filter 	= $session->read('filter');
 ?>
 
+<div id="compare">
 <ul id="breadcrumb">
  	<li><a href="/metarep/dashboard/index" title="Dashboard"><img src="/metarep/img/home.png" alt="Dashboard" class="home" /></a></li>
     <li><?php echo $html->link('List Projects', "/projects/index");?></li>
@@ -73,8 +74,7 @@ $filter 	= $session->read('filter');
     <select id="selectedDatasets" class="multiselect" multiple="multiple" name="data[selectedDatasets][]">
       
 	<?php 
-		foreach ($allDatasets as $id =>$name) {		
-			
+		foreach ($allDatasets as $id =>$name) {					
 				if(count($selectedDatasets)>0 && in_array($id,$selectedDatasets)){
 				 	echo("<option value=\"{$id}\" selected=\"selected\">{$name}</option>");
 				}
@@ -83,9 +83,26 @@ $filter 	= $session->read('filter');
 				}
 		}
 	?>      
-	
-      </select>      
+	</select>      
 </fieldset>
+
+
+
+<div class="compare-radio-box"> 
+	<label for="no">project datasets&nbsp;<input type="radio" name="project-datasets" id="CompareSelection.project" VALUE="all datasets" <?php if($mode) {echo 'CHECKED';} ?> /></label>
+	<label for="yes">all datasets&nbsp;<input type="radio" name="project-datasets" id="CompareSelection.all" VALUE="project datasets"    <?php if(!$mode) {echo 'CHECKED';} ?>/></label>
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+new Form.Element.EventObserver('CompareSelection.project', function(element, value) {new Ajax.Updater('compare','/metarep/compare/index/<?php echo $dataset ?>/1', {asynchronous:true, evalScripts:true, onComplete:function(request, json) {Element.hide('tab-panel');Effect.Appear('tab-panel',{ duration: 1.5 }); Element.hide('spinner');}, onLoading:function(request) {Element.show('spinner');}, parameters:Form.serialize('CompareAddForm'), requestHeaders:['X-Update', 'compare']})})
+//]]>
+</script>
+<script type="text/javascript">
+//<![CDATA[
+new Form.Element.EventObserver('CompareSelection.all', function(element, value) {new Ajax.Updater('compare','/metarep/compare/index/<?php echo $dataset ?>/0', {asynchronous:true, evalScripts:true, onComplete:function(request, json) {Element.hide('tab-panel');Effect.Appear('tab-panel',{ duration: 1.5 }); Element.hide('spinner');}, onLoading:function(request) {Element.show('spinner');}, parameters:Form.serialize('CompareAddForm'), requestHeaders:['X-Update', 'compare']})})
+//]]>
+</script>
 
 <fieldset class="comparator-query-panel">
 	<legend>Filter Datasets</legend>
@@ -105,24 +122,25 @@ $filter 	= $session->read('filter');
 						array('options' => 	
 							array(	'Summary' => array( 
 												1 =>'Absolute Counts',
-												2=>'Relative Counts',
-												3=>'Heatmap',
+												2 =>'Relative Counts',
+												3 =>'Heatmap Counts',
 												),
 									'Statistical Test' => array( 
 												4 =>'Chi-Square Test of Independence',
-												5=>'METASTATS - non parametric t-test',),
+												5 =>'Wilcoxon Rank Sum Test',
+												6 =>'METASTATS - non parametric t-test',),
 							
 									'Hierarchical Clustering Plot' => array( 
-												6 =>'Complete Linkage Cluster Plot',
-												7=>'Average Linkage Cluster Plot',
-												8=>'Single Linkage Cluster Plot',
-												9=>'Ward\'s Minimum Variance Cluster Plot',
-												10=>'Median Cluster Plot',
-												11=>'McQuitty Cluster Plot',
-												12=>'Centroid Cluster Plot'),
+												7 =>'Complete Linkage Cluster Plot',
+												8 =>'Average Linkage Cluster Plot',
+												9 =>'Single Linkage Cluster Plot',
+												10 =>'Ward\'s Minimum Variance Cluster Plot',
+												11 =>'Median Cluster Plot',
+												12 =>'McQuitty Cluster Plot',
+												13 =>'Centroid Cluster Plot'),
 									'Other Plot'=>array(
-												13 => 'Multidimensional scaling (MDS) Plot',
-												14 =>'HeatMap Plot',),			
+												14 => 'Multidimensional Scaling Plot',
+												15 =>'HeatMap Plot',),			
 							),
 							'label' => false,'selected' => $option,'div'=>'comparator-select-option')
 						);
@@ -204,3 +222,4 @@ function changeUrl() {
 	  jQuery("#tabs").tabs({ spinner: '<img src="/metarep/img/ajax.gif\"/>' });
 	});
 </script>
+</div>

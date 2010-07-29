@@ -140,7 +140,7 @@
 	       	?>	       					
 		<ul id="menu">			
 			<li><?php echo $html->link(__('Quick Navigation', true), array('controller'=> 'menus', 'action'=>'quick')); ?></li>
-			
+			<li><?php echo $html->link(__('Search', true), array('controller'=> 'search', 'action'=>'all')); ?></li>
 			<? if (	$userGroup === ADMIN_USER_GROUP):?>
 				<li><?php echo $html->link(__('New Project', true), array('controller'=> 'projects', 'action'=>'add')); ?></li>
 			<?endif;?>			
@@ -149,7 +149,7 @@
 			<li><?php echo $html->link(__('List Populations', true), array('controller'=> 'populations', 'action'=>'index')); ?> </li>
 				<li><?php if(JCVI_INSTALLATION) {echo $html->link(__('Pipeline Log', true), array('controller'=> 'logs', 'action'=>'index'));} ?> </li>
 			<?endif;?>		
-			<li><?php echo $html->link(__('Dashboard', true), array('controller'=> 'dashboard')); ?></li>
+			<li><?php if($userGroup != GUEST_USER_GROUP) {echo $html->link(__('Dashboard', true), array('controller'=> 'dashboard'));} ?></li>
 			<li><?php echo $html->link(__('Log Out', true), array('controller'=> 'users', 'action'=>'logout')); ?> </li>
 		</ul>	
 		<?endif;?>		

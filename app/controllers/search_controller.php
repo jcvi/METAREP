@@ -29,16 +29,18 @@
 **/
 
 #increase php dowload limits on space and time
-ini_set('memory_limit','256M');
+ini_set('memory_limit','556M');
 ini_set('max_execution_time','3000');
 
+define('LUCENE_QUERY_EXCEPTION','Lucene Query Syntax Exception. Please correct your query and try again.');
+
 class SearchController extends AppController {
-	
+
 	var $name 			= 'Search';
 	var $helpers 		= array('LuceneResultPaginator','Facet','Tree','Ajax','Dialog');	
 	var $uses 			= array('Project','Population','Library');	
 	var $components 	= array('Session','RequestHandler','Solr','Format');
-	var $searchFields 	= array(1 => 'Combination of Fields',
+	var $searchFields 	= array(1 => 'Lucene Query',
 								'Core Fields' => array( 
 											'peptide_id' =>'Peptide ID',										
 											'com_name_txt' =>'Common Name',
@@ -58,10 +60,15 @@ class SearchController extends AppController {
 											'blast_pid'=>'Min. Percent Identity [between 0 and 1]',
 											'blast_cov' =>'Min. Percent Coverage [between 0 and 1]',
 											),);
+											
+	var $luceneFields = array('peptide_id','com_name_txt','com_name_src','go_id','go_tree',
+							  'go_src','ec_id','ec_src','hmm_id','library_id','blast_species',
+							  'blast_tree','blast_evalue_exp','blast_pid','blast_cov','apis_tree',
+							  'cluster_id','filter');
 	
 	//this function lets us search the lucene index, by default it returns the first page of all results (*|*)
 	function index($dataset='CBAYVIR',$page=1,$sessionQueryId=null) {
-				
+			
 		#add otpional datatypes				
 		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
 				
@@ -78,8 +85,7 @@ class SearchController extends AppController {
 			if($optionalDatatypes['filter']) {
 					$optionalFields['filter']= 'Filter';
 			}	
-			$this->searchFields['Optional Fields'] = $optionalFields;
-						
+			$this->searchFields['Optional Fields'] = $optionalFields;						
 		}		
 		
 		$this->Session->write('searchFields',$this->searchFields);
@@ -87,60 +93,21 @@ class SearchController extends AppController {
 		//for paging use existing query session
 		if($sessionQueryId) {
 			if($this->Session->valid()) {
-				$query = $this->Session->read($sessionQueryId);
+				$query = $this->Session->read($sessionQueryId);				
 			}
 			else {
 				$this->Session->setFlash("Your search session has expired. Please reenter your query.");
 				$this->redirect(array('controller'=>'search','action' => 'index', $dataset));	
 			}		
 		}
+		
 		//otherwise create query session
-		else {
-			
-			//if user has entered a query other than the default query *:*
-			if(!empty($this->data['Search']['query']) && $this->data['Search']['query'] !='*:*') {	
-				//init result page			
-				$page  = 1;
-				
-				//get query and field
-				$query = $this->data['Search']['query'];
-				$field = $this->data['Search']['field'];
-				
-				$fieldCount = substr_count($query, ':');
-				
-				if($fieldCount > 1) {					
-					$this->Session->write('searchField',1);
-				}
-				else {
-					//if query does not have the same field prefix
-					if(!preg_match("/^$field\:/",$query)) {					
-						$queryParts = explode(":",$query);		
-													
-						if(preg_match("/{[0-9]* TO \*}/",$query)) {
-							$rangeParts = explode(" TO",$queryParts[count($queryParts)-1]);	
-							$minRange = str_replace('{','',$rangeParts[0]);
-							#debug($minRange);	
-							$queryParts[count($queryParts)-1] = $minRange;
-						}
-						
-						if($field === 'blast_evalue_exp' || $field === 'blast_pid' ||  $field === 'blast_cov') {
-								$query = '{'.$queryParts[count($queryParts)-1].' TO *}'; 
-						}
-						else {
-							$query = $queryParts[count($queryParts)-1];
-						}	
-						
-						$query = $field.":".$query;		
-						
-						$this->Session->write('searchField',$field);
-					}
-				}
-			}			
-			//if user has not entered a query
-			else {			
-				$query = "*:*";
-				$this->Session->write('searchField','com_name_txt');
-			}
+		else {		
+			//read fields from POST form and generate and store 
+			//lucene query and search field in the session variable
+			$query = $this->data['Search']['query'];
+			$field = $this->data['Search']['field'];			
+			$query = $this->generateLuceneQuery($query,$field); 	
 			$sessionQueryId = 'query_'.time();
 			$this->Session->write($sessionQueryId,$query);
 		}
@@ -154,18 +121,20 @@ class SearchController extends AppController {
 						"facet.limit" => NUM_TOP_FACET_COUNTS);
 
 		#handle exceptions
+		$numHits= 0;
+		$facets = array();
+		$hits 	= array();
+		
 		try{
 			$result = $this->Solr->search($dataset,$query, ($page-1)*NUM_SEARCH_RESULTS,NUM_SEARCH_RESULTS,$solrArguments,true);	
+			$numHits= (int) $result->response->numFound;
+			$facets = $result->facet_counts;
+			$hits 	= $result->response->docs;
 		}
-		catch (Exception $e) {			
-			$this->Session->setFlash("METAREP Lucene Query Exception. Please correct your query and try again.");
-			$this->redirect(array('controller'=>'search','action' => 'index', $dataset));
+		catch (Exception $e) {
+			$this->set('exception',LUCENE_QUERY_EXCEPTION);
 		}
-		
-		$numHits= (int) $result->response->numFound;
-		$facets = $result->facet_counts;
-		$hits 	= $result->response->docs;
-			
+				
 		//store facets for download
 		$this->Session->write('facets',$facets);
 		
@@ -177,20 +146,143 @@ class SearchController extends AppController {
 		$this->set('numHits',$numHits);
 		$this->set('facets',$facets);
 		$this->set('sessionQueryId',$sessionQueryId);
-		$this->set('page',$page);
-		
+		$this->set('page',$page);				
 	}
+	
+	/**
+	 * Search all datasets
+	 * 
+	 * @param String $query Lucene query string
+	 * @return void
+	 * @access public
+	 */
+	public function all($query = "*:*") {
+				
+		//returns all datasets the current user has access to
+		$datasets  = $this->Project->findUserDatasets(LIBRARY_DATASETS);
+		$totalHits = null;
+		$facets = array('habitat'=>array(),'location'=>array(),'filter'=>array(),'project'=>array(),'depth'=>array());
+		
+		//if a query string has been passed in as a variable
+		if($query != "*:*") {
+			$this->Session->write('searchField',1);		
+		}
+		//read fields from POST form and generate and store 
+		//lucene query and search field in the session variable		
+		else {
+			$query = $this->data['Search']['query'];
+			$field = $this->data['Search']['field'];			
+			$query = $this->generateLuceneQuery($query,$field); 	
+		}
+					
+		$totalHits = 0;
+		
+		foreach($datasets as &$dataset) {				
+			$numHits = 0;
+			
+			//get number of hits
+			try {
+				$numHits = $this->Solr->count($dataset['name'],$query);
+			}
+			catch (Exception $e) {				
+				$this->set('exception',LUCENE_QUERY_EXCEPTION);
+				break;			
+			}
+			
+			$totalHits += $numHits;
+			$dataset['hits']  = $numHits;
+			
+			//get number of overall counts
+			if($query === '*:*') {
+				$counts = $numHits;
+			}
+			else {
+				$counts = $this->count($dataset['name']);
+			}
+			
+			$dataset['counts'] = $counts;
+			
+			if($numHits > 0 ) {
+				$libraryMetadata = $this->Library->find('all', array('fields'=>array('sample_habitat','sample_filter','sample_longitude','sample_latitude','sample_depth'),'conditions' => array('Library.name' => $dataset['name'])));
+				$habitat = $libraryMetadata[0]['Library']['sample_habitat'];
+				$filter = $libraryMetadata[0]['Library']['sample_filter'];
+				$depth = $libraryMetadata[0]['Library']['sample_depth'];
+				$location = trim($libraryMetadata[0]['Library']['sample_latitude']." ".$libraryMetadata[0]['Library']['sample_longitude']);
+				
+				if(empty($habitat)) {
+					$habitat = 'unassigned';
+				}
+				if(empty($location)) {
+					$location = 'unassigned';
+				}	
+				if(empty($filter)) {
+					$filter = 'unassigned';
+				}	
+				if(empty($depth)) {
+					$depth = 'unassigned';
+				}				
+				if(empty($dataset['project'])) {
+					$project = 'unassigned';
+				}	
+				else {
+					$project = $dataset['project'];
+				}
+																					
+				if(array_key_exists($habitat,$facets['habitat'])) {
+					$facets['habitat'][$habitat] += $numHits;
+				} 
+				else {
+					$facets['habitat'][$habitat] =  $numHits;
+				}
+				if(array_key_exists($location,$facets['location'])) {
+					$facets['location'][$location] +=  $numHits;
+				} 
+				else {
+					$facets['location'][$location] =  $numHits;
+				}
+				if(array_key_exists($depth,$facets['depth'])) {
+					$facets['depth'][$depth] +=  $numHits;
+				} 
+				else {
+					$facets['depth'][$depth] =  $numHits;
+				}				
+				if(array_key_exists($filter,$facets['filter'])) {
+					$facets['filter'][$filter] +=  $numHits;
+				} 
+				else {
+					$facets['filter'][$filter] =  $numHits;
+				}		
+				if(array_key_exists($project,$facets['project'])) {
+					$facets['project'][$project] +=  $numHits;
+				} 
+				else {
+					$facets['project'][$project] =  $numHits;
+				}																	
+			}
+				
+			$dataset['perc'] = round(($dataset['hits'] /$dataset['counts'])*100,2);
+		}	
+	
+		if($numHits > 0) {
+			foreach($facets as $key => $value){
+				arsort($facets[$key]);
+				$facets[$key] = array_slice($facets[$key],0,10,true);
+			}
 
-//	public function all($query ="*:*") {
-//		$results = array();
-//				
-//		$datasets = $this->Project->findUserDatasets();
-//		debug($datasets);
-//		die();
-//		foreach($datasets as $dataset) {
-//			$this->Solr->count($query);
-//		}	
-//	}
+			//sort results by absolute counts
+			usort($datasets, array('SearchController','sortResultsByCounts'));			
+		}
+	
+		$this->Session->write('searchResults',$datasets);
+		$this->Session->write('searchFields',$this->searchFields);
+		$this->Session->write('query',$query);
+		$this->Session->write('facets',$facets);
+		$this->Session->write('numHits',$totalHits);
+		$this->Session->write('numDatasets',count($datasets));
+	}
+	
+	
+	private function sortResultsByCounts($a, $b) { return strnatcmp($b['hits'], $a['hits']); }
 	
 	public function count($dataset) {
 		try {
@@ -219,6 +311,27 @@ class SearchController extends AppController {
         header("Content-Disposition: attachment;filename=$fileName");
        
         echo $content;
+	}
+	
+	public function downloadMetaInformationFacets() {
+		$this->autoRender=false; 
+		
+		//read session variables
+		$numHits 	= $this->Session->read('numHits');
+		$query 		= $this->Session->read('query');
+		$numDatasets= $this->Session->read('numDatasets');
+
+		#get facet data from session
+		$facets = $this->Session->read('facets');
+
+		$content=$this->Format->facetMetaInformationListToDownloadString('Search Results - Top 10 Metainformation Categories',$facets,$query,$numHits,$numDatasets);
+		
+		$fileName = "jcvi_metagenomics_report_".time().'.txt';
+		
+        header("Content-type: text/plain"); 
+        header("Content-Disposition: attachment;filename=$fileName");
+       
+        echo $content;		
 	}
 	
 	public function dowloadData($dataset,$numHits,$sessionQueryId) {
@@ -264,6 +377,82 @@ class SearchController extends AppController {
         header('Content-type: text/plain');
         header("Content-disposition: attachment; filename=$fileName");		
 		readfile($fileLocation);	
+	}
+	
+	/**
+	 * Generates Lucene query basede on a search term and a 
+	 * selected field (search field drop down)
+	 * 
+	 * @param String $query entered search term
+	 * @param String $field selected field 
+
+	 * @return String lucene query (<field>:<term>)
+	 * @access private
+	 */	
+	private function generateLuceneQuery($query,$field) {
+		
+		//if a non default query has been supplied
+		if(!empty($query) && $query !='*:*') {	
+			$query = preg_replace('/[gG][oO]\:/i','GO\:',$query);
+					
+			$queryParts = explode(":",$query);		
+			
+			//get rid of lucene specific characters
+			$firstField = preg_replace('/(NOT||AND||\-||\+)/i','',trim($queryParts[0]));
+							
+			//handle default lucene query 
+			if($field == 1 && count($queryParts) == 1) {
+				$query = "com_name_txt:$query";
+			}
+			//handle non-Lucene queries
+			else if(!in_array($firstField,$this->luceneFields) && $field != 1) {
+				
+				//translate selected field and query into a lucene query
+				if($field === 'blast_evalue_exp' || $field === 'blast_pid' ||  $field === 'blast_cov') {
+							$query = '{'.$queryParts[count($queryParts)-1].' TO *}'; 
+				}
+				else if($field === 'go_tree') {
+					$query = ltrim(str_replace('GO\:','',$query),'0');
+				}					
+				$query = "$field:$query";		
+			}
+
+			//set search field to Lucene Query
+			$this->Session->write('searchField',1);		
+		}
+		//set default query
+		else {
+			//set search field to Lucene Query
+			$query = "*:*";
+			$this->Session->write('searchField','com_name_txt');			
+		}
+	
+		return $query;
+	} 
+	
+	/**
+	 * Wrapps around index function and provides access
+	 * to search results by specifying a dataset and query.
+	 * Used for links in the search help dialog.
+	 * 
+	 * @param String $dataset the dataset to search in
+	 * @param String $query lucene query to use
+
+	 * @return void
+	 * @access public
+	 */		
+	public function link($action,$query,$dataset=null) {
+		$query = str_replace('@',':',$query);	
+		if($action === 'index') {
+			$this->Session->write('searchField',1);					
+			$sessionQueryId = 'query_'.time();
+			$this->Session->write($sessionQueryId,$query);			
+			$this->index($dataset,1,$sessionQueryId);
+		}
+		else if($action === 'all') {
+			$this->all($query);
+		}		
+		$this->render($action);
 	}
 }
 ?>

@@ -32,7 +32,7 @@
 	<h2><?php __('Dash Board')?></h2>
 	<div class="dash-board-main-panel">
 	<fieldset>
-	<legend >JCVI Metagenomics Reports (v. 1.0.1 beta)</legend>
+	<legend >JCVI Metagenomics Reports (v. 1.1.0 beta)</legend>
 	<div class="dash-board-abstract">	
 		<p>JCVI Metagenomics Reports (METAREP) is a new <strong>open source</strong> tool for <strong>high-performance</strong> comparative metagenomics. 
 		It provides a suite of web based tools to help scientists to <strong>view, query, browse</strong> and <strong>compare</strong> metagenomics annotation data
@@ -47,7 +47,22 @@
 		For each of these features, METAREP provides download options to <strong>export
 		tab delimited files</strong> for downstream analysis. The web site is
 		optimized to be <strong>user friendly and fast</strong>.</p>
-				
+		<BR><p> 
+		<table  style="border-style:none !important;"><tr><td style="text-align:center">
+			<h6>Download Flyer</h6>
+				<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Download Flyer')), '/files/METAREP-flyer.pdf',array('escape' => false)));?>	
+			</td >
+			<td style="text-align:center">
+			<h6>Download Manual</h6>
+			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Download Manual')),'/files/METAREP-manual-v1.1.0.pdf',array('escape' => false)));?>	
+			</td>	
+			<td style="text-align:center; border-right:none">
+			<h6>Open Source</h6>
+			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Open Source')), 'http://github.com/jcvi/METAREP',array('escape' => false)));?>	
+			</td>	
+		</tr>
+		</table>
+		</p>			
 	</div>
 	</fieldset>	
 	
@@ -91,22 +106,17 @@
 	echo('<p>');
 	echo $html->link("Forgot password?","/users/forgotPassword");
 	echo('</p>');
-	
-	echo $html->link("Register","/users/register",array('class'=>'button')); 
+	echo('<p>');
+	echo $html->link("REGISTER","/users/register",array('class'=>'button')); 
+	echo $html->link("TRY IT","/users/guestLogin",array('class'=>'button')); 
+	echo('</p>');
 	
 	?>
 </fieldset>
 </div>
 
-<!--<div class="dash-board-links-panel" > 
-<fieldset >
-		<legend >Links</legend>
-		testme
-		<?php #echo $html->div('download', $html->link($html->image("source.png",array('width'=>'35px','title'=>'test')), 'http://github.com/jcvi/METAREP',array('escape' => false))); ?> Downlod Source
-</fieldset>		
-</div>
 
---><?php if (!empty($news)):?>
+<?php if (!empty($news)):?>
 <div class="dash-board-news-panel" > 
 	<fieldset >
 		<legend >News</legend>

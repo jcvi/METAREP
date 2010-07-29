@@ -206,7 +206,27 @@ class UsersController extends AppController {
 			$this->set(compact('projectId','projectName','users','projectUsers'));			
 		}
 	}
-    
+    function guestLogin(){
+    	$guestUser = array('username'=>'guest',
+    					   'password' => 'guest',
+    					   'remember' => 0);
+    	
+    	$user = Authsome::login($guestUser);
+
+    	if (!$user) {				
+				$this->Session->setFlash('Unknown user or wrong password');
+				$this->redirect('/dashboard');
+		}
+		
+		$this->Session->write("User",$user);
+		$this->Session->write("User.id",$user["User"]["id"]);
+		$this->Session->write("UserGroup.id",$user["UserGroup"]["id"]);
+		$this->Session->write("UserGroup.name",$user["UserGroup"]["name"]);
+
+		$this->redirect('/projects/index');		    	  	
+    }
+	
+	
 	function login() {
 		#account activation
 		if (isset($_GET["ident"])) {
@@ -228,7 +248,7 @@ class UsersController extends AppController {
 			if (empty($this->data)) {
 				return;
 			}
-			
+		
 			$user = Authsome::login($this->data['User']);
 			
 			//if authentification failed
@@ -252,8 +272,7 @@ class UsersController extends AppController {
 		}
     }
 
-	function forgotPassword() {
-		
+	function forgotPassword() {		
 		if ($this->data) {
 			$email = $this->data["User"]["email"];
 			if ($this->User->forgotPassword($email)) {

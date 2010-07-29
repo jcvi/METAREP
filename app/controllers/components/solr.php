@@ -297,7 +297,7 @@ class SolrComponent extends BaseModelComponent {
 		$pathwayUrl = "http://www.genome.jp/kegg-bin/show_pathway?ec".str_pad($pathway['Pathway']['kegg_id'],5,0,STR_PAD_LEFT);	
 		
 		$facetQueries = $this->Pathway->getEnzymeFacetQueries($pathwayId,$level,$ecId);
-		
+				
 		$facetQueryChunks = array_chunk($facetQueries,400);
 		
 		foreach($facetQueryChunks as $facetQueryChunk) {
@@ -305,9 +305,7 @@ class SolrComponent extends BaseModelComponent {
 			$solrArguments = array(	"facet" => "true",
 				'facet.mincount' => 1,
 				'facet.query' => $facetQueryChunk,
-				"facet.limit" => -1);	
-			
-			
+				"facet.limit" => -1);				
 			try	{			
 				$result = $this->search($dataset,$filter,0,0,$solrArguments);			
 			}
@@ -321,7 +319,7 @@ class SolrComponent extends BaseModelComponent {
 				$this->redirect('/projects/index');
 			}			
 			$facetsQueryResults = $result->facet_counts->facet_queries;			
-		
+			
 			foreach($facetsQueryResults as $facetQuery =>$count) {
 				
 				if($count > 0) {
@@ -347,12 +345,21 @@ class SolrComponent extends BaseModelComponent {
 	}	
 	
 	/**
-	 * Pathway helper function
-	 *
-	 */	
+	 * Returns array that contains facet counts for several data types.
+	 * 
+	 * 
+	 * @param String $filter Lucene filter query
+	 * @param String $dataset dataset
+	 * @param String $level hierarchical KEGG pathway [level 1-3 or enzyme]
+	 * @param String $nodeId parent pathway node id
+	 * @param String $children parent pathway node id 
+	 * @return void
+	 * @access public
+	 */
 	public function getPathwayFacets($filter,$dataset,$level,$nodeId,$children,$ecId=null) {
 		
 		if($level != 'level 1') {				
+			
 			$facetQueries = $this->Pathway->getEnzymeFacetQueries($nodeId,$level,$ecId);
 						
 			$solrArguments = array(	"facet" => "true",
@@ -475,8 +482,8 @@ class SolrComponent extends BaseModelComponent {
 			$description = 	$result[0]['Library']['description'];
 			
 			if(!empty($description)) {
-				//concatinate to accession
-				$acc = $acc." | ".$libraryDescription[0]['Library']['description'];
+				//concatinate accession with library description
+				$acc = $acc." | ".$description;
 			}
 			
 			$libraryHash[$acc]= $count;		

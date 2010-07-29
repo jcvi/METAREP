@@ -19,6 +19,14 @@
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
 
+define('COMPARE_FORMAT', 0);
+define('SEARCH_FORMAT', 1);
+
+
+define('POPULATION_AND_LIBRARY_DATASETS',0);
+define('LIBRARY_DATASETS',1);
+define('POPULATION_DATASETS',2);
+
 class Project extends AppModel {
 	
 	var $recursive			 = 2;
@@ -206,7 +214,18 @@ class Project extends AppModel {
 		}
 	}
 	
-	public function findUserDatasets($projectId=null) {		
+	/**
+	* Returns associative array with datasets as keys (those for which
+	* the logged in user has permissions and associative information
+	* as values
+	* 
+	* @param int $datasetType 0 all datasets, 1 only libraries, 2 only populations
+	* @param int $projectId restrict returned datasets to a certain project
+	* @return Array associative array with datasets as keys and associative information
+	* as values
+	* @access public
+	*/	
+	public function findUserDatasets($datasetType = POPULATION_AND_LIBRARY_DATASETS,$projectId=null) {		
 		$this->Library->recursive = 2;
 
 		$currentUser	= Authsome::get();
@@ -215,53 +234,120 @@ class Project extends AppModel {
 
 		if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {
 			if(is_null($projectId)) {
-				$results = $this->query("select datasets.name,datasets.description,datasets.project,datasets.type from (SELECT 'population' as type,populations.name as name, populations.description as description, projects.name as project from populations INNER JOIN projects ON(projects.id=populations.project_id) UNION SELECT 'library' as type,libraries.name as name, libraries.description as description,projects.name as project  from libraries INNER JOIN projects ON(projects.id=libraries.project_id))  as datasets ORDER BY datasets.project ASC, datasets.name ASC"); 
+				if($datasetType == POPULATION_AND_LIBRARY_DATASETS) {
+					$query = "select datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from (SELECT 'population' as type,populations.name as name, populations.description as description, projects.name as project,projects.id as project_id from populations INNER JOIN projects ON(projects.id=populations.project_id) UNION SELECT 'library' as type,libraries.name as name, libraries.description as description,projects.name as project,projects.id as project_id from libraries INNER JOIN projects ON(projects.id=libraries.project_id))  as datasets ORDER BY datasets.project ASC, datasets.name ASC";
+				}
+				else if($datasetType == LIBRARY_DATASETS) {
+					$query = "select datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from (SELECT 'library' as type,libraries.name as name, libraries.description as description,projects.name as project,projects.id as project_id from libraries INNER JOIN projects ON(projects.id=libraries.project_id))  as datasets ORDER BY datasets.project ASC, datasets.name ASC";
+				}
+				else if($datasetType == POPULATION_DATASETS) {		
+					$query = "select datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from (SELECT 'population' as type,populations.name as name, populations.description as description, projects.name as project,projects.id as project_id from populations INNER JOIN projects ON(projects.id=populations.project_id)) as datasets ORDER BY datasets.project ASC, datasets.name ASC";					
+				}
 			}
 			else {
-				$results = $this->query("select datasets.name,datasets.description,datasets.project,datasets.type from (SELECT 'population' as type,populations.name as name, populations.description as description, projects.name as project from populations INNER JOIN projects ON(projects.id=populations.project_id) where projects.id={$projectId} UNION SELECT 'library' as type,libraries.name as name, libraries.description as description,projects.name as project  from libraries INNER JOIN projects ON(projects.id=libraries.project_id) where projects.id={$projectId})  as datasets ORDER BY datasets.project ASC, datasets.name ASC"); 
+				if($datasetType == POPULATION_AND_LIBRARY_DATASETS) {
+					$query = "select datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from (SELECT 'population' as type,populations.name as name, populations.description as description, projects.name as project,projects.id as project_id from populations INNER JOIN projects ON(projects.id=populations.project_id) where projects.id={$projectId} UNION SELECT 'library' as type,libraries.name as name, libraries.description as description,projects.name as project,projects.id as project_id from libraries INNER JOIN projects ON(projects.id=libraries.project_id) where projects.id={$projectId})  as datasets ORDER BY datasets.project ASC, datasets.name ASC"; 
+				}
+				else if($datasetType == LIBRARY_DATASETS) {
+					$query = "select datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from (SELECT 'library' as type,libraries.name as name, libraries.description as description,projects.name as project,projects.id as project_id from libraries INNER JOIN projects ON(projects.id=libraries.project_id) where projects.id={$projectId})  as datasets ORDER BY datasets.project ASC, datasets.name ASC"; 
+				}	
+				else if($datasetType == POPULATION_DATASETS) {		
+					$query = "select datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from (SELECT 'population' as type,populations.name as name, populations.description as description, projects.name as project,projects.id as project_id from populations INNER JOIN projects ON(projects.id=populations.project_id))  as datasets ORDER BY datasets.project ASC, datasets.name ASC";
+				}	
 			}
 		}
 		else {
 			if(is_null($projectId)) {
-				$results = $this->query("SELECT datasets.name,datasets.description,datasets.project,datasets.type from
-			 	(SELECT populations.name as name, populations.description as description, projects.name as project,'population' as type from populations
-			 	INNER JOIN projects on(projects.id=populations.project_id) LEFT JOIN projects_users on(projects_users.project_id=projects.id)
-			   	where projects.user_id = $currentUserId OR projects_users.user_id = $currentUserId OR projects.is_public=1 UNION
-			    SELECT libraries.name as name, libraries.description as description,projects.name as project,'library' as type from libraries
-			    INNER JOIN projects on(projects.id=libraries.project_id) LEFT JOIN projects_users on(projects_users.project_id=projects.id)
-			    where projects.user_id = $currentUserId OR projects_users.user_id = $currentUserId OR projects.is_public=1) as datasets
-			    ORDER BY datasets.project ASC, datasets.name ASC"); 				
+				if($datasetType == POPULATION_AND_LIBRARY_DATASETS) {
+					$query = "SELECT datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from
+				 	(SELECT populations.name as name, populations.description as description, projects.name as project,projects.id as project_id,'population' as type from populations
+				 	INNER JOIN projects on(projects.id=populations.project_id) LEFT JOIN projects_users on(projects_users.project_id=projects.id)
+				   	where projects.user_id = $currentUserId OR projects_users.user_id = $currentUserId OR projects.is_public=1 UNION
+				    SELECT libraries.name as name, libraries.description as description,projects.name as project,projects.id as project_id,'library' as type from libraries
+				    INNER JOIN projects on(projects.id=libraries.project_id) LEFT JOIN projects_users on(projects_users.project_id=projects.id)
+				    where projects.user_id = $currentUserId OR projects_users.user_id = $currentUserId OR projects.is_public=1) as datasets
+				    ORDER BY datasets.project ASC, datasets.name ASC"; 
+				}
+				else if($datasetType == LIBRARY_DATASETS) {		
+					$query = "SELECT datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from
+				 	(SELECT libraries.name as name, libraries.description as description,projects.name as project,projects.id as project_id,'library' as type from libraries
+				    INNER JOIN projects on(projects.id=libraries.project_id) LEFT JOIN projects_users on(projects_users.project_id=projects.id)
+				    where projects.user_id = $currentUserId OR projects_users.user_id = $currentUserId OR projects.is_public=1) as datasets
+				    ORDER BY datasets.project ASC, datasets.name ASC"; 					
+				}	
+				else if($datasetType == POPULATION_DATASETS) {		
+					$query = "SELECT datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from
+				 	(SELECT populations.name as name, populations.description as description, projects.name as project,projects.id as project_id,'population' as type from populations
+				 	INNER JOIN projects on(projects.id=populations.project_id) LEFT JOIN projects_users on(projects_users.project_id=projects.id)
+				   	where projects.user_id = $currentUserId OR projects_users.user_id = $currentUserId OR projects.is_public=1) as datasets
+				    ORDER BY datasets.project ASC, datasets.name ASC"; 					
+				}	
 			}
 			else {
-				$results = $this->query("SELECT datasets.name,datasets.description,datasets.project,datasets.type from
-			 	(SELECT populations.name as name, populations.description as description, projects.name as project,'population' as type from populations
-			  	INNER JOIN projects on(projects.id=populations.project_id) LEFT JOIN projects_users on(projects_users.project_id=projects.id)
-			   	where projects.id={$projectId} AND (projects.user_id = $currentUserId OR projects_users.user_id = $currentUserId OR projects.is_public=1) UNION
-			    SELECT libraries.name as name, libraries.description as description,projects.name as project,'library' as type from libraries
-			    INNER JOIN projects on(projects.id=libraries.project_id) LEFT JOIN projects_users on(projects_users.project_id=projects.id)
-			    where projects.id={$projectId} AND (projects.user_id = $currentUserId OR projects_users.user_id = $currentUserId OR projects.is_public=1)) as datasets
-			    ORDER BY datasets.project ASC, datasets.name ASC"); 	
+				if($datasetType == POPULATION_AND_LIBRARY_DATASETS) {
+					$query = "SELECT datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from
+				 	(SELECT populations.name as name, populations.description as description, projects.name as project,projects.id as project_id,'population' as type from populations
+				  	INNER JOIN projects on(projects.id=populations.project_id) LEFT JOIN projects_users on(projects_users.project_id=projects.id)
+				   	where projects.id={$projectId} AND (projects.user_id = $currentUserId OR projects_users.user_id = $currentUserId OR projects.is_public=1) UNION
+				    SELECT libraries.name as name, libraries.description as description,projects.name as project,projects.id as project_id,'library' as type from libraries
+				    INNER JOIN projects on(projects.id=libraries.project_id) LEFT JOIN projects_users on(projects_users.project_id=projects.id)
+				    where projects.id={$projectId} AND (projects.user_id = $currentUserId OR projects_users.user_id = $currentUserId OR projects.is_public=1)) as datasets
+				    ORDER BY datasets.project ASC, datasets.name ASC";
+				}
+				else if($datasetType == LIBRARY_DATASETS) {		
+					$query = "SELECT datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from
+				 	(SELECT libraries.name as name, libraries.description as description,projects.name as project,projects.id as project_id,'library' as type from libraries
+				    INNER JOIN projects on(projects.id=libraries.project_id) LEFT JOIN projects_users on(projects_users.project_id=projects.id)
+				    where projects.id={$projectId} AND (projects.user_id = $currentUserId OR projects_users.user_id = $currentUserId OR projects.is_public=1)) as datasets
+				    ORDER BY datasets.project ASC, datasets.name ASC";					
+				}
+				else if($datasetType == POPULATION_DATASETS) {		
+					$query = "SELECT datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from
+				 	(SELECT populations.name as name, populations.description as description, projects.name as project,projects.id as project_id, 'population' as type from populations
+				  	INNER JOIN projects on(projects.id=populations.project_id) LEFT JOIN projects_users on(projects_users.project_id=projects.id)
+				   	where projects.id={$projectId} AND (projects.user_id = $currentUserId OR projects_users.user_id = $currentUserId OR projects.is_public=1)) as datasets
+				    ORDER BY datasets.project ASC, datasets.name ASC";				
+				}				
 			}
 		}
 		
-		foreach($results as $result) {
-			$datasetName 		= $result['datasets']['name'];
-			$datasetDescription = $result['datasets']['description'];
-			$projectName 		= $result['datasets']['project'];			
-			$type				= $result['datasets']['type'];		
-
-			$displayName = "$projectName ($type:$datasetName $datasetDescription)";
-			
-//			if($datasetDescription) {
-//				$displayName .= " ($datasetDescription)";
-//			}
-			
-			$allDatasets[$datasetName]=$displayName;
+		$results = $this->query($query);
+		
+		foreach($results as $result) {	
+			$datasetName = $result['datasets']['name'];
+			$allDatasets[$datasetName]=$result['datasets'];
+		
 		}	
-		
-		
+
 		return $allDatasets;
 	}
 	
+	/**
+	* Returns associative array with datasets as keys (those for which
+	* the logged in user has permissions and a special display string 
+	* formmated for the compare multi-select box 
+	* project (type:library description)
+	* 
+	* @param int $datasetType 0 all datasets, 1 only libraries, 2 only populations
+	* @param int $projectId restrict returned datasets to a certain project
+	* @return Array associative array with datasets as keys and formatted dataset
+	* display strings as values
+	* @access public
+	*/			
+	public function findUserDatasetsCompareFormat($datasetType = POPULATION_AND_LIBRARY_DATASETS,$projectId=null) {
+		$allDatasets = $this->findUserDatasets($datasetType,$projectId);
+		
+		foreach($allDatasets as $allDataset) {
+				if($allDataset['description']) {
+					$displayedDatasetDescription = substr($allDataset['description'], 0, 50)."...";				
+					$displayName = "{$allDataset['project']} ({$allDataset['type']}:{$allDataset['name']} $displayedDatasetDescription)";
+				}
+				else {
+					$displayName = "{$allDataset['project']} ({$allDataset['type']}:{$allDataset['name']})";
+				}
+				$allDatasets[$allDataset['name']] = $displayName;
+		}	
+		return $allDatasets;	
+	}
 }
 ?>

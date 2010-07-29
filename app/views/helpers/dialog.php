@@ -25,7 +25,7 @@ class DialogHelper extends AppHelper {
 
 	var $helpers = array('Html');	
 	
-	function printSearch($divId, $dataset='GOMVIR') {
+	function printSearch($divId, $dataset = null, $action = 'index') {
 		echo("<div id=\"$divId\" title=\"METAREP Lucene Query Syntax\">	
 		<p><p>The search supports fielded data. When performing a search you can either specify a field, or use the default field (com_name).
 		You can search any field by typing the field name followed by a colon \":\" and then the term you are looking for.</p>
@@ -68,17 +68,17 @@ class DialogHelper extends AppHelper {
 		</table>
 		<p>
 		<h5>Examples</h5><BR>
-		<pre class=\"code\">com_name_txt:phage* ". $this->Html->link('test it', array('controller'=>'search',$dataset,'com_name_txt@phage*',1), array('class'=>'_class', 'id'=>'_id'))."</pre>
+		<pre class=\"code\">com_name_txt:phage* ". $this->Html->link('test it', array('controller'=>'search','action'=>'link',$action,'com_name_txt@phage*',$dataset), array('class'=>'_class', 'id'=>'_id'))."</pre>
 		<p>or</p>
-		<pre class=\"code\">ec_id:1.1*" .$this->Html->link('test it', array('controller'=>'search', $dataset, 'ec_id@1.1*',1), array('class'=>'_class', 'id'=>'_id'))."</pre>
+		<pre class=\"code\">ec_id:1.1* " .$this->Html->link('test it', array('controller'=>'search','action'=>'link',$action, 'ec_id@1.1*',$dataset), array('class'=>'_class', 'id'=>'_id'))."</pre>
 		<p>or</p>
-		<pre class=\"code\">blast_species:Chlamydia*". $this->Html->link('test it', array('controller'=>'search',$dataset,'blast_species@Chlamydia*',1), array('class'=>'_class', 'id'=>'_id'))."</pre>
+		<pre class=\"code\">blast_species:Chlamydia* ". $this->Html->link('test it', array('controller'=>'search','action'=>'link',$action,'blast_species@Chlamydia*',$dataset), array('class'=>'_class', 'id'=>'_id'))."</pre>
 		<p>or Blast E-Value exponent >= 50</p>
-		<pre class=\"code\">blast_evalue_exp:{50 TO *}". $this->Html->link('test it', array('controller'=>'search',$dataset, 'blast_evalue_exp@{50 TO *}',1), array('class'=>'_class', 'id'=>'_id'))."</pre>
+		<pre class=\"code\">blast_evalue_exp:{50 TO *} ". $this->Html->link('test it', array('controller'=>'search','action'=>'link',$action, 'blast_evalue_exp@{50 TO *}',$dataset), array('class'=>'_class', 'id'=>'_id'))."</pre>
 		<p>or NCBI taxonomy taxon 2 (Bacteria) </p>
-		<pre class=\"code\">blast_tree:2". $this->Html->link('test it', array('controller'=>'search',$dataset,'blast_tree@2',1), array('class'=>'_class', 'id'=>'_id'))."</pre>
+		<pre class=\"code\">blast_tree:2 ". $this->Html->link('test it', array('controller'=>'search','action'=>'link',$action,'blast_tree@2',$dataset), array('class'=>'_class', 'id'=>'_id'))."</pre>
 		<p>or combinations of several fields</p>
-		<pre class=\"code\">blast_evalue_exp:{50 TO *} AND com_name_txt:\"structural protein\" ". $this->Html->link('test it', array('controller'=>'search',$dataset,"blast_evalue_exp@{50 TO *} AND com_name_txt@\"structural protein\"",1), array('class'=>'_class', 'id'=>'_id'))."</pre>
+		<pre class=\"code\">blast_evalue_exp:{50 TO *} AND com_name_txt:\"structural protein\" ". $this->Html->link('test it', array('controller'=>'search','action'=>'link',$action,"blast_evalue_exp@{50 TO *} AND com_name_txt@\"structural protein\"",$dataset), array('class'=>'_class', 'id'=>'_id'))."</pre>
 		More information can be found 
 		<a href=\"http://lucene.apache.org/java/2_3_2/queryparsersyntax.html\" target=\"blank\">here</a>.</p>
 		</div>");
@@ -114,7 +114,7 @@ class DialogHelper extends AppHelper {
 					<li><strong>blast_species</strong> Blast species.</li>
 					<li><strong>blast_tree</strong> NCBI taxonomy lineage for blast species.</i></li>
 					<li><strong>blast_evalue_exp</strong> Negative Blast E-Value exponent.</li>
-					<li><strong>blast_pid</strong> Blast percent identiy.</li>
+					<li><strong>blast_pid</strong> Blast percent identity.</li>
 					<li><strong>blast_cov</strong> Blast coverage of shortest sequence.</li>
 				</ul>
 				</td><td valign=\"top\">

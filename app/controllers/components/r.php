@@ -23,7 +23,15 @@
 class RComponent extends Object {
 	
 	var $components = array('Session');
-	
+
+	/**
+	 * Executes R PDF plots
+	 * 
+	 * @param array $datasets list of selected datasets
+	 * @param reference $counts matrix containing absolute counts
+	 * @return void
+	 * @access public
+	 */
 	public function writeRPlotMatrix($datasets,&$counts,$option) {
 		
 		$mode = str_replace('ajax','',$this->Session->read('mode'));
@@ -72,8 +80,9 @@ class RComponent extends Object {
 
 		$result = ' ';
 		$id 	= time();
-		$inFile = "jcvi_metagenomics_report_".$id;
-
+		
+		$inFile   = "jcvi_metagenomics_report_".$id;
+		$distFile = "jcvi_metagenomics_report_".$id."_dist";
 
 		foreach($counts as $category => $row) {
 			if($mode === 'Hmms') {
@@ -87,12 +96,11 @@ class RComponent extends Object {
 			
 		$categories = array_keys($counts);
 
-		#loop through each dataset [dimension 1 / column]
-		foreach($datasets as $dataset) {
-				
+		//loop through each dataset [dimension 1 / column]
+		foreach($datasets as $dataset) {	
 			$result .= $dataset." ";
 				
-			#loop through each category [dimension 2 / row]
+			//loop through each category [dimension 2 / row]
 			foreach($categories as $category) {
 				$result .= $counts[$category][$dataset]." ";
 			}
@@ -100,19 +108,31 @@ class RComponent extends Object {
 		}
 
 
-		#write to file
+		//write to file
 		$fh = fopen(METAREP_TMP_DIR."/$inFile", 'w');		#write session variables
 
 		fwrite($fh,$result);
 		fclose($fh);
-		exec(RSCRIPT_PATH." ".METAREP_WEB_ROOT."/scripts/r/plots.r ".METAREP_TMP_DIR."/$inFile \"$plotName ($mode $level)\" $rMethod");
+		
+		exec(RSCRIPT_PATH." ".METAREP_WEB_ROOT."/scripts/r/plots.r ".METAREP_TMP_DIR."/$inFile $option \"$plotName ($mode $level)\" $rMethod"." \"".METAREP_TMP_DIR."/".$distFile."\"");
+		
+		$clusterMatrices = file_get_contents(METAREP_TMP_DIR."/$distFile", 'w');		
+		$this->Session->write('distantMatrices',$clusterMatrices);	
 		$this->Session->write('plotFile',$inFile);
 	}
-	
+
+	/**
+	 * Executes METASTATS - a modified non -parameteric t-test (White et al 2009)
+	 * 
+	 * @param array $datasets list of selected datasets
+	 * @param reference $counts matrix containing absolute counts
+	 * @return Array of counts with test results
+	 * @access public
+	 */	
 	public function writeMetastatsMatrix($datasets,&$counts) {
 
-		$metastatsStartSecondPopulation = $this->Session->read('metastatsStartSecondPopulation');
-		$metastatsPopulations 			= $this->Session->read('metastatsPopulations');
+		$compareStartSecondPopulation 	= $this->Session->read('compareStartSecondPopulation');
+		$comparePopulations 			= $this->Session->read('comparePopulations');
 		$mode				 			= $this->Session->read('mode');
 
 		$matrixContent = "";
@@ -150,7 +170,7 @@ class RComponent extends Object {
 		$metastatsRScriptContent  = "#!".RSCRIPT_PATH."\n";
 		$metastatsRScriptContent .= "source(\"".METAREP_WEB_ROOT."/scripts/r/metastats/detect_DA_features.r\")\n";
 		$metastatsRScriptContent .= "jobj <- load_frequency_matrix(\"".METAREP_TMP_DIR."/$metastatsFrequencyMatrixFile"."\")\n";
-		$metastatsRScriptContent .= "detect_differentially_abundant_features(jobj,$metastatsStartSecondPopulation,\"".METAREP_TMP_DIR."/$metastatsResultsFile"."\",B=".NUM_METASTATS_BOOTSTRAP_PERMUTATIONS.")\n";
+		$metastatsRScriptContent .= "detect_differentially_abundant_features(jobj,$compareStartSecondPopulation,\"".METAREP_TMP_DIR."/$metastatsResultsFile"."\",B=".NUM_METASTATS_BOOTSTRAP_PERMUTATIONS.")\n";
 
 
 		#write metastats r script to file
@@ -171,8 +191,8 @@ class RComponent extends Object {
 		$fh = fopen(METAREP_TMP_DIR."/$metastatsResultsFile", 'r');
 			
 		$newCounts   = array();
-		$populationA = $metastatsPopulations[0];
-		$populationB = $metastatsPopulations[1];
+		$populationA = $comparePopulations[0];
+		$populationB = $comparePopulations[1];
 
 		$categoryCount = count($counts);
 		
@@ -209,7 +229,7 @@ class RComponent extends Object {
 					
 				#sum up library counts for each category to set population totals	
 				for($i=0;$i<count($datasets);$i++) {
-					if($i < ($metastatsStartSecondPopulation-1)) {
+					if($i < ($compareStartSecondPopulation-1)) {
 						$newCounts[$category][$populationA]['total'] += $counts[$category][$datasets[$i]];
 					}
 					else {
@@ -243,13 +263,24 @@ class RComponent extends Object {
 				}
 			}
 		}
-		$this->Session->write('selectedDatasets',$metastatsPopulations);
+		fclose($fh);
+		
+		$this->Session->write('selectedDatasets',$comparePopulations);
 		
 		$counts= $newCounts;
 
 		return;
 	}
-
+	
+	/**
+	 * Transforms counts to R compatible contingency table format string
+	 * 
+	 * @param array $selectedDatasets list of selected datasets
+	 * @param reference $counts count matrix
+	 * @param reference $totalCounts matrix that contains the total count for each dataset
+	 * @return String R compatible contingency table format string
+	 * @access public
+	 */
 	private function countsToContingencyTables($datasets,&$counts,&$totalCounts) {
 
 		$tables = array();
@@ -289,9 +320,9 @@ class RComponent extends Object {
 	 * 
 	 * @param array $selectedDatasets list of selected datasets
 	 * @param reference $counts count matrix
-	 * @param reference $counts total count matrix
+	 * @param reference $totalCounts matrix that contains the total count for each dataset
 	 * @param constant $option defines test to use CHISQUARE/FISHER
-	 * @return void
+	 * @return Array of counts with test results
 	 * @access public
 	 */
 	public function writeContingencyMatrix($selectedDatasets,&$counts,&$totalCounts,$option) {
@@ -346,6 +377,162 @@ class RComponent extends Object {
 				$counts[$category]['pvalue']=$pValue;
 			}
 		}
-	}	
+		fclose($fh);
+	}
+		
+	/**
+	 * Executes non-parametric Wilcoxon Runk Sum Test comparing 
+	 * relative counts of two populations.
+	 * 
+	 * @param array $selectedDatasets list of selected datasets
+	 * @param reference $counts relative counts
+	 * @return Array of counts with test results
+	 * @access public
+	 */	
+	function writeWilcoxonMatrix($selectedDatasets,&$counts) {
+		$categoryCount = count($counts);
+		$compareStartSecondPopulation = $this->Session->read('compareStartSecondPopulation');
+		$comparePopulations 			= $this->Session->read('comparePopulations');
+
+		$populationA = $comparePopulations[0];
+		$populationB = $comparePopulations[1];
+		
+		$id = time();
+		$inFile = "metarep_wilcox.in_".$id.'.txt';
+		$outFile = "metarep_wilcox.out_".$id.'.txt';
+		$fh = fopen(METAREP_TMP_DIR."/$inFile", 'w');		
+			
+		$categoryCounter=1;
+		
+		$ids = array();
+						#execute R code
+		exec(R_PATH." --quiet --vanilla < ".METAREP_TMP_DIR."/$inFile > ".METAREP_TMP_DIR."/$outFile");
+		
+		$newCounts = array();
+		
+		foreach($counts as $category => $row) {
+			
+			//specify default values
+			$newCounts[$category]['sum'] = 0;
+			$newCounts[$category][$populationA]['median'] = 0; 
+			$newCounts[$category][$populationB]['median'] = 0; 
+			$newCounts[$category][$populationA]['mad'] = 0; 
+			$newCounts[$category][$populationB]['mad'] = 0;
+			$newCounts[$category]['pvalue'] =1;
+			$newCounts[$category]['bonf-pvalue'] =1;
+			
+			//specify R commands
+			$ids[$categoryCounter] = $category;
+			$vectorA 	= "wca_c".$categoryCounter."= c(";
+			$vectorB	= "wcb_c".$categoryCounter."= c(";
+			$medianA	= "median(wca_c".$categoryCounter.")\n";
+			$medianB	= "median(wcb_c".$categoryCounter.")\n";
+			$madA		= "mad(wca_c".$categoryCounter.")\n";
+			$madB		= "mad(wcb_c".$categoryCounter.")\n";
+			$testCommand="wilcox.test(wca_c".$categoryCounter.",wcb_c".$categoryCounter.",alternative=\"two.sided\")\$p.value\n";
+			
+			//create vector A string
+			for($i =0;$i < ($compareStartSecondPopulation-1); $i++) {
+				$countCategory = $row[$selectedDatasets[$i]];
+				//if last element
+				if($i == $compareStartSecondPopulation-2) {
+					$vectorA .= "$countCategory)\n";
+				}
+				else {
+					$vectorA .= "$countCategory,";
+				}				
+			}
+			
+			//create vector B string
+			for($i = $compareStartSecondPopulation-1;$i < count($selectedDatasets); $i++) {
+				$countCategory = $row[$selectedDatasets[$i]];
+				//if last element
+				if($i == count($selectedDatasets)-1) {
+					$vectorB .= "$countCategory)\n";
+				}
+				else {
+					$vectorB .= "$countCategory,";
+				}	
+			}
+			
+			//write commands to input file
+			fwrite($fh,$vectorA);
+			fwrite($fh,$vectorB);
+			fwrite($fh,$medianA);
+			fwrite($fh,$medianB);
+			fwrite($fh,$madA);
+			fwrite($fh,$madB);			
+			fwrite($fh,$testCommand);
+			$categoryCounter++;
+		}		
+		fclose($fh);
+		
+		//execute R code
+		exec(R_PATH." --quiet --vanilla < ".METAREP_TMP_DIR."/$inFile > ".METAREP_TMP_DIR."/$outFile");
+				
+		//open result file
+		$fh = fopen(METAREP_TMP_DIR."/$outFile", 'r');
+		
+		$resultCounter=1;
+		
+		//read R results 
+		while (!feof($fh)) {
+				
+			$line = fgets($fh);
+			 
+			if (substr($line,0,6) == '> wcb_') {
+				$resultCounter = 1;				
+				$line =	str_replace('> wcb_c','',$line);
+				$tmp= split("=",$line);
+				$id = $tmp[0];
+				$category = $ids[$id];
+			}
+			else if(substr($line,0,3) == '[1]') {
+				$value =	round(trim(str_replace('[1] ','',$line)),6);
+				
+				if($resultCounter == 1) {
+					$newCounts[$category][$populationA]['median'] = round($value,6);
+				}
+				else if($resultCounter == 2) {
+					$newCounts[$category][$populationB]['median'] = round($value,6);
+				}
+				else if($resultCounter == 3) {
+					$newCounts[$category][$populationA]['mad'] =  round($value,6);
+				}	
+				else if($resultCounter == 4) {
+					$newCounts[$category][$populationB]['mad'] =  round($value,6);
+				}										
+				else if($resultCounter == 5) {					
+					$newCounts[$category]['pvalue'] = $value;
+					$newCounts[$category]['name'] = $counts[$category]['name'];
+					
+					if($newCounts[$category][$populationB]['median'] !=0) {
+						$newCounts[$category]['mratio']	= round($newCounts[$category][$populationA]['median']/$newCounts[$category][$populationB]['median'],3);
+					}
+					else {
+						$newCounts[$category]['mratio']	 =0;
+					}
+					$bonfPValue = round($value*$categoryCount,6);
+					
+					if($bonfPValue > 1) {
+						$bonfPValue = 1;
+					}
+					$newCounts[$category]['bonf-pvalue'] = $bonfPValue;
+					
+					if($newCounts[$category][$populationA]['median'] == 0 || $newCounts[$category][$populationB]['median'] == 0) {
+						unset($newCounts[$category]);	
+					}
+				}	
+				$resultCounter++;						
+			}
+		}
+		fclose($fh);
+		
+		$this->Session->write('selectedDatasets',$comparePopulations);
+		
+		$counts = $newCounts;
+		
+		return;
+	} 
 }
 ?>
