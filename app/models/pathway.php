@@ -64,5 +64,10 @@ class Pathway extends AppModel {
 		
 		return $facetQueries;
 	}	
+	
+	public function getEnzymeQueryByKeggPathwayId($pathwayId) {
+		$enzymeResults = $this->query("select replace(group_concat(distinct concat('ec_id:',ec_id) separator ' OR '),'-','*') as enzymes from pathways where parent_id in (SELECT id FROM pathways where kegg_id = '$pathwayId')");
+		return $enzymeResults[0][0]['enzymes'];
+	}
 }
 ?>

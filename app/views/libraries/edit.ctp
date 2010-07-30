@@ -34,11 +34,14 @@
 		width:80%;
 		float:left;
 		padding: 0px;
-		margin: 0px;
+		margin: 0px !important;
+		padding: 0px !important;
 		
 	}
 	input {
-		width:60%;
+		width:70%;
+		margin: 0px !important;
+		padding: 0px !important;
 	} 
 
 </style>
@@ -48,10 +51,20 @@
 <?php echo $form->create('Library');?>
 	<fieldset>
  		<legend></legend>
-	<?php		
-		#die("test".preg_match("/^[0-9]+°[0-9]+'[0-9]+\"[SN]$/","32°10'0\"N").":");	
+	<?php	
+		$currentUser 	= Authsome::get();
+		$currentUserId 	= $currentUser['User']['id'];	    	        	
+       	$userGroup  	= $currentUser['UserGroup']['name'];		
+		
 		echo $form->input('id');
-		echo $form->input('project_id');
+		
+		if($userGroup === ADMIN_USER_GROUP) {
+			echo $form->input('project_id');
+		}
+		else {
+			echo $form->hidden('project_id');
+		}
+		
 		echo $form->input('description',array('type' => 'textaerea'));
 		echo $form->input('apis_link',array('type' => 'text'));
 	?>
@@ -60,6 +73,7 @@
  		<legend>Sample Meta Information</legend>
  		<?php
 		echo $form->input('sample_date',array('type' => 'date'));
+		echo $form->input('sample_habitat',array('type' => 'text'),array('type' => 'text','size'=>'50','label' => 'Habitat (use Environmental Ontology)') );
 		echo $form->input('sample_depth',array('type' => 'text'),array('type' => 'text','size'=>'50','label' => 'Depth [m]') );
 		echo $form->input('sample_altitude',array('type' => 'text'), array('type' => 'text','size'=>'50','label' => 'Altitude [m]'));
 		echo $form->input('sample_latitude',array('type' => 'text','size'=>'50','label' => 'Sample Latitute [63&#176;35\'42"W]'));

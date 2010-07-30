@@ -89,6 +89,16 @@
 		<?php }?>
 	</div>
 </div>
+<?php
+echo $ajax->observeField( 'SearchField', 
+    array(
+        'url' => array('controller'=>'search', 'action'=>'index',$dataset),
+        'frequency' => 0.1,
+    	'update' => 'search-dataset', 'loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Element.hide(\'search-results\');Effect.Appear(\'search-results\',{ duration: 1.5})','before' => 'Element.hide(\'search-results\')',
+		'with' => 'Form.serialize(\'SearchAddForm\')'
+    ) 
+);
+?>
 
 <script type="text/javascript">
  jQuery.noConflict();

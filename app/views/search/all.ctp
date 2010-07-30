@@ -149,6 +149,17 @@
 		<?php  endif;?>	
 	</div>
 </div>
+<?php
+echo $ajax->observeField( 'SearchField', 
+    array(
+        'url' => array('controller'=>'search', 'action'=>'all',$query),
+        'frequency' => 0.1,
+    	'update' => 'search-all', 'loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Element.hide(\'search-all-result-panel\');Effect.Appear(\'search-all-result-panel\',{ duration: 1.5})','before' => 'Element.hide(\'search-all-result-panel\')',
+		'with' => 'Form.serialize(\'SearchAddForm\')'
+    ) 
+);
+?>
+
 <script type="text/javascript">
 function goThere(loc) {
 	window.location.href=loc;

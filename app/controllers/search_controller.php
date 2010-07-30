@@ -48,6 +48,7 @@ class SearchController extends AppController {
 											'go_id' =>'Gene Ontology ID',
 											'go_tree' =>'Gene Ontology Tree',
 											'go_src'=>'Gene Ontology Source',
+											'kegg_id' =>'KEGG Pathway ID',
 											'ec_id' =>'Enzyme ID',
 											'ec_src'=>'Enzyme Source',	
 											'hmm_id'=>'HMM ID',		
@@ -413,13 +414,21 @@ class SearchController extends AppController {
 			else if(!in_array($firstField,$this->luceneFields) && $field != 1) {
 				
 				//translate selected field and query into a lucene query
-				if($field === 'blast_evalue_exp' || $field === 'blast_pid' ||  $field === 'blast_cov') {
-							$query = '{'.$queryParts[count($queryParts)-1].' TO *}'; 
+				if($field === 'kegg_id') {
+					$query = $this->Pathway->getEnzymeQueryByKeggPathwayId($query);
+				}
+				else if($field === 'blast_evalue_exp' || $field === 'blast_pid' ||  $field === 'blast_cov') {
+					$query = '{'.$queryParts[count($queryParts)-1].' TO *}'; 
+					$query = "$field:$query";	
 				}
 				else if($field === 'go_tree') {
 					$query = ltrim(str_replace('GO\:','',$query),'0');
-				}					
-				$query = "$field:$query";		
+					$query = "$field:$query";	
+					
+				}	
+				else {
+					$query = "$field:$query";	
+				}
 			}
 
 			//set search field to Lucene Query
@@ -441,6 +450,7 @@ class SearchController extends AppController {
 	 * Used for links in the search help dialog.
 	 * 
 	 * @param String $dataset the dataset to search in
+	 * @param String $action either index or all
 	 * @param String $query lucene query to use
 
 	 * @return void

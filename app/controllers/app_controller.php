@@ -62,6 +62,7 @@ class AppController extends Controller {
 							'search/count',
 							'search/dowloadFacets',
 							'search/dowloadData',
+							'search/link',
 							'browse/blastTaxonomy',
 							'browse/apisTaxonomy',
 							'browse/enzymes',
@@ -71,7 +72,7 @@ class AppController extends Controller {
 							'browse/dowloadFacets',
 							'compare/index',
 							'populations/view',	
-							'libraries/view',						
+							'libraries/view',											
 	);		
 	
 	var $adminAccessUrls = array(
@@ -83,6 +84,7 @@ class AppController extends Controller {
 	var $projectAccessUrls = array(
 							'projects/view',
 							'projects/delete',
+							'libraries/edit',
 							'projects/ftp',												
 	);
 	
@@ -151,6 +153,15 @@ class AppController extends Controller {
 					}
 					elseif($controller === 'libraries') {
 						$dataset = $this->Library->getNameById($parameters[0]);
+					}
+					elseif($controller === 'search' && $action === 'link') {
+						//search all is not dataset restricted
+						if($parameters[0] === 'all') {
+							return;
+						}
+						else {
+							$dataset = $parameters[2];
+						}					
 					}
 					else {
 						$dataset = $parameters[0];
