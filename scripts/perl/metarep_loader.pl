@@ -57,8 +57,8 @@ B<--solr_data_dir, -y>
 B<--solr_max_mem, -z>
 	Solr maximum memory allocation [default: 1000M]
 	
-B<--mysql_url, -s>
-	mySQL URL incl. port [default: http://localhost:3306]
+B<--mysql_host, -s>
+	MySQL host incl. port [default: localhost:3306]
 
 B<--metarep_db, -b>
 	METAREP MySQL database name [default: metarep]
@@ -103,7 +103,7 @@ GetOptions(
 	'solr_instance_dir|w=s',
 	'solr_data_dir|h=s',
 	'solr_max_mem|z=s',
-	'mysql_url|m=s',
+	'mysql_host|m=s',
 	'metarep_db|b=s',
 	'metarep_username|u=s',
 	'metarep_password|p=s',
@@ -180,8 +180,8 @@ elsif(!defined($args{solr_instance_dir}) && !$args{xml_only}) {
 if(!defined($args{solr_url})) {
 	$args{solr_url} = "http://localhost:8983";
 }
-if(!defined($args{mysql_url})) {
-	$args{mysql_url} = "http://localhost:3306";
+if(!defined($args{mysql_host})) {
+	$args{mysql_host} = "localhost:3306";
 }
 if(!defined($args{metarep_db})) {
 	$args{metarep_db} = "metarep";
@@ -203,8 +203,8 @@ if(!defined($args{solr_data_dir})) {
 }
 
 #connect to metarep MySQL database
-print "Trying to connect to MySQL database=".$args{metarep_db}." host=".$args{mysql_url}."\n";
-my $metarepDbConnection = DBI->connect("DBI:mysql:".$args{metarep_db}.";host=".$args{mysql_url}."",$args{metarep_username},$args{metarep_password}, { 'RaiseError' => 0 });
+print "Trying to connect to MySQL database=".$args{metarep_db}." host=".$args{mysql_host}."\n";
+my $metarepDbConnection = DBI->connect("DBI:mysql:".$args{metarep_db}.";host=".$args{mysql_host}."",$args{metarep_username},$args{metarep_password}, { 'RaiseError' => 0 });
 
 if(!$metarepDbConnection) {
 		pod2usage(
@@ -216,8 +216,8 @@ if(!$metarepDbConnection) {
 }
 
 #connect to Gene Ontology database
-print "Trying to connect to MySQL database=".$args{go_db}." host=".$args{mysql_url}."\n";
-my $goDbConnection = DBI->connect("DBI:mysql:".$args{go_db}.";host=".$args{mysql_url}."",$args{go_username},$args{go_password}, { 'RaiseError' => 0 });
+print "Trying to connect to MySQL database=".$args{go_db}." host=".$args{mysql_host}."\n";
+my $goDbConnection = DBI->connect("DBI:mysql:".$args{go_db}.";host=".$args{mysql_host}."",$args{go_username},$args{go_password}, { 'RaiseError' => 0 });
 
 if(!$goDbConnection) {
 		pod2usage(

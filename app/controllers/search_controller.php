@@ -259,8 +259,13 @@ class SearchController extends AppController {
 					$facets['project'][$project] =  $numHits;
 				}																	
 			}
-				
-			$dataset['perc'] = round(($dataset['hits'] /$dataset['counts'])*100,2);
+			if($dataset['counts'] > 0) {
+				$percent = round(($dataset['hits'] /$dataset['counts'])*100,2);
+			}	
+			else {
+				$percent = 0;			
+			}
+			$dataset['perc'] = $percent;
 		}	
 	
 		if($numHits > 0) {

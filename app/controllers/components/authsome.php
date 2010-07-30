@@ -21,16 +21,19 @@
  * THE SOFTWARE.
  */
 
-
-//define('ADMIN_USER_GROUP','Admin');
-//define('INTERNAL_USER_GROUP','JCVI');
-//define('EXTERNAL_USER_GROUP','User');
-//define('GUEST_USER_GROUP','Guest');
-
-define('ADMIN_USER_GROUP','ADMIN');
-define('INTERNAL_USER_GROUP','INTERNAL');
-define('EXTERNAL_USER_GROUP','EXTERNAL');
-define('GUEST_USER_GROUP','GUEST');
+//JCVI installation
+if(JCVI_INSTALLATION) {
+	define('ADMIN_USER_GROUP','Admin');
+	define('INTERNAL_USER_GROUP','JCVI');
+	define('EXTERNAL_USER_GROUP','User');
+	define('GUEST_USER_GROUP','Guest');
+}
+else {
+	define('ADMIN_USER_GROUP','ADMIN');
+	define('INTERNAL_USER_GROUP','INTERNAL');
+	define('EXTERNAL_USER_GROUP','EXTERNAL');
+	define('GUEST_USER_GROUP','GUEST');
+}
 
 class AuthsomeComponent extends Object{
 	public $components = array(

@@ -21,7 +21,7 @@
 **/
 require_once('baseModel.php');
 
-require_once( '../../vendors/SolrPhpClient/Apache/Solr/Service.php' );
+require_once( 'vendors/SolrPhpClient/Apache/Solr/Service.php' );
 
 define('SOLR_CONNECT_EXCEPTION', "There was a problem with fetching data from the Lucene index. Please contact ".METAREP_SUPPORT_EMAIL." if this problem is persistent");
 
