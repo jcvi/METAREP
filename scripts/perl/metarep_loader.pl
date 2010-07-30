@@ -671,6 +671,9 @@ sub clean {
 	$tmp =~ s/^\s+//g;
 	$tmp =~ s/\s+$//g;
 		
+	#remove other invalid characters
+	$tmp =~ s/[^\x09\x0A\x0D\x20-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]//;	
+		
 	return $tmp;
 }
 
