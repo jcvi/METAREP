@@ -50,15 +50,15 @@
 		<BR><p> 
 		<table  style="border-style:none !important;"><tr><td style="text-align:center">
 			<h6>Download Flyer</h6>
-				<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Download Flyer')), '/files/METAREP-flyer.pdf',array('escape' => false)));?>	
+				<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Download Flyer')), 'http://github.com/downloads/jcvi/METAREP/METAREP-flyer.pdf',array('escape' => false)));?>	
 			</td >
 			<td style="text-align:center">
 			<h6>Download Manual</h6>
-			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Download Manual')),'/files/METAREP-manual-v1.1.0.pdf',array('escape' => false)));?>	
+			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Download Manual')),'http://github.com/downloads/jcvi/METAREP/METAREP-manual.pdf',array('escape' => false)));?>	
 			</td>	
 			<td style="text-align:center; border-right:none">
 			<h6>Open Source</h6>
-			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Open Source')), 'http://github.com/jcvi/METAREP',array('escape' => false)));?>	
+			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Open Source')), 'http://github.com/jcvi/METAREP',array('escape' => false,'target' => '_blank')));?>	
 			</td>	
 		</tr>
 		</table>
