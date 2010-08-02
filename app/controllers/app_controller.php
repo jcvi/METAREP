@@ -24,7 +24,7 @@
 class AppController extends Controller {
 
 	#global helpers
-	var $helpers 	= array('Session','Html', 'Form','Crumb','Javascript','Ajax');
+	var $helpers 	= array('Session','Html', 'Form','Javascript','Ajax');
 	var $components = array('Session','Cookie','RequestHandler','Authsome' => array('model' => 'User'));
 
 	var $openAccessUrls = array(
