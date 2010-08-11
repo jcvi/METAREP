@@ -39,7 +39,7 @@
 	<div id="browse-main-panel">	
 		<div id="browse-tree-panel">			
 			<fieldset>
-			<legend>NCBI Taxonomy Tree </legend>
+			<legend>NCBI Taxonomy Tree</legend>
 			<a href="#" id="dialog_link" class="ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>Help</a>
 			<?php 
 			$treeData = $session->read($mode.'.tree');

@@ -37,7 +37,7 @@ class BrowseController extends AppController {
 	var $name 		= 'Browse';
 	var $limit 		= 10;
 	var $helpers 	= array('Facet','Tree','Ajax','Dialog');	
-	var $uses 		= array('Project','Taxonomy','GoTerm','GoGraph','Enzymes','Population','Library','Pathway','Kegg');	
+	var $uses 		= array('Project','Taxonomy','GoTerm','GoGraph','Enzymes','Population','Library','Pathway');	
 	var $components = array('Session','RequestHandler','Solr','Format');
 	
 	function blastTaxonomy($dataset='CBAYVIR',$expandTaxon=1) {
@@ -126,8 +126,7 @@ class BrowseController extends AppController {
 		$this->set('numHits',$numHits);
 		$this->set('numChildHits',$numChildHits);
 		$this->set('facets',$facets);	
-		$this->set('mode',BLAST_TAXONOMY);	
-		
+		$this->set('mode',BLAST_TAXONOMY);			
 	}
 
 	
@@ -184,7 +183,7 @@ class BrowseController extends AppController {
 				$numChildHits +=$count;
 			}
 		}
-				
+		
 		
 		$solrArguments = array(	"facet" => "true",
 						'facet.field' => array('blast_species','com_name','go_id','ec_id','com_name_src','hmm_id'),
@@ -201,6 +200,15 @@ class BrowseController extends AppController {
 		$numHits = (int) $result->response->numFound;
 		$facets = $result->facet_counts;
 
+		//handle unresolved child nodes
+		if(count($taxaChildren) > 0 && $numChildHits <	$numHits) {
+			$childCounts['unresolved'] = $numHits - $numChildHits;
+			$childArray[-1]['name']  = 'unresolved';
+			$childArray[-1]['rank']  = 'no rank';
+			$childArray[-1]['taxon_id'] = -1; 
+			$childArray[-1]['count']  = $numHits - $numChildHits;
+			$childArray[-1]['children'] = NULL;
+		}
 		
 		//show root level for 1
 		if($expandTaxon==1) {
@@ -609,7 +617,7 @@ class BrowseController extends AppController {
 		
 		#get childCounts
 		$childCounts = $this->Session->read($mode.".childCounts");
-		$content = $this->Format->infoString("Browse $mode Results",$dataset,$query,$numHits,$node);
+		$content = $this->Format->infoString("Browse $mode Results",$dataset,$query,0,$numHits,$node);
 		$content.=$this->Format->facetToDownloadString($node,$childCounts,$numHits);
 		
 		$fileName = "jcvi_metagenomics_report_".time().'.txt';

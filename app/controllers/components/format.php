@@ -31,15 +31,7 @@ class FormatComponent extends Object {
 			return "$content\n\n";
 	}
 	
-	public function treeLevelToDownloadString($heading,$treeLevel,$numHits) {
-			$content ="$heading\tAbsolute Count\tRelative Count\n";
-			$content .="----------------------------------------------------------\n";
-			foreach($treeLevel as $taxon => $entry) {	
-				$relativeCount= round($entry['count']/$numHits,4);		
-				$content .= "{$entry['name']}\t{$entry['count']}\t$relativeCount\n";
-			}
-			return "$content\n\n";
-	}
+
 	public function pathwayToDownloadString($data,$numHits) {
 		$content = "";
 		
@@ -60,15 +52,19 @@ class FormatComponent extends Object {
 		return $content;
 	}
 
-	public function infoString($title,$dataset,$query,$numHits,$node=''){
+	public function infoString($title,$dataset,$query,$minCount,$numHits='',$node =''){
 		$content ="----------------------------------------------------------\n";
 		$timestamp =$today = date("F j, Y, g:i a"); 
 		$content .= METAREP_RUNNING_TITLE." - $title\n";
 		#for browse data add node
 		$content .= "Date:\t\t$timestamp\nQuery:\t\t$query\n";
+		
+		if($minCount != 0) {
+			$content .="Min. Count:\t$minCount\n";		
+		}	
 		if(!empty($node)) {
 			$content .="Node:\t\t$node\n";
-		}		
+		}
 		if(is_array($dataset)) {
 			$content .="Datasets:\n";
 			foreach($dataset as $entry) {			
@@ -97,7 +93,7 @@ class FormatComponent extends Object {
 	}
 		
 	public function facetListToDownloadString($title,$dataset,$facets,$query,$numHits,$node = '') {		
-		$content =$this->infoString($title,$dataset,$query,$numHits,$node);	
+		$content =$this->infoString($title,$dataset,$query,0,$numHits,$node);	
 		$content.=$this->facetToDownloadString('Blast Species',$facets->facet_fields->blast_species,$numHits);	
 		$content.=$this->facetToDownloadString('Common Name',$facets->facet_fields->com_name,$numHits);		
 		$content.=$this->facetToDownloadString('Gene Ontology',$facets->facet_fields->go_id,$numHits);		
@@ -133,20 +129,26 @@ class FormatComponent extends Object {
 	
 	public function metatstatsResultsToDonwloadString($counts,$selectedDatasets) {
 		
-		$content 	="Catgeory\t";
+		$content 	= "ID\tCategory\t";
 		
 		foreach($selectedDatasets as $dataset) {
 			$content .= "Total ($dataset)\t";
-			$content .= "Mean ($dataset)\t";
+			$content .= "%Mean ($dataset)\t";
 			$content .= "Variance ($dataset)\t";
-			$content .= "SE ($dataset)\t";		
+			$content .= "%SE ($dataset)\t";		
 		}
 		$content .= "Mean Ratio\t";
-		$content .= "p value\t";
-		$content .= "p value (bonf. corr.)\n";
+		$content .= "P-Value\t";
+		$content .= "P-Value (Bonf. Corr.)\n";
 		
 		foreach($counts as $category => $row) {				
-			$content .= $row['name']."\t";
+			if($category != $row['name']) {
+				$content .="$category\t{$row['name']}\t";
+			}
+			else {
+				$content .= "NA\t{$row['name']}\t";
+			}
+			
 			foreach($selectedDatasets as $dataset) {
 				$content .= $row[$dataset]['total']."\t";								
 				$content .= $row[$dataset]['mean']."\t";
@@ -163,18 +165,24 @@ class FormatComponent extends Object {
 
 	public function wilcoxonResultsToDonwloadString($counts,$selectedDatasets) {
 		
-		$content 	="Catgeory\t";
+		$content 	= "ID\tCategory\t";
 		
 		foreach($selectedDatasets as $dataset) {
-			$content .= "Median ($dataset)\t";
-			$content .= "MAD ($dataset)\t";
+			$content .= "%Median ($dataset)\t";
+			$content .= "%MAD ($dataset)\t";
 		}
 		$content .= "Median Ratio\t";
-		$content .= "p value\t";
-		$content .= "p value (bonf. corr.)\n";
+		$content .= "P-Value\t";
+		$content .= "P-Value (Bonf. Corr.)\n";
 		
 		foreach($counts as $category => $row) {				
-			$content .= $row['name']."\t";
+			if($category != $row['name']) {
+				$content .="$category\t{$row['name']}\t";
+			}
+			else {
+				$content .= "NA\t{$row['name']}\t";
+			}
+				
 			foreach($selectedDatasets as $dataset) {			
 				$content .= $row[$dataset]['median']."\t";
 				$content .= $row[$dataset]['mad']."\t";
@@ -188,7 +196,7 @@ class FormatComponent extends Object {
 	}	
 	
 	public function comparisonResultsToDownloadString($counts,$selectedDatasets,$option) {
-		$content 	="Catgeory\t";
+		$content 	= "ID\tCategory\t";
 		
 		foreach($selectedDatasets as $dataset) {
 			$content .=$dataset."\t";
@@ -196,7 +204,7 @@ class FormatComponent extends Object {
 		if($option == ABSOLUTE_COUNTS) {
 			$content .="Total";
 		}
-		if($option === CHISQUARE || $option === FISHER) {
+		if($option == CHISQUARE || $option == FISHER) {
 			$content .="\tP-Value\t";
 			$content .="\tP-Value (Bonf. Corr.)\t";			
 		}	
@@ -206,7 +214,12 @@ class FormatComponent extends Object {
 		foreach($counts as $category => $row) {	
 			if($row['sum']>0 && $category!='unclassified') {	
 
-				$content .= $row['name'];
+				if($category != $row['name']) {
+					$content .="$category\t{$row['name']}";
+				}
+				else {
+					$content .= "NA\t{$row['name']}";
+				}
 				
 				foreach($selectedDatasets as $dataset) {
 					$content .="\t".$row[$dataset];
@@ -233,23 +246,23 @@ class FormatComponent extends Object {
 		
 		#$content .= $category ;
 				
-		foreach($selectedDatasets as $dataset) {
-			$content .="\t".$counts[$category][$dataset];
-		}
-		if($option == ABSOLUTE_COUNTS) {
-				$content .="\t".$counts[$category]['sum'];
-		}
-		if($option == CHISQUARE || $option == FISHER) {
-			$pvalue 	= $counts[$category]['pvalue'];
-			$adjPValue 	= $pvalue * count($counts);
-			
-			if($adjPValue>1) {
-				$adjPValue=1;
-			}					
-			
-			$content .="\t".$pvalue."\t".$adjPValue;
-		}			
-		$content .="\n";
+//		foreach($selectedDatasets as $dataset) {
+//			$content .="\t".$counts[$category][$dataset];
+//		}
+//		if($option == ABSOLUTE_COUNTS) {
+//				$content .="\t".$counts[$category]['sum'];
+//		}
+//		if($option == CHISQUARE || $option == FISHER) {
+//			$pvalue 	= $counts[$category]['pvalue'];
+//			$adjPValue 	= $pvalue * count($counts);
+//			
+//			if($adjPValue>1) {
+//				$adjPValue=1;
+//			}					
+//			
+//			$content .="\t".$pvalue."\t".$adjPValue;
+//		}			
+//		$content .="\n";
 		return $content;
 	}
 }

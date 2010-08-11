@@ -352,7 +352,7 @@ class SearchController extends AppController {
 		
 		
 		$facets =  $this->Session->read('facets');
-		$content = $this->Format->infoString('Search Results - Peptide Id List',$dataset,$query,$numHits);	
+		$content = $this->Format->infoString('Search Results - Peptide Id List',$dataset,$query,0,$numHits);	
 		$content.="Peptide Id\n";
 		fwrite($fh, $content);				
 		

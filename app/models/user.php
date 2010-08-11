@@ -77,25 +77,35 @@ class User extends AppModel {
 				)					
 			);
 	/**
-	 * Set user group before saving the user
-	 * based on Email extension and username admin 
+	 * Set user privileges before saving the new user. If the user's name equals
+	 * admin, the user group id is set to 1 (ADMIN_USER). If the user's email
+	 * extension matches the internal email extension, the user's group id is 
+	 * set to 4 (INTERNAL_USER). Internal users have access to all datasets. The
+	 * internal email extension (INTERNAL_EMAIL_EXTENSION) can be defined in the
+	 * METAREP configuration file (app/config/metarep.php). If neither macthes,
+	 * the user group is set to 2 (EXTERNAL_USER). External users can only access
+	 * project datasets for which they have permissions.
 	 * 
 	 * @return void
 	 * @access public
 	 */
 	function beforeSave() 	{
 		if(!empty($this->data)) {						
-			$email  =  	$this->data['User']['email'];
-			$tmp 	= split('@',$email);
+			$email  =  $this->data['User']['email'];
+			$tmp = split('@',$email);
 			$emailExtension = $tmp[1];
 
-			//set admin privileges
+			//set admin privileges based on user name
 			if($this->data['User']['username'] === 'admin') {
+				//the user's group id is set to 1 (ADMIN_USER).
 				 $this->data['User']['user_group_id'] = 1;
-			}
-			//set internal privileges
-			else if($emailExtension === INTERNAL_EMAIL_EXTENSION) {
-				 $this->data['User']['user_group_id'] = 4;
+			}			
+			//set internal uprivileges based on email extension
+			else if(defined('INTERNAL_EMAIL_EXTENSION')) {
+				if($emailExtension === INTERNAL_EMAIL_EXTENSION) {
+					//set user group to INTERNAL USER GROUP (4)
+					$this->data['User']['user_group_id'] = 4;
+				}
 			}
 			//set external privileges
 			else {

@@ -167,16 +167,20 @@ class ProjectsController extends AppController {
 	}
 	
 	/**
-	 * Sets and activates ftp link on the project view page
+	 * Sets and activates ftp link on the project view page.
+	 * Uses FTP connection paramters specified in the METAREP
+	 * configuration file.
 	 * 
 	 * @param int $projectId project id
 	 * @param String $dataset dataset name
 	 */
 	function ftp($projectId,$dataset) {
-		$fileName = "$dataset.tgz";
-		$filePath = "ftp://".FTP_USERNAME.":".FTP_PASSWORD."@".FTP_HOST."/$projectId/$fileName";	
-		$this->set('ftpLink',$filePath);
-		$this->set('project', $this->Project->read(null,$projectId));
+		if(defined('FTP_HOST') && defined('FTP_USERNAME') && defined('FTP_PASSWORD')) {
+			$fileName = "$dataset.tgz";
+			$filePath = "ftp://".FTP_USERNAME.":".FTP_PASSWORD."@".FTP_HOST."/$projectId/$fileName";	
+			$this->set('ftpLink',$filePath);
+			$this->set('project', $this->Project->read(null,$projectId));
+		}
 		$this->render('view');
 	}
 

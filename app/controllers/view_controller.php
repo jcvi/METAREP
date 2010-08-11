@@ -144,7 +144,7 @@ class ViewController extends AppController {
 						
 		$this->set('dataset',$dataset);
 		$this->set('facetField',$facetField);
-		$this->render('facet_panel','ajax');
+		$this->render('result_panel','ajax');
 	}
 	
 	function pathways($dataset,$facetField) {	
@@ -246,11 +246,9 @@ class ViewController extends AppController {
 		}
 		
 		$this->Session->write('view.pathways',$pathways);					
-		
-
 		$this->set('dataset',$dataset);
 		$this->set('facetField',$facetField);
-		$this->render('facet_panel','ajax');
+		$this->render('result_panel','ajax');
 	}
 	
 	#function comparePercentEnzymes($a, $b) { return strnatcmp($b['percFoundEnzymes'], $a['percFoundEnzymes']); } 
@@ -302,12 +300,12 @@ class ViewController extends AppController {
 		#pathway data has to handled differently since it is not a lucene facet data type
 		if($facetField === 'pathway_id') {				
 			$pathways = $this->Session->read('view.pathways');
-			$content = $this->Format->infoString("$facetName Categories ",$dataset,$query,$numHits);	
+			$content = $this->Format->infoString("$facetName Categories ",$dataset,$query,0,$numHits);	
 			$content.= $this->Format->pathwayToDownloadString($pathways,$numHits);
 		}
 		else {			
 			$facets = $this->Session->read('view.facetCounts');		
-			$content = $this->Format->infoString("Top $limit $facetName Categories ",$dataset,$query,$numHits);		
+			$content = $this->Format->infoString("Top $limit $facetName Categories ",$dataset,$query,0,$numHits);		
 			$content.= $this->Format->facetToDownloadString($facetName,$facets->facet_fields->{$facetField},$numHits);	
 		}
 

@@ -54,9 +54,79 @@ class CompareController extends AppController {
 
 	var $name 		= 'Compare';	
 	var $helpers 	= array('Matrix','Dialog','Ajax');
-	var $uses 		= array('Project','Taxonomy','GoGraph','Enzymes','Hmm','Library','Population','Pathway','EnvironmentalLibrary');
+	var $uses 		= array('Project','Library','Population');
 	var $components = array('Solr','RequestHandler','Session','Matrix','Format');
 
+	var $taxonomyLevels = array(
+		'root' 		=> 'root',
+		'kingdom' 	=> 'kingdom',
+		'class' 	=> 'class',
+		'phylum' 	=> 'phylum',
+		'order' 	=> 'order',
+		'family' 	=> 'family',
+		'genus' 	=> 'genus',
+	);
+	
+	var $geneOntologyLevels = array(
+		1 =>'root',
+		'Molecular Function' =>
+			array(
+				'MF2' => 'Molecular Function Root Distance 2',
+				'MF3' => 'Molecular Function Root Distance 3',
+				'MF4' => 'Molecular Function Root Distance 4',
+				'MF5' => 'Molecular Function Root Distance 5',
+			),
+		'Cellular Component' =>
+			array(
+				'CC2' => 'Cellular Component Root Distance 2',
+				'CC3' => 'Cellular Component Root Distance 3',
+				'CC4' => 'Cellular Component Root Distance 4',
+				'CC5' => 'Cellular Component Root Distance 5',
+			),
+		'Biological Process' =>
+			array(
+				'BP2' => 'Biological Process Root Distance 2',
+				'BP3' => 'Biological Process Root Distance 3',
+				'BP4' => 'Biological Process Root Distance 4',
+				'BP5' => 'Biological Process Root Distance 5',
+			)									
+	);	
+	
+	var $enzymeLevels = array(
+		'level 1' => 'Enzyme Commission Level 1',
+		'level 2' => 'Enzyme Commission Level 2',
+		'level 3' => 'Enzyme Commission Level 3',
+		'level 4' => 'Enzyme Commission Level 4',
+	);
+		
+	var $hmmLevels = array(
+		'TIGR' => 'TIGRFam',
+		'PF'   => 'Pfam',
+	);
+
+	var $clusterLevels  = array(
+		'CAM_CR' => 'Core Clusters',
+		'CAM_CL' => 'Final Clusters'
+	);
+	
+	var $environmentalLibrariesLevels = array(
+		'level1' => 'Level 1',					
+		'level2' => 'Level 2',
+	);
+	
+	var $pathwayLevels = array(
+		'level 2' => 'Metabolic Pathways (level 2)',	
+		'level 3' => 'Metabolic Pathways (level 3)',				
+	);	
+
+	var $commonNamelevels = array(
+		'10'  => 'Top 10 Hits',
+		'20'  => 'Top 20 Hits',
+		'50'  => 'Top 50 Hits',
+		'100' => 'Top 100 Hits',
+		'1000'=> 'Top 1000 Hits',
+	);	
+	
 	/**
 	 * Initializes index compare page
 	 * 
@@ -108,7 +178,7 @@ class CompareController extends AppController {
 	 * @access public
 	 */		
 	function ajaxTabPanel() {
-			
+		
 		#get compare form data
 		$option				= $this->data['Compare']['option'];
 		$minCount 			= $this->data['Compare']['minCount'];
@@ -141,6 +211,7 @@ class CompareController extends AppController {
 					array_push($tabs,array('function'=>'clusters','isActive'=>0,'tabName' => 'Clusters','dbTable' => null,'sorlField' => 'cluster_id'));
 				}		
 				if($optionalDatatypes['viral']) {
+					
 					array_push($tabs,array('function'=>'environmentalLibraries','isActive'=>1,'tabName' => 'Environmental Libraries','dbTable' => 'environemental_libraries','sorlField' => 'env_lib'));
 				}					  
 				else {
@@ -150,7 +221,6 @@ class CompareController extends AppController {
 			
 			#set default variables
 			if(empty($option)) {
-				debug('test');
 				$option = ABSOLUTE_COUNTS;
 			}
 			if(empty($filter)) {
@@ -229,7 +299,8 @@ class CompareController extends AppController {
 	 * @access private
 	 */	
 	private function taxonomy($facetField = 'blast_tree') {
-		
+		$this->loadModel('Taxonomy');
+				
 		if($facetField === 'blast_tree') {
 			$mode = 'blastTaxonomy';
 		}
@@ -250,15 +321,7 @@ class CompareController extends AppController {
 			}	
 		}
 
-		$levels = array(
-						'root' 		=> 'root',
-						'kingdom' 	=> 'kingdom',
-						'class' 	=> 'class',
-						'phylum' 	=> 'phylum',
-						'order' 	=> 'order',
-						'family' 	=> 'family',
-						'genus' 	=> 'genus',
-						);
+		$levels = $this->taxonomyLevels;
 						
 		#read session variables
 		$option 			= $this->Session->read('option');
@@ -355,6 +418,8 @@ class CompareController extends AppController {
 	 * @access public
 	 */
 	function geneOntology() {
+		$this->loadModel('GoGraph');
+		
 		$mode 			= __FUNCTION__;
 		$counts			= array();
 		$subontology 	= 'universal';
@@ -363,22 +428,7 @@ class CompareController extends AppController {
 		$level			= 1;
 
 		//drop down menu information
-		$levels = array(1 =>'root','Molecular Function' =>
-		array('MF2' => 'Molecular Function Root Distance 2',
-										'MF3' => 'Molecular Function Root Distance 3',
-										'MF4' => 'Molecular Function Root Distance 4',
-										'MF5' => 'Molecular Function Root Distance 5'),
-							'Cellular Component' =>
-		array('CC2' => 'Cellular Component Root Distance 2',
-										'CC3' => 'Cellular Component Root Distance 3',
-										'CC4' => 'Cellular Component Root Distance 4',
-										'CC5' => 'Cellular Component Root Distance 5'),
-							'Biological Process' =>
-		array('BP2' => 'Biological Process Root Distance 2',
-										'BP3' => 'Biological Process Root Distance 3',
-										'BP4' => 'Biological Process Root Distance 4',
-										'BP5' => 'Biological Process Root Distance 5')									
-		);
+		$levels = $this->geneOntologyLevels;
 
 		#read post data
 		if(!empty($this->data['Post']['level'])) {				
@@ -500,16 +550,13 @@ class CompareController extends AppController {
 	 * @access public
 	 */
 	function enzymes() {
+		$this->loadModel('Enzymes');
+		
 		$mode = __FUNCTION__;
 		$counts	= array();
 		$level	='level 1';
 
-		$levels = array(
-		'level 1' => 'Enzyme Commission Level 1',
-		'level 2' => 'Enzyme Commission Level 2',
-		'level 3' => 'Enzyme Commission Level 3',
-		'level 4' => 'Enzyme Commission Level 4'
-		);
+		$levels = $this->enzymeLevels;
 			
 		#read post data
 		if(!empty($this->data['Post']['level'])) {
@@ -609,32 +656,45 @@ class CompareController extends AppController {
 	 * @access public
 	 */
 	function hmms() {
+		$this->loadModel('Hmm');
+		
 		$mode = __FUNCTION__;
 		$counts	= array();
-		$level	='TIGR';
-
+		
+		//read session variables
+		$option 			= $this->Session->read('option');
+		$minCount 			= $this->Session->read('minCount');
+		$filter 			= $this->Session->read('filter');
+		$selectedDatasets	= $this->Session->read('selectedDatasets');
+		$optionalDatatypes  = $this->Session->read('optionalDatatypes');		
+		
 		//drop down selection
-		$levels = array(
-		'TIGR' => 'TIGRFam',
-		'PF'   => 'Pfam'
-		);
-			
-		#read post data
+		$levels = $this->hmmLevels;
+
+		//handle ACLAME HMMs for viral annotations
+		if(JCVI_INSTALLATION && $optionalDatatypes['viral']) {
+			$levels['AC'] = 'ACLAME';
+			$level = 'AC';
+		}	
+		else {
+			$level	='TIGR';
+		}	
+		
+		//read post data
 		if(!empty($this->data['Post']['level'])) {
 			$level = $this->data['Post']['level'];
 		}
 		else {
 			if($this->Session->check("$mode.level")) {
 				$level = $this->Session->read("$mode.level");
+				
+				//handle ACLAME HMMs for viral annotations
+				if(JCVI_INSTALLATION && !$optionalDatatypes['viral']) {
+					$level	='TIGR';
+				}
 			}	
 		}
-
-		#read session variables
-		$option 			= $this->Session->read('option');
-		$minCount 			= $this->Session->read('minCount');
-		$filter 			= $this->Session->read('filter');
-		$selectedDatasets	= $this->Session->read('selectedDatasets');
-
+		
 		if($option == METASTATS || $option == WILCOXON) {
 			#split the two populations into their libraries; store population 
 			#names and start position of secontd population
@@ -689,8 +749,7 @@ class CompareController extends AppController {
 			foreach($facets as $category => $count) {
 				$counts[$category][$dataset] = $count;
 				$counts[$category]['sum'] += $count;
-			}
-				
+			}				
 		}
 
 		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$counts);
@@ -712,10 +771,7 @@ class CompareController extends AppController {
 		$level	='CAM_CR';
 
 		//drop down selection
-		$levels = array(
-		'CAM_CR' => 'Core Clusters',
-		'CAM_CL'   => 'Final Clusters'
-		);
+		$levels = $this->clusterLevels;
 			
 		//get post data
 		if(!empty($this->data['Post']['level'])) {
@@ -808,16 +864,15 @@ class CompareController extends AppController {
 	 * @access public
 	 */
 	function environmentalLibraries() {
+		$this->loadModel('EnvironmentalLibrary');
+		
 		$mode   = __FUNCTION__;
 		$counts	= array();
 		
 		$level	='level1';
 		
 		//drop down selection
-		$levels = array(
-						'level1' => 'Level 1',					
-						'level2'  => 'Level 2',
-		);
+		$levels = $this->environmentalLibrariesLevels;
 	
 			//get post data
 		if(!empty($this->data['Post']['level'])) {
@@ -928,16 +983,15 @@ class CompareController extends AppController {
 	 * @access public
 	 */
 	function pathways() {
+		$this->loadModel('Pathway');
+		
 		$mode   = __FUNCTION__;
 		$counts	= array();
 
 		$level	='level 2';
 
 		//drop down selection
-		$levels = array(
-			'level 2' => 'Metabolic Pathways (level 2)',	
-			'level 3' => 'Metabolic Pathways (level 3)',				
-		);
+		$levels = $this->pathwayLevels;
 
 		#read post data
 		if(!empty($this->data['Post']['level'])) {
@@ -1019,13 +1073,9 @@ class CompareController extends AppController {
 	function commonNames() {
 		$mode   = __FUNCTION__;
 		$counts = array();
-		$level	=10;
-		$levels = array('10' => 'Top 10 Hits',
-		'20' => 'Top 20 Hits',
-		'50' => 'Top 50 Hits',
-		'100' => 'Top 100 Hits',
-		'1000' => 'Top 1000 Hits'
-		);
+		$level	= 10;
+		
+		$levels = $this->commonNamelevels;
 
 			//get post data
 		if(!empty($this->data['Post']['level'])) {
@@ -1126,33 +1176,33 @@ class CompareController extends AppController {
 
 		if($option == CHISQUARE) {
 			$title = 'Comparison Results - Chi-Square Test of Independence';
-			$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);
+			$content = $this->Format->infoString($title,$selectedDatasets,$filter,$minCount);
 			$content.= $this->Format->comparisonResultsToDownloadString($counts,$selectedDatasets,$option);
 		}
 		elseif($option == FISHER) {			
 			$title = "Comparison Results - Fisher's Exact Test";
-			$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);
+			$content = $this->Format->infoString($title,$selectedDatasets,$filter,$minCount);
 			$content.= $this->Format->comparisonResultsToDownloadString($counts,$selectedDatasets,$option);
 		}
 		elseif($option == METASTATS) {
 			$title = "Comparison Results - METASTATS non-parametric t-test";
-			$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);
+			$content = $this->Format->infoString($title,$selectedDatasets,$filter,$minCount);
 			$content.= $this->Format->metatstatsResultsToDonwloadString($counts,$selectedDatasets);
 		}	
 		elseif($option == WILCOXON) {
 			$title = "Comparison Results - Wilcoxon Signed Rank Test";
-			$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);
+			$content = $this->Format->infoString($title,$selectedDatasets,$filter,$minCount);
 			$content.= $this->Format->wilcoxonResultsToDonwloadString($counts,$selectedDatasets);
 		}	
 		//plot options
 		elseif($option > 6) {
 			$title = "Comparison Results - Euclidean Distance Matrix";
-			$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);
+			$content = $this->Format->infoString($title,$selectedDatasets,$filter,$minCount);
 			$content .= $this->Session->read('distantMatrices');		
 		}				
 		else{
 			$title = "Comparison Results";
-			$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);
+			$content = $this->Format->infoString($title,$selectedDatasets,$filter,$minCount);
 			$content.= $this->Format->comparisonResultsToDownloadString($counts,$selectedDatasets,$option);			
 		}		
 

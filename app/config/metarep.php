@@ -13,9 +13,9 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.1.0
 * @author Johannes Goll
-* @lastmodified 2010-07-09
+* @lastmodified 2010-08-11
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
 
@@ -40,10 +40,10 @@ define('METAREP_WEB_ROOT','/<your-installation-dir>/apache-2.2.14/htodocs/metare
 
 /**
  * METAREP Url Root
- * Default: http://localhost:8080/metarep
+ * Default: http://localhost:80/metarep
  */
 
-define('METAREP_URL_ROOT','http://localhost:8080/metarep');
+define('METAREP_URL_ROOT','http://localhost:80/metarep');
 
 /**
  * Directory to store temporary files
@@ -98,7 +98,7 @@ define('SOLR_MASTER_HOST','localhost');
  * in a load balanced/replication set-up
  */
 
-define('SOLR_SLAVE_HOST','');
+//define('SOLR_SLAVE_HOST','');
 
 /**
  * Solr big ip; define if you use a 
@@ -106,7 +106,7 @@ define('SOLR_SLAVE_HOST','');
  * load balanced/replication set-up
  */
 
-define('SOLR_BIG_IP_HOST','');
+//define('SOLR_BIG_IP_HOST','');
 
 /**
  * FTP host
@@ -115,19 +115,19 @@ define('SOLR_BIG_IP_HOST','');
  * additional data for your METAREP dataset
  */
 
-define('FTP_HOST','');
+//define('FTP_HOST','');
 
 /**
  * FTP suser name 
  */
 
-define('FTP_USERNAME','');
+//define('FTP_USERNAME','');
 
 /**
  * FTP password
  */
 
-define('FTP_PASSWORD','');
+//define('FTP_PASSWORD','');
 
 /**
  * Email to send bug reports and feature requests. 
@@ -150,11 +150,11 @@ define('METAREP_SUPPORT_EMAIL','metarep-support@jcvi.org');
  * EXTERNAL and PUBLIC have restricted access. The variable defines
  * the Email extension that is used to identify INTERNAL users. This
  * is especially helpful if you like to grant dataset access to all
- * users of your institution - just specify your institute’s email
+ * users of your institution - just specify your institute's email
  * extension, e.g. jcvi.org for the J. Craig Venter Institute.
  */
 
-define('INTERNAL_EMAIL_EXTENSION','');
+//define('INTERNAL_EMAIL_EXTENSION','');
 
 /**
  * Number of Top Facet Counts

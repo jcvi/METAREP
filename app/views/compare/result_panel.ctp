@@ -161,7 +161,7 @@ else {
 	}
 	
 	if(count($counts) == 0) {
-			echo("<div id=\"flashMessage\" class=\"message\" style=\"position:absolute;font-size:1.4em;top:90px;text-align:center;left:200px\">No hits found. Please try again with different options.</div>");
+		echo("<div id=\"flashMessage\" class=\"message\" style=\"position:absolute;font-size:1.4em;top:90px;text-align:center;left:200px\">No hits found. Please try again with different options.</div>");
 		exit();
 	}
 	if(count($counts) < 3 && $option > 6) {

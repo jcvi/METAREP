@@ -32,7 +32,7 @@
 	<h2><?php __('Dash Board')?></h2>
 	<div class="dash-board-main-panel">
 	<fieldset>
-	<legend >JCVI Metagenomics Reports (v. 1.1.0 beta)</legend>
+	<legend >JCVI Metagenomics Reports (1.1.0-beta)</legend>
 	<div class="dash-board-abstract">	
 		<p>JCVI Metagenomics Reports (METAREP) is a new <strong>open source</strong> tool for <strong>high-performance</strong> comparative metagenomics. 
 		It provides a suite of web based tools to help scientists to <strong>view, query, browse</strong> and <strong>compare</strong> metagenomics annotation data

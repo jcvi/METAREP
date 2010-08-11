@@ -162,9 +162,6 @@
 			?>	
 		</div>			
 		<div id="footer">
-			<ul>
-			<!--<li>METAREP v.0.1.3</li>-->
-			</ul>
 		</div>
 	</div>
 	<?php echo $cakeDebug;  ?>

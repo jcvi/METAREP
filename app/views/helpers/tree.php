@@ -63,8 +63,11 @@ class TreeHelper extends AppHelper {
 			if($taxonEntry['name'] == $selectedTaxon) {
 				$link = "<span class=\"selected_taxon\">".$taxonEntry['name']."</span>";
 			}
-			else if ($taxonEntry['rank']=='blast_species') {
+			else if($taxonEntry['rank'] == 'blast_species' ) {
 				$link = "<i>".$taxonEntry['name']."</i>";
+			}
+			else if($taxonEntry['taxon_id'] == -1) {
+				$link = $taxonEntry['name'];
 			}
 			else {
 				$link = $ajaxLink;
@@ -79,7 +82,7 @@ class TreeHelper extends AppHelper {
 			$html .="<li $class><span style=\"white-space: nowrap\">".$link." (".$taxonEntry['rank'].") <strong>[".number_format($taxonEntry['count'])." peptides]</strong></span>";
 
 			//if has children
-			if($taxonEntry['children'] !=null){
+			if($taxonEntry['children'] != null){
 				$html .="<ul>";
 				$this->taxonNode($dataset,$html,$level[$taxonId]['children'],$selectedTaxon,$mode);
 				$html .="</ul>";
@@ -103,7 +106,7 @@ class TreeHelper extends AppHelper {
 			if($taxonEntry['name'] == $selectedEc) {
 				$link = "<span class=\"selected_taxon\">".$taxonEntry['name']."</span>";
 			}
-			else if ($taxonEntry['count'] == 0) {
+			else if ($taxonEntry['count'] == 0 ) {
 				//$link = $this->Html->link($taxonEntry['name'], '', array('class'=>'_class', 'id'=>'_id'));
 				$link = "<b>".$taxonEntry['name']."</b>";
 			}
