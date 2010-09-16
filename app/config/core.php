@@ -42,7 +42,8 @@ include_once('metarep.php');
  * In production mode, flash messages redirect after a time interval.
  * In development mode, you need to click the flash message to continue.
  */
-	Configure::write('debug', '1');
+
+	Configure::write('debug', '0');
 	
 /**
  * Application wide charset encoding
@@ -197,10 +198,23 @@ include_once('metarep.php');
 		'duration'=> 3600, //[optional]
 		'probability'=> 100, //[optional]
  		'path' => METAREP_TMP_DIR, //[optional] use system tmp directory - remember to use absolute path
- 		'prefix' => 'cake_', //[optional]  prefix every cache file with this string
+ 		'prefix' => 'metarep_dcache_', //[optional]  prefix every cache file with this string
  		'lock' => false, //[optional]  use file locking
  		'serialize' => true,
 	));
+	
+/**
+ *
+ * Cache Engine Configuration
+ * for CAKE CORE
+ *
+ * File storage engine.
+ */	
+Cache::config('_cake_core_', array('engine' => 'Apc',
+                                   'duration'=> 3600,
+                                   'probability'=> 100,
+									'prefix' => 'metarep_ccache_',
+                                  ));	
  /**
  *
  * APC (http://pecl.php.net/package/APC)

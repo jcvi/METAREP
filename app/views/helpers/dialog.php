@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -25,8 +25,49 @@ class DialogHelper extends AppHelper {
 
 	var $helpers = array('Html');	
 	
+	var $searchParagraph = "<p>The 'Filter Panel' allows you to filter datasets using fielded data. When defining a filter you can either specify a field, or use the default field (com_name).
+				You can search any field by typing the field name followed by a colon \":\" and then the term you are looking for.</p>
+				<p>
+				<table>
+				<tr><td valign=\"top\">
+				<ul>
+				<h5>Core Evidence Fields</h5>
+				<BR>
+					<li><strong>com_name_txt</strong> Common name (default field).</li>
+					<li><strong>com_name_src</strong> Common names source/evidence.</li>
+					<li><strong>go_id</strong> Gene Ontology ID.</li>
+					<li><strong>go_src</strong> Gene Ontology source.</li>
+					<li><strong>ec_id</strong> Enzyme Commision ID.</li>
+					<li><strong>ec_src</strong> Enzyme Commision source.</li>
+					<li><strong>hmm_id</strong> PFAM and TIGRFAM HMM accessions</li>
+				</ul>
+				</td><td valign=\"top\">
+				<h5>Best Blast Hit Fields</h5>
+				<BR>
+					<li><strong>blast_species</strong> Blast species.</li>
+					<li><strong>blast_tree</strong> NCBI taxonomy lineage for blast species.</i></li>
+					<li><strong>blast_evalue_exp</strong> Negative Blast E-Value exponent.</li>
+					<li><strong>blast_pid</strong> Blast percent identity.</li>
+					<li><strong>blast_cov</strong> Blast coverage of shortest sequence.</li>
+				</ul>
+				</td><td valign=\"top\">
+				<h5>Optional Fields</h5>
+				<BR>
+				<ul>	
+					<li><strong>filter</strong> Sequence filter, e.g. Schmidt et al.</li>
+					<li><strong>apis_tree</strong> NCBI taxonomy lineage for most precise Apis classification.</li>
+					<li><strong>env_lib</strong> Environmental library that has been hit (only available for viral libraries).</li>
+					<li><strong>scaff_id</strong> Scaffold id.</li>
+					<li><strong>scaff_tree</strong> NCBI taxonomy lineage for most precise scaffold classification.</li>
+					</li>
+				</ul></td></tr>
+				</p>
+				<BR>
+				</table>
+				</p>";
+	
 	function printSearch($divId, $dataset = null, $action = 'index') {
-		echo("<div id=\"$divId\" title=\"METAREP Lucene Query Syntax\">	
+		echo("<div id=\"$divId\" title=\"Search Help Dialog\">	
 		<p><p>The search supports fielded data. When performing a search you can either specify a field, or use the default field (com_name).
 		You can search any field by typing the field name followed by a colon \":\" and then the term you are looking for.</p>
 		<p>
@@ -84,56 +125,16 @@ class DialogHelper extends AppHelper {
 		</div>");
 	}
 	function compare($divId) {
-		echo("<div id=\"$divId\" title=\"METAREP Multi Dataset Comparisons\">
+		echo("<div id=\"$divId\" title=\"Compare Datasets Help Dialog\">
 				<BR>	
 				<b>Select Datasets</b>
 				<BR>	
 				<p>Choose datsets from the left subpanel either by clicking on the + symbol or by dragging it into the left subpanel. You can narrow down the list in the rigth subpanel by entering a search term into the
 				text box above the list.<p>
 				<BR>	
-				<b>Filter Datasets</b>
-				<p>The 'Filter Datasets Panel' allows you to filter all data sets using fielded data. When defining a filter you can either specify a field, or use the default field (com_name).
-				You can search any field by typing the field name followed by a colon \":\" and then the term you are looking for.</p>
-				<p>
-				<table>
-				<tr><td valign=\"top\">
-				<ul>
-				<h5>Core Evidence Fields</h5>
-				<BR>
-					<li><strong>com_name_txt</strong> Common name (default field).</li>
-					<li><strong>com_name_src</strong> Common names source/evidence.</li>
-					<li><strong>go_id</strong> Gene Ontology ID.</li>
-					<li><strong>go_src</strong> Gene Ontology source.</li>
-					<li><strong>ec_id</strong> Enzyme Commision ID.</li>
-					<li><strong>ec_src</strong> Enzyme Commision source.</li>
-					<li><strong>hmm_id</strong> PFAM and TIGRFAM HMM accessions</li>
-				</ul>
-				</td><td valign=\"top\">
-				<h5>Best Blast Hit Fields</h5>
-				<BR>
-					<li><strong>blast_species</strong> Blast species.</li>
-					<li><strong>blast_tree</strong> NCBI taxonomy lineage for blast species.</i></li>
-					<li><strong>blast_evalue_exp</strong> Negative Blast E-Value exponent.</li>
-					<li><strong>blast_pid</strong> Blast percent identity.</li>
-					<li><strong>blast_cov</strong> Blast coverage of shortest sequence.</li>
-				</ul>
-				</td><td valign=\"top\">
-				<h5>Optional Fields</h5>
-				<BR>
-				<ul>	
-					<li><strong>filter</strong> Sequence filter, e.g. Schmidt et al.</li>
-					<li><strong>apis_tree</strong> NCBI taxonomy lineage for most precise Apis classification.</li>
-					<li><strong>env_lib</strong> Environmental library that has been hit (only available for viral libraries).</li>
-					<li><strong>scaff_id</strong> Scaffold id.</li>
-					<li><strong>scaff_tree</strong> NCBI taxonomy lineage for most precise scaffold classification.</li>
-					</li>
-				</ul></td></tr>
-				</p>
-				<BR>
-				</table>
-				</p>
+				<b>Filter Datasets</b>{$this->searchParagraph}
 				<BR>	
-				<b>Options</b>
+				<b>Compare Options</b>
 				<BR>	
 				<p>
 				<table>
@@ -151,33 +152,42 @@ class DialogHelper extends AppHelper {
 				</td><td valign=\"top\">
 				<h5>Statistical Test</h5>
 				<BR>
-					<li><strong>Chi-Square test of independence</strong> Blast species.</li>
-					<li><strong>METASTATS</strong> NCBI taxonomy lineage for blast species.</i></li>
-					<li><strong>blast_evalue_exp</strong> Negative Blast E-Value exponent.</li>
-					<li><strong>blast_pid</strong> Blast percent identiy.</li>
-					<li><strong>blast_cov</strong> Blast coverage of shortest sequence.</li>
+					<li><strong>Chi-Square Test of Independence</strong> Tests association between a certain feature (taxon, hmm, etc.) and selected datasets (assumes that selected datasets are derived from a single population).</li>
+					<li><strong>Wilcoxon Rank Sum Test</strong> non-parametric test to compare two sample populations.</i></li>
+					<li><strong>METASTATS</strong> modified non-parametric test to compare two sample populations (White et al.).</i></li>
 				</ul>
 				</td><td valign=\"top\">
-				<h5>Optional Fields</h5>
+				<h5>Hierarchical Clustering Plot</h5>
 				<BR>
 				<ul>	
-					<li><strong>filter</strong> Sequence filter, e.g. Schmidt et al.</li>
-					<li><strong>apis_tree</strong> NCBI taxonomy lineage for most precise Apis classification.</li>
-					<li><strong>env_lib</strong> Environmental library that has been hit (only available for viral libraries).</li>
-					<li><strong>scaff_id</strong> Scaffold id.</li>
-					<li><strong>scaff_tree</strong> NCBI taxonomy lineage for most precise scaffold classification.</li>
+					<li><strong>Complete Linkage Cluster Plot</strong> uses the maximum distance of two merged clusters for the next clustering iteration.</li>
+					<li><strong>Average Linkage Cluster Plot</strong> uses average distance of two merged clusters for the next clustering iteration
+(tends to find spherical clusters with equal variance).</li>
+					<li><strong>Single Linkage Cluster Plot</strong> uses minimum distance of two merged clusters for the next clustering iteration
+(tends to have less bias for detecting highly elongated or irregular shaped clusters).</li>
+					<li><strong>Wards Minimum Variance Cluster Plot </strong>tends to find spherical clusters with approximately the same number
+of observations in each cluster</li>
+					<li><strong>Median Cluster Plot</strong>  uses median distance of two merged clusters for next clustering iteration..</li>
+					<li><strong>McQuitty Cluster Plot</strong></li>
+					<li><strong>Centroid Cluster Plot</strong></li>
 					</li>
-				</ul></td></tr>
+				</ul></td>
+				<td valign=\"top\">
+				<h5>Other Plot</h5>
+				<BR>
+				<ul>	
+					<li><strong>Multidimensional Scaling Plot</strong> applies non-metric multidimensional scaling to project differences between samples
+onto a two dimensional space where samples that are close are more similar than those that a farther apart.</li>
+					<li><strong>Heatmap Plot</strong> prvides quick visual impression of differences between datasets and
+categories. Differences are highlighted by a color gradient and dendrograms (tree like structures) that
+are added to the left and to the top axis. Click on the download button to
+download both sets of euclidean distances</li>
+				</ul></td>				
+				</tr>
+				
 				</p>
 				<BR>
 				</table>				
-				
-				
-				&#160;&#160;&#160;<strong>Absolute Counts</strong>
-				&#160;&#160;&#160;displays the absolute number of peptides that fall into a certain category. 
-				&#160;<strong>Relative Counts</strong> displays the absolute number of peptides that fall into a certain category 
-				devided by the dataset's overall number of peptides. The <strong>Heatmap</strong> option  The minumum absolute count (<strong>Min. Abs. Count</strong>) allows to filter for categories with equal or more peptides than specified (accross all datasets).
-				</p>
 				<BR>	
 				<b>Tabs</b><BR>
 				<p>
@@ -193,29 +203,46 @@ class DialogHelper extends AppHelper {
 	}
 	
 	function browseTaxonomy($divId) {
-		echo("<div id=\"$divId\" title=\"METAREP Taxonomy Browser\">
-		<p><B>NCBI Taxonomy Tree</B>
+		echo("<div id=\"$divId\" title=\"Browse Taxonomy Help Dialog\">
+				
+		<b>Filter</b>{$this->searchParagraph}
+		<BR>		
+		<p><B>Browse Taxonomy</B>
 		Expand a taxon in the tree on the left hand side by clicking it.
 		For each tree level the taxon name, its rank and the number of peptides are shown. <BR><BR>
 		<B>Taxon Summaries:</B> For each selected taxon, various functional and taxonomic assignments are summarized on the right hand side.
 		Counts reflect the number of peptides that have a taxonomic assignment that belongs to the lineage of the selected taxon.
 		Percentages reflect the proportion of peptides in that selected taxon that fall into a certain category.</p>
+		<BR>	
+		<b>Download</b>	
+		<p>
+		Browse results can be downloaded by clicking on the disk with the green arrow at the left upper corner of the panels on the right hand side.".$this->Html->image("download-small.png")."
+		</p>		
 		</div>");
 	}
 	function browseEnzymes($divId) {
-			echo("<div id=\"$divId\" title=\"METAREP Enzyme Browser\">
-			<p><B>Enzymes Classes:</B>
+			echo("<div id=\"$divId\" title=\"Browse Enzymes Help Dialog\">
+			<b>Filter</b>{$this->searchParagraph}
+			<BR>				
+			<p><B>Browse Enzymes</B>
 			Expand an enzyme class in the tree on the left hand side by clicking it. 
 			For each enzyme level the enzyme class name, its level and the number of peptides are shown. <BR><BR>
 			<B>Enzyme Class Summaries:</B> For each selected enzyme class, various functional and taxonomic assignments
 			are summarized on the right hand side. Counts reflect the number of peptides that have an EC number assignment
 			that belongs to the selected class. Percentages reflect the proportion of peptides in that selected class that
 			fall into a certain category.</p>
+			<BR>	
+			<b>Download</b>	
+			<p>
+			Browse results can be downloaded by clicking on the disk with the green arrow at the left upper corner of the panels on the right hand side.".$this->Html->image("download-small.png")."
+			</p>			
 			</div>");
 	}
 	function browsePathways($divId) {
-			echo("<div id=\"$divId\" title=\"METAREP Pathway Browser\">
-			<p><B>Pathway Classes:</B>
+			echo("<div id=\"$divId\" title=\"Browse Pathways Help Dialog\">
+			<b>Filter</b>{$this->searchParagraph}
+			<BR>				
+			<p><B>Browse Pathways</B>
 			Expand a pathway class, pathway or an enzyme in the tree on the left hand side by clicking it. 
 			For each pathway level the pathway name, its level and the number of hits are shown. <BR><BR>
 			<B>Pathway Summaries:</B> For each selected pathway, or enzyme various functional and taxonomic assignments
@@ -224,17 +251,29 @@ class DialogHelper extends AppHelper {
 			Counts reflect the number of peptides that have an EC number assignment
 			that belongs to the selected pathway or pathway group. Percentages reflect the proportion of peptides in the selected class that
 			fall into a certain category.</p>
+			<BR>	
+			<b>Download</b>	
+			<p>
+			Browse results can be downloaded by clicking on the disk with the green arrow at the left upper corner of the panels on the right hand side.".$this->Html->image("download-small.png")."
+			</p>			
 			</div>");
 	}	
 	function browseGeneOntology($divId) {
-			echo("<div id=\"$divId\" title=\"METAREP Gene Ontology Browser\">
-			<p><B>Gene Ontology Tree</B>
+			echo("<div id=\"$divId\" title=\"Browse Gene Ontology Help Dialog\">
+			<b>Filter</b>{$this->searchParagraph}
+			<BR>				
+			<p><B>Browse Gene Ontology</B>
 			 Expand a GO class in the tree on the left hand side by clicking it. 
 			 For each GO class, the class accession, name and the number of peptides are shown.
 			 <BR><BR><B>Gene Ontology Class Summaries:</B> For each GO class, various functional
 			 and taxonomic assignments are summarized on the right hand side. Counts reflect the number of peptides
 			 that have a GO assignment that belongs to the selected class or is a child of it. Percentages reflect the
 			 proportion of peptides in that selected class that fall into a certain category.</p>
+			<BR>	
+			<b>Download</b>	
+			<p>
+			Browse results can be downloaded by clicking on the disk with the green arrow at the left upper corner of the panels on the right hand side.".$this->Html->image("download-small.png")."
+			</p>			 
 			</div>");
 	}	
 	

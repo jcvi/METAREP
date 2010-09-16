@@ -18,7 +18,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.0.1
+  @version METAREP v 1.2.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -28,11 +28,12 @@
 <?php echo $html->css('dashboard.css'); ?>
 <?php echo $html->css('jquery-ui-1.7.2.custom.css'); ?>
 
+
 <div class="dash-board">
 	<h2><?php __('Dash Board')?></h2>
 	<div class="dash-board-main-panel">
 	<fieldset>
-	<legend >JCVI Metagenomics Reports (1.1.0-beta)</legend>
+	<legend >JCVI Metagenomics Reports (v<?php echo(METAREP_VERSION)?>)</legend>
 	<div class="dash-board-abstract">	
 		<p>JCVI Metagenomics Reports (METAREP) is a new <strong>open source</strong> tool for <strong>high-performance</strong> comparative metagenomics. 
 		It provides a suite of web based tools to help scientists to <strong>view, query, browse</strong> and <strong>compare</strong> metagenomics annotation data
@@ -50,16 +51,20 @@
 		<BR><p> 
 		<table  style="border-style:none !important;"><tr><td style="text-align:center">
 			<h6>Download Flyer</h6>
-				<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Download Flyer')), 'http://github.com/downloads/jcvi/METAREP/METAREP-flyer.pdf',array('escape' => false)));?>	
+				<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Flyer')), 'http://github.com/downloads/jcvi/METAREP/METAREP-flyer.pdf',array('escape' => false)));?>	
 			</td >
 			<td style="text-align:center">
 			<h6>Download Manual</h6>
-			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Download Manual')),'http://github.com/downloads/jcvi/METAREP/METAREP-manual.pdf',array('escape' => false)));?>	
+			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Manual')),'http://github.com/downloads/jcvi/METAREP/METAREP-manual.pdf',array('escape' => false)));?>	
+			</td>	
+			<td style="text-align:center">
+			<h6>Open Source</h6>
+			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Source')), 'http://github.com/jcvi/METAREP',array('escape' => false,'target' => '_blank')));?>	
 			</td>	
 			<td style="text-align:center; border-right:none">
-			<h6>Open Source</h6>
-			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Open Source')), 'http://github.com/jcvi/METAREP',array('escape' => false,'target' => '_blank')));?>	
-			</td>	
+			<h6>Download Publication</h6>
+			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Publication')), 'http://bioinformatics.oxfordjournals.org/content/early/2010/08/26/bioinformatics.btq455.full.pdf+html',array('escape' => false,'target' => '_blank')));?>	
+			</td>				
 		</tr>
 		</table>
 		</p>			
@@ -115,7 +120,6 @@
 </fieldset>
 </div>
 
-
 <?php if (!empty($news)):?>
 <div class="dash-board-news-panel" > 
 	<fieldset >
@@ -128,6 +132,14 @@
 	</fieldset>
 </div>
 <?php endif;?>
+
+<div class="dash-board-powered-by-panel" >
+	<fieldset >
+		<legend>Powered By</legend>
+			<?php echo $html->link($html->image("solr.jpg",array("title" => 'Solr','class'=>'img-alignment')), 'http://lucene.apache.org/solr',array('escape' => false,'target' => '_blank'));?>	
+			<?php echo $html->link($html->image("cake.png",array("title" => 'CakePHP','class'=>'img-alignment')), 'http://cakephp.org/',array('escape' => false,'target' => '_blank'));?>		
+	</fieldset>
+</div>
 
 <script type="text/javascript">
 jQuery(function() {

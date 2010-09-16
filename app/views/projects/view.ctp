@@ -16,7 +16,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.0.1
+  @version METAREP v 1.2.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -125,7 +125,7 @@ or has been configured not to display inline frames.]</iframe></p>");
 			<?php echo $population['updated']; ?>		
 		</td>
 		<td style="width:4%;text-align:right">
-			<?php  echo(number_format($this->requestAction("/search/count/".$population['name']))); ?>
+			<?php  echo $population['count'];; ?>
 		</td>		
 		<td style="width:25%;text-align:left">
 			<?php echo $population['name']; ?>
@@ -211,7 +211,7 @@ or has been configured not to display inline frames.]</iframe></p>");
 			<?php echo $library['updated']; ?>		
 		</td>
 		<td style="width:4%;text-align:right">
-			<?php  echo(number_format($this->requestAction("/search/count/".$library['name']))); ?>
+			<?php echo $library['count'];  ?>
 		</td>				
 		<td style="width:25%;text-align:left">
 			<?php echo $library['name']; ?>
@@ -243,8 +243,8 @@ or has been configured not to display inline frames.]</iframe></p>");
 		</td>		
 		<?php if($currentUserId == $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP):?>
 		<td class="actions" style="width:4%;text-align:right">
-			<?php echo $html->link(__('Edit', true), array('controller'=>'libraries','action'=>'edit', $library['id'])); ?>
-			<?php echo $html->link(__('Delete', true), array('controller'=>'libraries','action'=>'delete', $library['id']),array(),'Delete library?'); ?>			
+			<?php if($currentUserId == $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP){echo $html->link(__('Edit', true), array('controller'=>'libraries','action'=>'edit', $library['id']));} ?>
+			<?php if($userGroup === ADMIN_USER_GROUP){echo $html->link(__('Delete', true), array('controller'=>'libraries','action'=>'delete', $library['id']),array(),'Delete library?');} ?>			
 		</td>
 		<?php endif;?>
 		<td class="actions" style="width:4%;text-align:right">

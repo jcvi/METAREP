@@ -20,7 +20,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -35,15 +35,31 @@ define('PATHWAY', 'Pathway');
 class BrowseController extends AppController {
 	
 	var $name 		= 'Browse';
-	var $limit 		= 10;
-	var $helpers 	= array('Facet','Tree','Ajax','Dialog');	
-	var $uses 		= array('Project','Taxonomy','GoTerm','GoGraph','Enzymes','Population','Library','Pathway');	
+	var $helpers 	= array('Facet','Tree','Dialog');
+	var $uses 		= array();	
 	var $components = array('Session','RequestHandler','Solr','Format');
 	
-	function blastTaxonomy($dataset='CBAYVIR',$expandTaxon=1) {
+	function filter($dataset,$action) {
+		$query = $this->data['Filter']['filter'];
 		
-		$this->pageTitle = 'Browse Blast Taxonomy';
+		if(empty($query)){
+			$query = '*:*';
+		}
 		
+		$this->Session->write($action.'.browse.query',$query);
+		$this->setAction($action,$dataset);
+	}
+	
+	function blastTaxonomy($dataset='CBAYVIR',$expandTaxon=1,$query='*:*') {	
+		$function = __FUNCTION__;		
+		$this->loadModel('Project');
+		$this->loadModel('Taxonomy');
+		$this->pageTitle = 'Browse Taxonomy (Blast)';
+			
+		if($this->Session->check($function.'.browse.query')){
+			$query = $this->Session->read($function.'.browse.query');
+		}
+
 		//get session based taxonomic tree
 		$displayedTree = $this->Session->read(BLAST_TAXONOMY.'.tree');
 		
@@ -65,9 +81,10 @@ class BrowseController extends AppController {
 		foreach($taxaChildren as $taxon) {
 				
 			try{
-				$count=  $this->Solr->count($dataset,"blast_tree:".$taxon['Taxonomy']['taxon_id']);
+				$count=  $this->Solr->count($dataset,"($query) AND (blast_tree:{$taxon['Taxonomy']['taxon_id']})");
 			}
 			catch(Exception $e) {
+				debug("$query AND blast_tree:{$taxon['Taxonomy']['taxon_id']}");
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
 				$this->redirect('/projects/index');
 			}
@@ -95,7 +112,7 @@ class BrowseController extends AppController {
 						"facet.limit" => NUM_TOP_FACET_COUNTS);
 		
 		try{		
-			$result = $this->Solr->search($dataset,"blast_tree:$expandTaxon", 0,0,$solrArguments,true);
+			$result = $this->Solr->search($dataset,"($query) AND (blast_tree:$expandTaxon)", 0,0,$solrArguments,true);
 		}
 		catch(Exception $e) {
 			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
@@ -129,15 +146,20 @@ class BrowseController extends AppController {
 		$this->set('mode',BLAST_TAXONOMY);			
 	}
 
-	
 	/**
 	 * @param unknown_type $dataset
 	 * @param unknown_type $expandTaxon
 	 */
 	
-	function apisTaxonomy($dataset='CBAYVIR',$expandTaxon=1) {
-		
-		$this->pageTitle = 'Browse Apis Taxonomy';
+	function apisTaxonomy($dataset='CBAYVIR',$expandTaxon=1,$query='*:*') {
+		$function = __FUNCTION__;
+		$this->loadModel('Project');
+		$this->loadModel('Taxonomy');		
+		$this->pageTitle = 'Browse Taxonomy (Apis)';
+				
+		if($this->Session->check($function.'.browse.query')){
+			$query = $this->Session->read($function.'.browse.query');
+		}
 		
 		//get session based taxonomic tree
 		$displayedTree = $this->Session->read(APIS_TAXONOMY.'.tree');
@@ -146,6 +168,10 @@ class BrowseController extends AppController {
 			$expandTaxon=1;
 		}
 
+		if($this->Session->check($function.'.blast.query')){
+			$query = $this->Session->read($function.'.blast.query');
+		}	
+		
 		//get taxonomy information from database
 		$taxaChildren = $this->Taxonomy->find('all', array('conditions' => array('Taxonomy.parent_tax_id' => $expandTaxon)));
 		$taxaParent = $this->Taxonomy->find('first', array('conditions' => array('Taxonomy.taxon_id' => $expandTaxon)));
@@ -161,7 +187,7 @@ class BrowseController extends AppController {
 				
 			//get solr count
 			try {
-				$count=  $this->Solr->count($dataset,"apis_tree:".$taxon['Taxonomy']['taxon_id']);
+				$count=  $this->Solr->count($dataset,"($query) AND (apis_tree:{$taxon['Taxonomy']['taxon_id']})");
 			}	
 			catch(Exception $e) {
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
@@ -191,7 +217,7 @@ class BrowseController extends AppController {
 						"facet.limit" => NUM_TOP_FACET_COUNTS);
 		
 		try{		
-			$result = $this->Solr->search($dataset,"apis_tree:$expandTaxon", 0,0,$solrArguments,true);
+			$result = $this->Solr->search($dataset,"($query) AND (apis_tree:$expandTaxon)", 0,0,$solrArguments,true);
 		}
 		catch(Exception $e) {
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
@@ -236,9 +262,15 @@ class BrowseController extends AppController {
 		
 	}
 		
-	function enzymes($dataset='CBAYVIR',$expandTaxon='root') {
-		
+	function enzymes($dataset='CBAYVIR',$expandTaxon='root',$query = '*:*') {
+		$function = __FUNCTION__;
+		$this->loadModel('Project');
+		$this->loadModel('Enzymes');			
 		$this->pageTitle = 'Browse Enzymes';
+		
+		if($this->Session->check($function.'.browse.query')){
+			$query = $this->Session->read($function.'.browse.query');
+		}		
 		
 		//get session based taxonomic tree
 		$displayedTree = $this->Session->read(ENZYMES.'.tree');
@@ -247,20 +279,19 @@ class BrowseController extends AppController {
 			$expandTaxon='root';
 		}
 		
-		if($expandTaxon==='root'){
-			$solrQuery = "-ec_id:unassigned";
+		if($expandTaxon === 'root'){
+			$solrQuery = "($query) NOT ec_id:unassigned";
 			$expandTaxon=1;
 		}
 		else {
 			$taxonPrefix = split("\\.-",$expandTaxon);
-			$solrQuery = "ec_id:$taxonPrefix[0]*";
+			$solrQuery = "($query) AND (ec_id:$taxonPrefix[0]*)";
 		}		
 		
 		//get taxonomy information from database
 		$taxaChildren 	= $this->Enzymes->find('all', array('conditions' => array('Enzymes.parent_ec_id' => $expandTaxon)));
 		$taxaParent 	= $this->Enzymes->find('first', array('conditions' => array('Enzymes.ec_id' => $expandTaxon)));
-		//die(print($taxaParent['Taxonomy']['name']));
-		$parentName = $taxaParent['Enzymes']['name'];				
+		$parentName 	= $taxaParent['Enzymes']['name'];				
 
 		$childArray = array();
 		$childCounts = array();
@@ -271,8 +302,8 @@ class BrowseController extends AppController {
 			$ec = split("\\.-",$taxon['Enzymes']['ec_id']);
 			
 			try{
-			//get solr count
-				$count=  $this->Solr->count($dataset,"ec_id:".$ec[0]."*");				
+				//get solr count
+				$count=  $this->Solr->count($dataset,"($query) AND (ec_id:{$ec[0]}*)");				
 			}
 			catch (Exception $e) {
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
@@ -337,9 +368,16 @@ class BrowseController extends AppController {
 		$this->set('mode',ENZYMES);
 	}	
 
-	function geneOntology($dataset='CBAYVIR',$expandTaxon='root') {
-		
+	function geneOntology($dataset='CBAYVIR',$expandTaxon='root',$query='*:*') {
+		$function = __FUNCTION__;
+		$this->loadModel('Project');
+		$this->loadModel('GoTerm');
+		$this->loadModel('GoGraph');	
 		$this->pageTitle = 'Browse Gene Ontology';
+		
+		if($this->Session->check($function.'.browse.query')){
+			$query = $this->Session->read($function.'.browse.query');
+		}			
 		
 		//get session based taxonomic tree
 		$displayedTree = $this->Session->read(GENE_ONTOLOGY.'.tree');
@@ -350,7 +388,7 @@ class BrowseController extends AppController {
 		
 		if($expandTaxon==='root') {
 			//get all entries with go assignment
-			$solrQuery = "-go_id:unassigned";
+			$solrQuery = "($query) NOT go_id:unassigned";
 			$goAcc ="all";
 			
 			//set selected node attributes
@@ -358,7 +396,7 @@ class BrowseController extends AppController {
 			$selectedNode['name'] = 'root';				
 		}
 		else {
-			$solrQuery="go_tree:$expandTaxon";
+			$solrQuery="($query) AND (go_tree:$expandTaxon)";
 			
 			//GO integer to accession
 			$goAcc = "GO:".str_pad($expandTaxon,7,"0",STR_PAD_LEFT);
@@ -391,24 +429,24 @@ class BrowseController extends AppController {
 			
 			//get solr count
 			try{ 
-				$count=  $this->Solr->count($dataset,"go_tree:".$goId);
+				$count=  $this->Solr->count($dataset,"($query) AND (go_tree:$goId)");
 			}
 			catch(Exception $e){
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
 				$this->redirect('/projects/index');
 			}
 			#FIXME	temporary fix for GO parsing error		
-			if($count==0) {				
-				$goIdFix = str_pad($goId,7,"0",STR_PAD_LEFT);
-				
-				try{ 
-					$count=  $this->Solr->count($dataset,"go_tree:".$goIdFix);
-				}
-				catch(Exception $e){
-					$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-					$this->redirect('/projects/index');
-				}				
-			}
+//			if($count==0) {				
+//				$goIdFix = str_pad($goId,7,"0",STR_PAD_LEFT);
+//				
+//				try{ 
+//					$count=  $this->Solr->count($dataset,"go_tree:".$goIdFix);
+//				}
+//				catch(Exception $e){
+//					$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
+//					$this->redirect('/projects/index');
+//				}				
+//			}
 			
 			//set count
 			$taxon['Descendant']['count'] = $count;
@@ -420,7 +458,6 @@ class BrowseController extends AppController {
 
 				//check if leave node (has no children)
 				$goAcc 	= "GO:".str_pad($goId,7,"0",STR_PAD_LEFT);
-				#$childCount = $this->GoGraph->find('count', array('conditions' => array('Ancestor.acc' => $goAcc,'distance'=>'1', 'Descendant.is_obsolete' => '0')));			
 				
 				//$displayName = $goAcc." | ".$taxon['Descendant']['name'];
 				$displayName = $taxon['Descendant']['name']." ($goAcc)";
@@ -429,7 +466,6 @@ class BrowseController extends AppController {
 				$taxon['Descendant']['name'] 	= $displayName;
 				$taxon['Descendant']['count'] 	= $count;
 				$taxon['Descendant']['children']= NULL;
-				#$taxon['Descendant']['rank']	= $childCount == 0 ? 'leave' : '';
 				
 				//create child counts
 				$childCounts[$displayName]=$count;
@@ -458,18 +494,18 @@ class BrowseController extends AppController {
 		$numHits = (int) $result->response->numFound;
 
 		#FIXME	temporary fix for GO parsing error		
-		if($numHits==0) {			
-			$goIdFix = str_pad($expandTaxon,7,"0",STR_PAD_LEFT);
-			$solrQuery="go_tree:$goIdFix";
-			
-			try{
-				$result = $this->Solr->search($dataset,$solrQuery, 0,0,$solrArguments,true);				
-			}
-			catch(Exception $e){
-				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-				$this->redirect('/projects/index');
-			}
-		}		
+//		if($numHits==0) {			
+//			$goIdFix = str_pad($expandTaxon,7,"0",STR_PAD_LEFT);
+//			$solrQuery="go_tree:$goIdFix";
+//			
+//			try{
+//				$result = $this->Solr->search($dataset,$solrQuery, 0,0,$solrArguments,true);				
+//			}
+//			catch(Exception $e){
+//				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
+//				$this->redirect('/projects/index');
+//			}
+//		}		
 				
 		$numHits = (int) $result->response->numFound;
 		$facets = $result->facet_counts;
@@ -514,9 +550,15 @@ class BrowseController extends AppController {
 	 * @return void
 	 * @access public
 	 */	
-	function pathways($dataset='CBAYVIR',$expandNode = 16905) {
-		
+	function pathways($dataset='CBAYVIR',$expandNode = 16905,$query='*:*') {
+		$function = __FUNCTION__;
+		$this->loadModel('Project');
+		$this->loadModel('Pathway');		
 		$this->pageTitle = 'Browse Pathways';
+
+		if($this->Session->check($function.'.browse.query')){
+			$query = $this->Session->read($function.'.browse.query');
+		}			
 		
 		//get session based taxonomic tree
 		$displayedTree = $this->Session->read(PATHWAY.'.tree');
@@ -535,15 +577,13 @@ class BrowseController extends AppController {
 		
 		//get pathway facets and overall counts 
 		if($parentLevel === 'enzyme') {
-			$parentSolrResults = $this->Solr->getPathwayFacets('*:*',$dataset,$parentLevel,$expandNode,$children,$parent['Pathway']['ec_id']);
+			$parentSolrResults = $this->Solr->getPathwayFacets($query,$dataset,$parentLevel,$expandNode,$children,$parent['Pathway']['ec_id']);
 			$parentName = $parent['Pathway']['name']." (".$parent['Pathway']['ec_id'].")";	
 		}
 		else {
-			$parentSolrResults = $this->Solr->getPathwayFacets('*:*',$dataset,$parentLevel,$expandNode,$children);
+			$parentSolrResults = $this->Solr->getPathwayFacets($query,$dataset,$parentLevel,$expandNode,$children);
 		}
-		
-		
-		
+				
 		$childArray 	= array();
 		$childCounts 	= array();
 		$numChildHits 	= 0;
@@ -555,7 +595,7 @@ class BrowseController extends AppController {
 			$nodeId = $node['Pathway']['id'];
 			$ecId 	= $node['Pathway']['ec_id'];
 					
-			$childCount = $this->Solr->getPathwayCount('*:*',$dataset,$level,$nodeId,0,$ecId);
+			$childCount = $this->Solr->getPathwayCount($query,$dataset,$level,$nodeId,0,$ecId);
 				
 			//filter for children
 			if($childCount >= 0 ) {
@@ -579,7 +619,6 @@ class BrowseController extends AppController {
 			}	
 			
 		}
-		#debug($pathwayUrl);
 		
 		//show root level for 1
 		if($expandNode == 16905) {
@@ -608,11 +647,13 @@ class BrowseController extends AppController {
 		$this->set('mode',PATHWAY);	
 	}
 			
-	public function downloadChildCounts($dataset,$node,$mode,$numHits,$query="*:*") {
+	public function downloadChildCounts($dataset,$node,$mode,$numHits,$query = "*:*") {
 		$this->autoRender=false; 
 
+		$query = urldecode($query);
+		
 		if($mode === PATHWAY) {
-			$node = urldecode($node);
+			$node = base64_decode($node);
 		}
 		
 		#get childCounts
@@ -628,13 +669,15 @@ class BrowseController extends AppController {
         echo $content;					
 	}
 
-	public function dowloadFacets($dataset,$node,$mode,$numHits) {
+	public function dowloadFacets($dataset,$node,$mode,$numHits,$query = "*:*") {
 		$this->autoRender=false; 
 
+		$query = urldecode($query);
+		
 		#get facet data from session
 		$facets = $this->Session->read($mode.'.facets');
 		
-		$content=$this->Format->facetListToDownloadString("Browse $mode Results - Top 10 Functional Categories",$dataset,$facets,"*:*",$numHits,$node);
+		$content=$this->Format->facetListToDownloadString("Browse $mode Results - Top 10 Functional Categories",$dataset,$facets,$query,$numHits,$node);
 		
 		$fileName = "jcvi_metagenomics_report_".time().'.txt';
 		

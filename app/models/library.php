@@ -14,14 +14,13 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
 
 class Library extends AppModel {
-
 	var $name 				 = 'Library';
 	var $belongsTo 			 = array('Project');	
 	var $hasAndBelongsToMany = array('Population');
@@ -62,15 +61,14 @@ class Library extends AppModel {
 	);	
 		
 	public function getProjectName($dataset) {
+		$this->contain('Project');
 		$library = $this->find('first', array('conditions' => array('Library.name' => $dataset)));
 		return $library['Project']['name'];
 	}
 
 	public function getNameById($id) {
-		$this->unbindModel(array('belongsTo' => array('Project'),),false);	
-		$this->unbindModel(array('hasAndBelongsToMany' => array('Populations'),),false);	
 		$library = $this>findById($id);	
 		return $library['Library']['name'];	
-	} 	
+	} 
 }
 ?>

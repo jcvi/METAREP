@@ -13,7 +13,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -39,8 +39,7 @@ class FormatComponent extends Object {
 			$content .= "Kegg Pathway Class: $level2 \n";
 			$content .= "Pathway\tAbsolute Count\tRelative Count\tPathway Enzymes\t#Found Enzymes\t%Found Enzymes\n";
 			foreach($pathways as $pathway) {
-				$relativeCount= round($pathway['numPeptides']/$numHits,4);
-				
+				$relativeCount= round($pathway['numPeptides']/$numHits,4);				
 				$content .= $pathway['pathway']."\t";
 				$content .= $pathway['numPeptides']."\t";				
 				$content .= $relativeCount."\t";		
@@ -56,6 +55,7 @@ class FormatComponent extends Object {
 		$content ="----------------------------------------------------------\n";
 		$timestamp =$today = date("F j, Y, g:i a"); 
 		$content .= METAREP_RUNNING_TITLE." - $title\n";
+		$content .= "Version:\t".METAREP_VERSION."\n";
 		#for browse data add node
 		$content .= "Date:\t\t$timestamp\nQuery:\t\t$query\n";
 		

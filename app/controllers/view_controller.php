@@ -22,7 +22,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -30,21 +30,18 @@
 class ViewController extends AppController {
 	
 	var $name 		= 'View';
-	var $helpers 	= array('LuceneResultPaginator','Facet','Ajax');
-	var $uses 		= array('Project','Population','Library','GoTerm','GoGraph','Enzymes','Hmm','Pathway');
+	var $helpers 	= array('LuceneResultPaginator','Facet');
+	var $uses 		= array();
 	var $components = array('Solr','Format');
 	
 	//this function lets us view all detail of the lucene index
-	function index($dataset='CBAYVIR',$page=1) {
-			
-		//unset existing filter session variables		
-		if($this->Session->check('view.filter')) {
-			$this->Session->delete('view.filter');
-		}
-				
-		$this->Project->unbindModel(array('hasMany' => array('Population'),),false);
-		$this->Project->unbindModel(array('hasMany' => array('Library'),),false);
+	function index($dataset='CBAYVIR',$page=1) {	
 		
+		//create unique session id
+		$viewSessionId = 'view.'.time();
+		
+		$this->loadModel('Project');
+						
 		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
 		
 		$displayLimit 	= 20;
@@ -53,59 +50,66 @@ class ViewController extends AppController {
 		$solrArguments = array(	'fl' => 'peptide_id com_name com_name_src blast_species blast_evalue go_id go_src ec_id ec_src hmm_id');		
 		$result = $this->Solr->search($dataset,"*:*", ($page-1)*$displayLimit,$displayLimit,$solrArguments);			
 		$numHits = (int) $result->response->numFound;
-		$hits = $result->response->docs;
-						
+		$documents = $result->response->docs;
+		
 		$filters = $this->Solr->facet($dataset,'filter');
 		
 		if(count($filters) > 1) {
 			foreach($filters as $filter=>$numPeptides) {
 				$filters[$filter] = "$filter (".number_format($numPeptides)." hits)";
 			}
-			$this->Session->write('view.filters',$filters);
+			$viewResults['filters'] = $filters;
 		}
 		else {
 			unset($filters);
-			if($this->Session->check('view.filters')) {
-				$this->Session->delete('view.filters');
-			}	
+			if(isset($viewResults['filters'])) {
+				unset($viewResults['filters']);
+			}
 		}
 		
 		//write session variables
-		$this->Session->write('view.optionalDatatypes',$optionalDatatypes);	
-		$this->Session->write('projectId',$this->Project->getProjectId($dataset));
-		$this->Session->write('projectName',$this->Project->getProjectName($dataset));
-		$this->Session->write('view.numHits',$numHits);
-		$this->Session->write('view.hits',$hits);
+		$viewResults['optionalDatatypes'] = $optionalDatatypes;
+		$viewResults['projectId'] = $this->Project->getProjectId($dataset);
+		$viewResults['projectName'] = $this->Project->getProjectName($dataset);
+		$viewResults['numHits'] = $numHits;
+		$viewResults['documents'] = $documents;
+		
+		//store session object
+		$this->Session->write($viewSessionId,$viewResults);	
 
-		//set post variables
+		//set view variables
+		$this->set('sessionId',$viewSessionId);
 		$this->set('dataset',$dataset);
 		$this->set('page',$page);
 	}
 	
-	function facet($dataset='CBAYVIR',$facetField,$prefix ='',$limit=20) {		
+	function facet($dataset='CBAYVIR',$sessionId,$facetField,$prefix ='',$limit=20) {		
 	
+		$viewResults = $this->Session->read($sessionId);
+			
 		if(empty($this->data['Post'])) {
-			if($this->Session->check('view.limit')) {
-				$limit = $this->Session->read('view.limit');
+			if(isset($viewResults['limit']))	{ 			
+				$limit = $viewResults['limit'];
 			}
-			if($this->Session->check('view.filter')) {
-				$filter = $this->Session->read('view.filter');
+			if(isset($viewResults['filter']))	{ 			
+				$filter = $viewResults['filter'];
 			}			
 		}
 		else {
 			if(!empty($this->data['Post']['limit'])) {
 				$limit = $this->data['Post']['limit'];
-				$this->Session->write('view.limit',$limit);
+				$viewResults['limit'] = $limit;
 			}
+			
 			//reset filter variables if no option '-select filter--' has been selected
 			if(empty($this->data['Post']['filter'])) {	
-				if($this->Session->check('view.filter')) {
-					$this->Session->delete('view.filter');
+				if(isset($viewResults['filter'])) {
+					unset($viewResults['filter']);
 				}
 			}
 			elseif(!empty($this->data['Post']['filter'])) {
 				$filter = $this->data['Post']['filter'];
-				$this->Session->write('view.filter',$filter);
+				$viewResults['filter'] = $filter;
 			}
 		}
 
@@ -127,7 +131,7 @@ class ViewController extends AppController {
 		}
 		
 		try {
-			$result= $this->Solr->search($dataset,$query, 0,0,$solrArguments,true);
+			$result= $this->Solr->search($dataset,$query, 0,0,$solrArguments,true);			
 		}
 		catch(Exception $e) {
 			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
@@ -136,36 +140,41 @@ class ViewController extends AppController {
 			
 		$numHits= (int) $result->response->numFound;
 		$facetCounts = $result->facet_counts;
-				
-		//write session variables
-		$this->Session->write('view.facetCounts',$facetCounts);		
-		$this->Session->write('view.limit',$limit);
-		$this->Session->write('view.numHits',$numHits);	
-						
+		
+		$viewResults['facetCounts'] = $facetCounts;
+		$viewResults['limit']  = $limit;
+		$viewResults['numHits']= $numHits;
+
+		$this->Session->write($sessionId,$viewResults);			
+		
+		$this->set('sessionId',$sessionId);			
 		$this->set('dataset',$dataset);
 		$this->set('facetField',$facetField);
 		$this->render('result_panel','ajax');
 	}
 	
-	function pathways($dataset,$facetField) {	
+	function pathways($dataset,$sessionId,$facetField) {	
+		$this->loadModel('Pathway');
 		
-		$numHits  = $this->Session->read('view.numHits');
+		$viewResults = $this->Session->read($sessionId);
+		
+		$numHits  = $viewResults['numHits'];
 		
 		if(empty($this->data['Post'])) {
-			if($this->Session->check('view.filter')) {
-				$filter = $this->Session->read('view.filter');
+			if(isset($viewResults['filter']))	{ 			
+				$filter = $viewResults['filter'];
 			}			
 		}
 		else {
 			//reset filter variables if no option '-select filter--' has been selected
 			if(empty($this->data['Post']['filter'])) {	
-				if($this->Session->check('view.filter')) {
-					$this->Session->delete('view.filter');
+				if(isset($viewResults['filter'])) {
+					unset($viewResults['filter']);
 				}
 			}
 			elseif(!empty($this->data['Post']['filter'])) {
 				$filter = $this->data['Post']['filter'];
-				$this->Session->write('view.filter',$filter);
+				$viewResults['filter'] = $filter;
 			}
 		}
 
@@ -196,7 +205,6 @@ class ViewController extends AppController {
 		$pathways 	  = array();
 	
 		$solrEcIds 	  = array_keys($solrEcIdHash);
-		
 				
 		$level2Results= $this->Pathway->find('all', array('fields'=> array('id','name'),'conditions' => array('level' => 'level 2')));
 		
@@ -244,8 +252,11 @@ class ViewController extends AppController {
 			
 			$pathways[$level2Name]=$level2Results;		
 		}
+		$viewResults['facetCounts'] = $pathways;
 		
-		$this->Session->write('view.pathways',$pathways);					
+		$this->Session->write($sessionId,$viewResults);						
+		
+		$this->set('sessionId',$sessionId);			
 		$this->set('dataset',$dataset);
 		$this->set('facetField',$facetField);
 		$this->render('result_panel','ajax');
@@ -254,11 +265,14 @@ class ViewController extends AppController {
 	#function comparePercentEnzymes($a, $b) { return strnatcmp($b['percFoundEnzymes'], $a['percFoundEnzymes']); } 
 	private function comparePeptideCount($a, $b) { return strnatcmp($b['numPeptides'], $a['numPeptides']); } 
 	
-	function download($dataset,$facetField) {
+	function download($dataset,$sessionId,$facetField) {
 		$this->autoRender=false; 
 		
-		$numHits = $this->Session->read('view.numHits');
-		$limit = $this->Session->read('view.limit');
+		$viewResults = $this->Session->read($sessionId);	
+		$facetCounts = $viewResults['facetCounts'];
+		
+		$numHits = $viewResults['numHits'];
+		$limit 	 = $viewResults['limit'];
 		
 		$facetName = '';
 		
@@ -289,24 +303,24 @@ class ViewController extends AppController {
 				break;				
 		}	
 		
-		if($this->Session->check('view.filter')) {
-			$filter = $this->Session->read('view.filter');
+		if(isset($viewResults['filter'])) {
+			$filter = $viewResults['filter'];
 			$query = "filter:$filter";	
 		}
 		else {
 			$query = '*:*';
 		}		
 		
-		#pathway data has to handled differently since it is not a lucene facet data type
+		//pathway data has to handled differently since it is not a lucene facet data type
 		if($facetField === 'pathway_id') {				
-			$pathways = $this->Session->read('view.pathways');
+			#$pathways = $this->Session->read('view.pathway.counts');
 			$content = $this->Format->infoString("$facetName Categories ",$dataset,$query,0,$numHits);	
-			$content.= $this->Format->pathwayToDownloadString($pathways,$numHits);
+			$content.= $this->Format->pathwayToDownloadString($facetCounts,$numHits);
 		}
 		else {			
-			$facets = $this->Session->read('view.facetCounts');		
+			#$facets = $this->Session->read('view.facet.counts');		
 			$content = $this->Format->infoString("Top $limit $facetName Categories ",$dataset,$query,0,$numHits);		
-			$content.= $this->Format->facetToDownloadString($facetName,$facets->facet_fields->{$facetField},$numHits);	
+			$content.= $this->Format->facetToDownloadString($facetName,$facetCounts->facet_fields->{$facetField},$numHits);	
 		}
 
 		#generate download file name

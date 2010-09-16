@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -22,21 +22,18 @@
 
 class DashboardController extends AppController {
 	
-	var $components = array('Solr');
-    
-	var $uses = array('Blog','Project');
+	var $components = array('Solr');  
+	var $uses = array();
 	
 	function index() {
-
-		$this->Project->recursive = 2;
-		$this->User->recursive = 1;
+		$this->loadModel('Project');	
+		$this->loadModel('Blog');
 		$projects = array();
 		
-		if($this->Authsome->get()) {
-			$news 	  = $this->Blog->find('all',array('limit' => 10));
-			
-			$this->User->recursive = 1;
-			$this->Project->recursive = 2;
+		$this->Project->contain('Library.id','Population.id');
+		
+		if($this->Authsome->get()) {				
+			$news = $this->Blog->find('all',array('limit' => 4));
 			
 			$user 		= $this->Authsome->get();
 			$userId 	= $user['User']['id'];
@@ -58,7 +55,7 @@ class DashboardController extends AppController {
 			$this->render('user_dashboard');
 		}
 		else {			
-			$news 	  = $this->Blog->find('all',array('limit' => 10));
+			$news 	  = $this->Blog->find('all',array('limit' => 4));
 			$projects = $this->Project->find('all',array('order'=>array('updated DESC'),'limit' => 5));
 			$this->set('projects', $projects);			
 			$this->set('news', $news);

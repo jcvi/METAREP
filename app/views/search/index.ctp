@@ -18,7 +18,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.0.1
+  @version METAREP v 1.2.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -36,10 +36,11 @@
 	    <li><?php echo $html->link('Search Dataset', "/view/index/$dataset");?></li>
 	</ul>
 	<?php 	
-			#read session variables
+			//read session variables
 			$query = $session->read($sessionQueryId);
 			$searchFields = $session->read('searchFields');
 			$field = $session->read('searchField');
+			$suggestions = $session->read('suggestions');
 			
 	?>
 	<h2><?php __("Search Dataset");?><span class="selected_library"><?php echo "$dataset ($projectName)"; ?></span><span id="spinner" style="display: none;"><?php echo $html->image('ajax-loader.gif', array('width'=>'25px')); ?></span></h2>
@@ -71,6 +72,23 @@
 		?>
 		</fieldset>
 	</div>
+	<?php if(!empty($suggestions)) { ?>
+	<div id="search-suggestions">
+			<fieldset>
+		<legend>Search Terms (<?php echo count($suggestions)?>)</legend>
+		<div id="search-suggestions-panel">
+		<?php
+			echo('<ul>');
+			foreach($suggestions as $suggestion) {
+					echo("<li>$suggestion</li>");
+			}
+			echo('</ul>');
+		?>
+		</div>
+		</fieldset>
+	</div>
+	<?php }?>
+	
  	<div id="search-results">
 		<?php if($numHits>0) { ?>
 		

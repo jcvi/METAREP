@@ -332,6 +332,7 @@ class Apache_Solr_Service
 		$context = stream_context_create(
 			array(
 				'http' => array(
+
 					// set HTTP method
 					'method' => 'POST',
 
@@ -350,8 +351,11 @@ class Apache_Solr_Service
 		{
 			// timeouts with file_get_contents seem to need
 			// to be halved to work as expected
-			$timeout = (float) $timeout / 2;
+			//$timeout = (float) $timeout / 2;
 
+			//set timeout to a day
+			$timeout = 86400;
+			
 			stream_context_set_option($context, 'http', 'timeout', $timeout);
 		}
 
@@ -905,9 +909,6 @@ class Apache_Solr_Service
 		// multiple foo=bar strings. This regex should always work since '=' will be urlencoded
 		// anywhere else the regex isn't expecting it
 		$queryString = preg_replace('/%5B(?:[0-9]|[1-9][0-9]+)%5D=/', '=', $queryString);
-		
-		
-		#debug($this->_searchUrl . $this->_queryDelimiter . $queryString);
 		
 		if ($method == self::METHOD_GET)
 		{

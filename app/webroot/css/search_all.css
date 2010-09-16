@@ -36,6 +36,33 @@ CSS for search page
 	,argin:0px !important;
 	/*overflow:auto*/;
 }
+
+#search-suggestions {  
+	position: relative;
+	top: 20px;
+	width: 100%;
+	font-size:1em;
+	max-height:80px;
+	padding-bottom:25px;
+	float:none;
+
+}
+#search-suggestions-panel {  
+	max-height:80px;
+	overflow:auto;
+}
+#search-suggestions ul{
+     width: 99%;
+     list-style-type: disc !important;
+     font-size:0.9em;
+     font-weight:bold;
+}
+
+#search-suggestions li{
+    float: left;
+    width: 18em;   
+}
+
 select {
 	height: 20px;
 	width: 150px;

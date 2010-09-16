@@ -17,8 +17,34 @@ CSS for search page
 	position: relative;
 	top: 0px;
 	float:none;
-	
 }
+
+#search-suggestions {  
+	position: relative;
+	top: 20px;
+	width: 100%;
+	font-size:1em;
+	padding-bottom:25px;
+	max-height:80px;
+	float:none;
+
+}
+#search-suggestions-panel {  
+	max-height:80px;
+	overflow:auto;
+}
+#search-suggestions ul{
+     width: 99%;
+     list-style-type: disc !important;
+     font-size:0.9em;
+     font-weight:bold;
+}
+
+#search-suggestions li{
+    float: left;
+    width: 18em;   
+}	
+
 .facet-pie-panel { 
 	position: relative;
 	top: 0px;

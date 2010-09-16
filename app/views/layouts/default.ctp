@@ -127,9 +127,18 @@
 </style>
 </head>
 <body>
+	
 	<div id="container">
 		<div id="header">
-			<h1><?php echo $html->link(__(METAREP_RUNNING_TITLE, true), '/projects'); ?></h1>			
+			<h1></h1>			
+		</div>	
+		<div id="header-url-panel">
+			<ul>
+				<li>website <span style="color: #00A4E4;"><a href="<?php echo(METAREP_URL_ROOT)?>"><?php echo(METAREP_URL_ROOT)?></a></span></li>
+				<li>source code <span style="color: #00A4E4;"><a href="http://github.com/jcvi/METAREP">http://github.com/jcvi/METAREP</a></span></li>
+				<li>blog <span style="color: #00A4E4;"><a href="http://blogs.jcvi.org/tag/metarep">http://blogs.jcvi.org/tag/metarep</a></span></li>
+				<li>contact <span style="color: #00A4E4;"><a href="mailto:<?php echo(METAREP_SUPPORT_EMAIL)?>"><?php echo(METAREP_SUPPORT_EMAIL)?></a></span></li>
+				</ul>	
 		</div>		
 		<? 
 		if (Authsome::get()):?>

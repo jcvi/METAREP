@@ -125,10 +125,10 @@ class Apache_Solr_Service_Balancer
 		}
 
 		//setup writeable services
-		foreach ($writeableServices as $service)
-		{
-			$this->addWriteService($service);
-		}
+//		foreach ($writeableServices as $service)
+//		{
+//			$this->addWriteService($service);
+//		}
 	}
 
 	public function setReadPingTimeout($timeout)
@@ -748,15 +748,16 @@ class Apache_Solr_Service_Balancer
 	 *
 	 * @throws Exception If an error occurs during the service call
 	 */
-	public function search($query, $offset = 0, $limit = 10, $params = array())
+	public function search($path,$query, $offset = 0, $limit = 10, $params = array(),$method)
 	{
 		$service = $this->_selectReadService();
-
+		$service->setPath($path);
+		
 		do
 		{
 			try
 			{
-				return $service->search($query, $offset, $limit, $params);
+				return $service->search($query, $offset, $limit, $params,$method);
 			}
 			catch (Exception $e)
 			{
@@ -767,6 +768,7 @@ class Apache_Solr_Service_Balancer
 			}
 
 			$service = $this->_selectReadService(true);
+			$service->setPath($path);
 		} while ($service);
 
 		return false;

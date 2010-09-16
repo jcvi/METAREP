@@ -13,7 +13,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -21,11 +21,10 @@
 
 class GoGraph extends AppModel {
 	var $useDbConfig = 'go'; 
-	var $name = 'GoGraph';
-	var $useTable = 'graph_path';
-	var $primaryKey = 'id';
-	
-	var $recursive=0;
+	var $name 		 = 'GoGraph';
+	var $useTable 	 = 'graph_path';
+	var $primaryKey  = 'id';
+	var $recursive  = 0;
 	
     var $belongsTo = array(
         'Ancestor' => array(
@@ -38,6 +37,6 @@ class GoGraph extends AppModel {
             'foreignKey' => 'term2_id',
             'dependent'    => true
         )
-    );
+    );	 
 }
 ?>

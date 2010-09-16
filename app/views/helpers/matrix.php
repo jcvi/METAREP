@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -34,21 +34,27 @@ define('HEATMAP_GREEN_END', 'E5F5E0');
 
 
 class MatrixHelper extends AppHelper {
-
+ 	var $helpers = array('Session');
 	var $uses = array('Library');
 		
 	function printTable($datasets,$counts,$option,$mode) {
 			
 		$html='';
 			
+		
+		
 		#debug($datasets);
 		if($option == METASTATS || $option == WILCOXON) {	
+			
+				$libraryCountPopulationA = $this->Session->read('libraryCountPopulationA');
+				$libraryCountPopulationB = $this->Session->read('libraryCountPopulationB');
+						
 				if($option == METASTATS) {		
 					$html .= "<table style=\"border:1px; padding-bottom:5px; border-bottom-style:solid;border-width:1px;\">
 						<tr>"	;
 					$html .= "<th style=\"padding-right:5px; width:30%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\"></th>";			
-					$html .= "<th style=\"padding-center:5px; width:21%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[0]}</th>";
-					$html .= "<th style=\"padding-center:5px; width:21%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[1]}</th>";
+					$html .= "<th style=\"padding-center:5px; width:21%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[0]} (n=$libraryCountPopulationA)</th>";
+					$html .= "<th style=\"padding-center:5px; width:21%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[1]} (n=$libraryCountPopulationB)</th>";
 					$html .= "<th style=\"padding-center:5px; width:27%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">Significance</th>";
 					$html .= "</tr></table>";
 					
@@ -71,8 +77,8 @@ class MatrixHelper extends AppHelper {
 					$html .= "<table style=\"border:1px; padding-bottom:5px; border-bottom-style:solid;border-width:1px;\">
 						<tr>"	;
 					$html .= "<th style=\"padding-right:5px; width:35%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\"></th>";			
-					$html .= "<th style=\"padding-center:5px; width:20%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[0]}</th>";
-					$html .= "<th style=\"padding-center:5px; width:20%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[1]}</th>";
+					$html .= "<th style=\"padding-center:5px; width:20%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[0]} (n=$libraryCountPopulationA)</th>";
+					$html .= "<th style=\"padding-center:5px; width:20%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[1]} (n=$libraryCountPopulationB)</th>";
 					$html .= "<th style=\"padding-center:5px; width:25%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">Significance</th>";
 					$html .= "</tr></table>";
 					

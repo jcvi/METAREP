@@ -11,16 +11,22 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.0.1
+  @version METAREP v 1.2.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
   
 <!---------------------------------------------------------->
 
+<?php 
+	$currentUser	=  Authsome::get();
+	$currentUsername= $currentUser['User']['username'];
+	$userId = $currentUser['User']['id'];
+?>
+
 <ul id="breadcrumb">
  	<li><a href="/metarep/dashboard/index" title="Dashboard"><img src="/metarep/img/home.png" alt="Dashboard" class="home" /></a></li>
-    <li><?php echo $html->link('Change Account Information', "/logs/index");?></li>
+    <li><?php echo $html->link('Change Account Information', "/users/edit/$userId");?></li>
 </ul>
 
 <style type="text/css">
@@ -45,8 +51,7 @@
 				echo $form->create('User',array('action'=>'edit'));
 				echo $form->input('id');
 			
-				$currentUser	=  Authsome::get();
-				$currentUsername= $currentUser['User']['username'];	
+
 					
 				#only allow admins to change user permissions
 				if($currentUsername === 'admin') { 

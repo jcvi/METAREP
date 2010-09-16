@@ -15,7 +15,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.0.1
+  @version METAREP v 1.2.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -29,7 +29,7 @@
  		<legend></legend>
 	<?php
 		echo $form->input('name');
-		echo $form->input('user_id',array('options'=> $userSelectArray,'selected'=> $projectUserId,'empty'=>'--Select User--','label'=> false));		
+		echo $form->input('user_id',array('options'=> $userSelectArray,'selected'=> $projectUserId,'empty'=>'--Select User--','label'=> 'Project Admin'));		
 		echo $form->input('description',array('type' => 'textarea'));
 		echo $form->input('charge_code');
 		echo $form->input('jira_link',array('type' => 'text'));

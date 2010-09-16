@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -22,13 +22,47 @@
 require_once('baseModel.php');
 
 require_once( 'vendors/SolrPhpClient/Apache/Solr/Service.php' );
+require_once( 'vendors/SolrPhpClient/Apache/Solr/Service/Balancer.php' );
 
 define('SOLR_CONNECT_EXCEPTION', "There was a problem with fetching data from the Lucene index. Please contact ".METAREP_SUPPORT_EMAIL." if this problem is persistent");
 
 class SolrComponent extends BaseModelComponent {
 
- 	var $uses = array('GoTerm','Enzymes','Hmm','Population','Pathway','Library'); 
+ 	var $uses = array(); 
+	private $solrLoadBalancer;
 	
+ 	/**
+	 * Define Solr services used for load balancing.
+	 * If only one host is specified, load balancing
+	 * is swithed of. This is true if a BIG IP host
+	 * has been specified or if only the master has 
+	 * been specified and no slave server is available. 
+	 *	
+	 */
+   function __construct() {
+       parent::__construct();
+       
+       //stores services used for load balancing 
+       $solrServices =  array();
+       
+       if(defined('SOLR_BIG_IP_HOST')) {
+       		 //add big ip as load balancing service (single service)
+       		array_push($solrServices,new Apache_Solr_Service(SOLR_BIG_IP_HOST,SOLR_PORT));
+       }
+       elseif(defined('SOLR_MASTER_HOST')) {
+       		//add master as load balancing service
+       		array_push($solrServices,new Apache_Solr_Service(SOLR_MASTER_HOST,SOLR_PORT));
+       		
+       		if(defined('SOLR_SLAVE_HOST')) {
+       			//add slave as load balancing service
+       			array_push($solrServices,new Apache_Solr_Service(SOLR_SLAVE_HOST,SOLR_PORT));
+       		}
+       }
+       
+ 	   //create load balancing object
+       $this->solrLoadBalancer = new Apache_Solr_Service_Balancer($solrServices);
+   }	
+ 	
 	/**
 	 * Searches Solr core/index
 	 *
@@ -41,29 +75,19 @@ class SolrComponent extends BaseModelComponent {
  	 * @param const $method PSOT or GET
 	 * @return void
 	 * @access public
-	 * @throws Exception If an error occurs during the service call
+	 * @throws Throws exception if an error occurs during the Solr service call
 	 */	
 	function search($dataset,$query, $offset = 0, $limit = NUM_SEARCH_RESULTS, $params = array(), $renameFacets=false,$method = 'POST'){
 		
-		//use Solr BigIp host if it has been defined in the METAREP configuration file
-		if(defined('SOLR_BIG_IP_HOST')) {
-			$solr = new Apache_Solr_Service( SOLR_BIG_IP_HOST, SOLR_PORT,"/solr/$dataset" );
+		try {		
+			$result = $this->solrLoadBalancer->search("/solr/$dataset",$query, $offset,$limit,$params,$method);	
 		}
-		//otherwise use the Solr master host
-		else {
-			$solr = new Apache_Solr_Service( SOLR_MASTER_HOST, SOLR_PORT,"/solr/$dataset" );
-		}
-		
-		try {
-			$result= $solr->search($query, $offset,$limit,$params,$method);			
-		}
-		catch (Exception $e) {	
-			
+		catch (Exception $e) {				
 			//rethrow exception
 			throw new Exception($e);
 		}
 	
-		#if documents are being returned
+		//if documents are being returned
 		if($limit > 0) {
 			$hits = $result->response->docs;		
 			$this->removeUnassignedValues($hits);
@@ -96,18 +120,9 @@ class SolrComponent extends BaseModelComponent {
 	 * @access private
 	 */
 	function count($dataset,$query="*:*",$params=null) {	
-		
-		//use Solr BigIp host if it has been defined in the METAREP configuration file
-		if(defined('SOLR_BIG_IP_HOST')) {
-			$solr = new Apache_Solr_Service( SOLR_BIG_IP_HOST, SOLR_PORT, "/solr/$dataset");
-		}
-		else {
-			$solr = new Apache_Solr_Service( SOLR_MASTER_HOST, SOLR_PORT, "/solr/$dataset");
-		}
-
 		try {
-			$result= $solr->search($query, 0,0,$params);
-				
+			$result = $this->solrLoadBalancer->search("/solr/$dataset",$query, 0,0,$params, 'POST');		
+
 			//get the number of hits
 			$numHits = (int) $result->response->numFound;
 		}
@@ -127,13 +142,13 @@ class SolrComponent extends BaseModelComponent {
 	public function deleteIndex($dataset) {		
 		
 		//command to delete all documetns of an index	
-		$removeIndexCommand 		= "<delete><query>*:*</query></delete>";
+		$removeIndexCommand = "<delete><query>*:*</query></delete>";
 		
 		try {
 			$solr = new Apache_Solr_Service( SOLR_MASTER_HOST, SOLR_PORT, "/solr/$dataset");
 			$solr->delete($removeIndexCommand);
 			
-			#if master/slave configuration sleep to allow slave to synchronize
+			//if master/slave configuration sleep to allow slave to synchronize
 			if(defined(SOLR_SLAVE_HOST)) {
 				sleep(40);
 			}
@@ -214,8 +229,7 @@ class SolrComponent extends BaseModelComponent {
 	 * @return void
 	 * @access private
 	 */
-	public function mergeIndex($projectId,$core,$datasets) {	
-		
+	public function mergeIndex($projectId,$core,$datasets) {		
 		#create cores
 		$this->createCore($projectId,$core);	
 
@@ -238,8 +252,7 @@ class SolrComponent extends BaseModelComponent {
 	 * @return void
 	 * @access public
 	 */	
-	public function executeUrl($url) {
-		
+	public function executeUrl($url) {	
 		//write request to log file
 		$this->log("solr request: $url",LOG_DEBUG);
 		
@@ -265,8 +278,7 @@ class SolrComponent extends BaseModelComponent {
 	 * @return Array Associateive array containing the facet field as key and counts as values
 	 * @access public
 	 */	
-	public function facet($dataset,$facetField,$query='*:*',$limit=-1) {
-		
+	public function facet($dataset,$facetField,$query='*:*',$limit=-1) {		
 		$solrArguments = array(	"facet" => "true",
 						'facet.field' => $facetField,
 						'facet.sort' =>'count',
@@ -286,14 +298,15 @@ class SolrComponent extends BaseModelComponent {
 	 * Pathway helper function
 	 *
 	 */	
-	public function getPathwayCount($filter,$dataset,$level,$pathwayId,$pathwayEnzymeCount,$ecId=null) {
+	public function getPathwayCount($filter,$dataset,$level,$pathwayId,$pathwayEnzymeCount,$ecId=null) {		
+		$this->Pathway =& ClassRegistry::init('Pathway'); 
 		
+		#$this->loadModel('Pathway');
 		$foundEnzymes = 0;
 		$pathwayCount = 0;
 		
 		$pathway = $this->Pathway->findById($pathwayId);
-		
-		
+			
 		$pathwayUrl = "http://www.genome.jp/kegg-bin/show_pathway?ec".str_pad($pathway['Pathway']['kegg_id'],5,0,STR_PAD_LEFT);	
 		
 		$facetQueries = $this->Pathway->getEnzymeFacetQueries($pathwayId,$level,$ecId);
@@ -357,6 +370,7 @@ class SolrComponent extends BaseModelComponent {
 	 * @access public
 	 */
 	public function getPathwayFacets($filter,$dataset,$level,$nodeId,$children,$ecId=null) {
+		$this->Pathway =& ClassRegistry::init('Pathway'); 
 		
 		if($level != 'level 1') {				
 			
@@ -369,7 +383,7 @@ class SolrComponent extends BaseModelComponent {
 			"facet.limit" => NUM_TOP_FACET_COUNTS);
 
 			try	{			
-				$result 	  = $this->search($dataset,$filter,0,0,$solrArguments,true);			
+				$result = $this->search($dataset,$filter,0,0,$solrArguments,true);			
 			}
 			catch(Exception $e){
 				$this->set('exception',SOLR_CONNECT_EXCEPTION);
@@ -392,8 +406,7 @@ class SolrComponent extends BaseModelComponent {
 	* Replaces Solr default values with empty string
 	**/
 	
-	private function removeUnassignedValues(&$hits) {
-		
+	private function removeUnassignedValues(&$hits) {	
 		foreach($hits as $hit) {
 			$hit->peptide_id = str_replace('JCVI_PEP_metagenomic.orf.','',$hit->peptide_id);
 			$hit->com_name =  str_replace('unassigned','',$hit->com_name);
@@ -412,6 +425,7 @@ class SolrComponent extends BaseModelComponent {
 	* Mapps HMMs names to HMM IDs returned by Solr
 	**/
 	private function addHmmDescriptions(&$facets) {
+		$this->Hmm =& ClassRegistry::init('Hmm'); 
 		
 		$hmmHash = array();
 		foreach($facets->facet_fields->hmm_id as $acc => $count) {
@@ -428,10 +442,13 @@ class SolrComponent extends BaseModelComponent {
 		$facets->facet_fields->hmm_id = $hmmHash;		
 	} 
 	
+
 	/**
 	* Mapps GO names to GO IDs returned by Solr
 	**/
 	private function addGeneOntologyDescriptions(&$facets) {
+		$this->GoTerm =& ClassRegistry::init('GoTerm'); 
+		
 		$goHash = array();
 		
 		foreach($facets->facet_fields->go_id as $acc => $count) {
@@ -451,6 +468,7 @@ class SolrComponent extends BaseModelComponent {
 	* Mapps Enzyme names to Enzyme IDs returned by Solr
 	**/
 	private function addEnzymeDescriptions(&$facets) {
+		$this->Enzymes =& ClassRegistry::init('Enzymes'); 
 		$ecHash = array();
 		foreach($facets->facet_fields->ec_id as $acc => $count) {
 			//find go term descritpion
@@ -471,9 +489,7 @@ class SolrComponent extends BaseModelComponent {
 	* Mapps Library descriptions to Library IDs returned by Solr
 	**/
 	private function addLibraryDescriptions(&$facets) {
-		
-		$this->Library->unbindModel(array('belongsTo' => array('Project'),),false);
-		$this->Library->unbindModel(array('hasAndBelongsToMany' => array('Populations'),),false);
+		$this->Library =& ClassRegistry::init('Library'); 
 		
 		$libraryHash = array();
 		foreach($facets->facet_fields->library_id as $acc => $count) {
@@ -489,6 +505,22 @@ class SolrComponent extends BaseModelComponent {
 			$libraryHash[$acc]= $count;		
 		}
 		$facets->facet_fields->library_id = $libraryHash;		
-	}			
+	}	
+	
+	/**
+	 * Escape a value for special query characters such as ':', '(', ')', '*', '?', etc.
+	 *
+	 * NOTE: inside a phrase fewer characters need escaped, use {@link Apache_Solr_Service::escapePhrase()} instead
+	 *
+	 * @param string $value
+	 * @return string
+	 */
+	public function escape($value) {
+		//list taken from http://lucene.apache.org/java/docs/queryparsersyntax.html#Escaping%20Special%20Characters
+		$pattern = '/(\+|-|&&|\|\||!|\(|\)|\{|}|\[|]|\^|"|~|\*|\?|:|\\\)/';
+		$replace = '\\\$1';
+
+		return preg_replace($pattern, $replace, $value);
+	}	
 }
 ?>

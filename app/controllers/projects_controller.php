@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -23,7 +23,7 @@
 class ProjectsController extends AppController {
 	
 	var $name 		= 'Projects';
-	var $uses 		= array('Project','User');
+	var $uses 		= array();
 	var $components = array('Solr','Format');
 	
 	/**
@@ -33,23 +33,18 @@ class ProjectsController extends AppController {
 	 * @access public
 	 */	
 	function index() {
-		
-//		$this->Project->unbindModel(array('hasMany' => array('Library')));
-//		$this->Project->unbindModel(array('hasMany' => array('Population')));
-//		
-//		$this->Project->bindModel(array('hasOne' => array(
-//        							'User' => array(
-//            						'foreignKey' => false,
-//            						'conditions' => array('User.id = Project.user_id'),
-//									)))
-//        );
+		$this->loadModel('Project');
 		
 		$currentUser	= Authsome::get();
 		$currentUserId 	= $currentUser['User']['id'];	    	        	
         $userGroup  	= $currentUser['UserGroup']['name'];			
-
+		
 		if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {		
-			$this->Project->findAll();
+			
+			$this->paginate['Project'] = array(
+		    'contain' => array('Population.id','Population.project_id','Library.id','Library.project_id'),
+		    'order' => 'Project.id');
+
 			$this->set('projects', $this->paginate());
 		}   
 		else {
@@ -58,7 +53,7 @@ class ProjectsController extends AppController {
 			$this->render('index_no_pagination');
         }		
 	}
-	
+	  	
 	/**
 	 * View project
 	 * 
@@ -66,12 +61,34 @@ class ProjectsController extends AppController {
 	 * @return void
 	 * @access public
 	 */
+	
 	function view($id = null) {
-		if (!$id) {
+		$this->loadModel('Project');
+		$this->Project->contain('Library','Population');
+		
+		if(!$id) {
 			$this->Session->setFlash(__('Invalid Project.', true));
 			$this->redirect(array('action'=>'index'));
 		}
-		$this->set('project', $this->Project->read(null, $id));
+		else {
+			//cache project view page 
+			if (($project = Cache::read($id.'project')) === false) {
+				$project =  $this->Project->read(null, $id);	
+				
+				if($project['Library']) {					
+					foreach($project['Library'] as &$library) {
+						$library['count'] = number_format($this->Solr->count($library['name']));				
+					}
+				}
+				if($project['Population']) {
+					foreach($project['Population'] as &$population) {
+						$population['count'] = number_format($this->Solr->count($population['name']));				
+					}			
+				}						
+				Cache::write($id.'project', $project);
+			}
+		}		
+		$this->set('project',$project);
 	}
 	
 	/**
@@ -80,8 +97,9 @@ class ProjectsController extends AppController {
 	 * @return void
 	 * @access public
 	 */	
-	function add() {
+	function add() {		
 		if (!empty($this->data)) {
+			$this->loadModel('Project');
 			$this->Project->create();
 			if ($this->Project->save($this->data)) {
 				$this->Session->setFlash(__('The Project has been saved', true));
@@ -91,11 +109,12 @@ class ProjectsController extends AppController {
 			}
 		}
 		else {
+			$this->loadModel('User');
 			//get all users except admin
 			$this->User->recursive=1;
 			$this->User->unbindModel(array('belongsTo' => array('UserGroup'),),false);	
-			$users  = $this->User->findAll(array('NOT'=>array('User.username'=>'admin')));
-						
+			#$users  = $this->User->findAll('NOT'=>array('User.username'=>'admin')));
+			$users  = $this->User->findAll(array('NOT'=>array('User.username'=>'admin','User.username'=>'guest')));			
 			$userSelectArray = array();
 			
 			foreach($users as $user) {
@@ -115,11 +134,14 @@ class ProjectsController extends AppController {
 	 * @access public
 	 */
 	function edit($id = null) {
+		$this->loadModel('User');
+		
 		if (!$id && empty($this->data)) {
 			$this->Session->setFlash(__('Invalid Project', true));
 			$this->redirect(array('action'=>'index'));
 		}
 		if (!empty($this->data)) {
+			
 			if ($this->Project->save($this->data)) {
 				$this->Session->setFlash(__('The Project has been saved',true));
 				$this->redirect("/dashboard");	
@@ -128,12 +150,12 @@ class ProjectsController extends AppController {
 			}
 		}
 		if (empty($this->data)) {
-			
+				
 			$this->data = $this->Project->read(null, $id);
 			
 			//get all users except admin
-			$this->User->recursive=1;
-			$this->User->unbindModel(array('belongsTo' => array('UserGroup'),),false);	
+			$this->User->contain(array('Project.user_id'));
+			#$this->User->unbindModel(array('belongsTo' => array('UserGroup'),),false);	
 			$users  = $this->User->findAll(array('NOT'=>array('User.username'=>'admin')));
 						
 			$userSelectArray = array();
@@ -156,6 +178,7 @@ class ProjectsController extends AppController {
 	 * @access public
 	 */
 	function delete($id = null) {
+		$this->loadModel('User');
 		if (!$id) {
 			$this->Session->setFlash(__('Invalid id for Project', true));
 			$this->redirect(array('action'=>'index'));

@@ -13,7 +13,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -22,13 +22,12 @@
 class User extends AppModel {
 	
 	var $name 				 = 'User';
-	var $recursive 			 = 1;
-	var $actsAs 			 = array('Membership'=>array('option1'=>'value'));
+	var $displayField 		 = 'username';
+	var $actsAs 			 = array('Containable','Membership'=>array('option1'=>'value'));
 	var $hasAndBelongsToMany = array('Project'=>array('joinTable'=>'projects_users'));
     var $hasMany 			 = array('LoginToken');
 	var $belongsTo 			 = array('UserGroup');
-	
-	var $displayField 		= 'username';
+	var $order 				 = array('User.last_name ASC','User.first_name ASC');
 	
 	var $validate = array(
 				"username" => array(
@@ -90,32 +89,45 @@ class User extends AppModel {
 	 * @access public
 	 */
 	function beforeSave() 	{
-		if(!empty($this->data)) {						
-			$email  =  $this->data['User']['email'];
-			$tmp = split('@',$email);
+
+		if(!empty($this->data)) {									
+			$email  = $this->data['User']['email'];
+			$tmp 	= split('@',$email);
 			$emailExtension = $tmp[1];
 
 			//set admin privileges based on user name
 			if($this->data['User']['username'] === 'admin') {
-				//the user's group id is set to 1 (ADMIN_USER).
+				//the user's group id is set to ADMIN_USER.
 				 $this->data['User']['user_group_id'] = 1;
 			}			
 			//set internal uprivileges based on email extension
 			else if(defined('INTERNAL_EMAIL_EXTENSION')) {
 				if($emailExtension === INTERNAL_EMAIL_EXTENSION) {
-					//set user group to INTERNAL USER GROUP (4)
+					//set user group to INTERNAL USER GROUP 
 					$this->data['User']['user_group_id'] = 4;
 				}
-			}
-			//set external privileges
-			else {
+				else {
+					//set external privileges
+					$this->data['User']['user_group_id'] = 2;
+				}
+			}			
+			else {				
+				//set external privileges
 				$this->data['User']['user_group_id'] = 2;
-			}
+			}		
 		}	
 		return true;
 	}
 			
-			
+	/**
+	 * Send registration Email after the account has been created
+	 * successfully
+	 * 
+	 * @param boolean $created flag that indicates if the account
+	 * has successfully been created
+	 * @return void
+	 * @access public
+	 */			
 	function afterSave($created) {
 		if ($created) {
 			$this->sendRegistrationEmail();
@@ -133,9 +145,7 @@ class User extends AppModel {
         return $data;
     }
 	function authsomeLogin($type, $credentials = array()) {
-		
-		//project information is not needed for login
-		$this->unbindModel(array('hasAndBelongsToMany' => array('Project'),),false);	
+		$this->contain('LoginToken','UserGroup');
 		
 		switch ($type) {
 			case 'guest':

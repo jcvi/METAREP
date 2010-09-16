@@ -16,15 +16,62 @@ CSS Browse Page
 	margin-left: 95%;
 	top: -30px;
 }
+#browse-left-panel{
+	postion:absolute;float: left; width: 29%; padding-right: 10px;
+}
 
+#browse-main-panel{
+	position: relative;	width: 100%;
+}
+
+form {
+	position:relative !important;
+	float:none !important;
+	margin-right:0 !important;
+	padding:0 !important;
+	
+	width:100% !important;
+	height:30px !important;
+}
+
+#browse-search-panel{
+	position: relative;	
+	margin-top:0px;
+	padding-top:0px;
+	height: 85px;
+	width: 100%;
+	font-size: 0.9em;
+	vertical-align:center;
+}
+
+input[type="text"] {
+	position: absolute;
+	top: 0px;
+	left:55px;
+	float:left;
+	margin:0px;
+	width: 67%;
+}
+input[type="submit"] {
+	position: absolute;
+	width: 70px;
+	height: 28px;
+	right:1%;
+	top:0px;
+}
+
+submit{
+	float:right;
+	right:0px;
+	height:0px;
+}
 
 #dialog_link {  	
 	position: relative;
-	
+	float:left;
 	margin-bottom: 20px;
 	top: 0px;
 	left:0px;
-	margin-bottom:20px;
 }
 
 #browse-tree-panel {
@@ -32,9 +79,9 @@ CSS Browse Page
 	float:left;
 	margin-top:0px;
 	padding-top:0px;
-	height: 100%;
-	width: 30%;
-	font-size: 0.9em;
+	height: 90%;
+	width: 100%;
+	font-size: 0.9em;	
 	vertical-align:center;
 	overflow:auto;
 	
@@ -46,10 +93,10 @@ fieldset {
 
 #browse-right-panel {
 	position: relative;
+	margin-left: 30%;
 	float:none;
-	margin-left:31%;
+	width: 70%;
 	height: 100%;
-	width: 69%;
 	overflow:none;
 	text-align: center
 }
@@ -71,8 +118,14 @@ fieldset {
 	width: 100%;
 	font-size: 0.9em;
 
+
 }
 
+ul.tree li {
+	line-height:20px!important;	
+	padding-top:0px!important;	
+	margin:0px!important;	
+}
 #browse-facet-pie-panel {
 	position: relative;
 	float:none;

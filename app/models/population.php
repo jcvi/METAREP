@@ -13,15 +13,16 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
 class Population extends AppModel {
-
-	var $name = 'Population';
-	
+	var $name   			= 'Population';
+	var $belongsTo 			= array('Project');
+    var $hasAndBelongsToMany= array('Library'); 
+    	
     var $validate = array(
         'name' => array(
     		'notEmpty' =>array('rule'=>'notEmpty','message' => 'Please enter a name'),
@@ -36,21 +37,18 @@ class Population extends AppModel {
     		'notEmpty' =>array('rule'=>'notEmpty','message' => 'Please enter a description'),
          ),
 	);
-		
-	//The Associations below have been created with all possible keys, those that are not needed can be removed
-	var $belongsTo = array('Project');
-
-	#a population has many datasets
-    var $hasAndBelongsToMany = array('Library');   
 
 	public function getProjectName($dataset) {
+		$this->contain('Project.name');
 		$population = $this->find('first', array('conditions' => array('Population.name' => $dataset)));
 		return $population['Project']['name'];
 	} 
 
 	public function getLibraries($dataset) {
 		$libraries = array();
-		$this->unbindModel(array('belongsTo' => array('Project'),));
+		$this->contain('Project.id','Library.name','Library.project_id');
+		
+		#$this->unbindModel(array('belongsTo' => array('Project'),));
 		$population = $this->findByName($dataset);
 		
 		foreach($population['Library'] as $library) {
@@ -60,7 +58,7 @@ class Population extends AppModel {
 	}
 	
 	public function getNameById($id) {
-		$this->unbindModel(array('belongsTo' => array('Project'),),false);	
+		$this->contain();
 		$population = $this>findById($populationId);	
 		return $population['Population']['name'];	
 	} 

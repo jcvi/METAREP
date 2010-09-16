@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -129,12 +129,12 @@ class RComponent extends Object {
 	 * @return Array of counts with test results
 	 * @access public
 	 */	
-	public function writeMetastatsMatrix($datasets,&$counts) {
-
-		$compareStartSecondPopulation 	= $this->Session->read('compareStartSecondPopulation');
-		$comparePopulations 			= $this->Session->read('comparePopulations');
-		$mode				 			= $this->Session->read('mode');
-
+	public function writeMetastatsMatrix($datasets,&$counts) {	
+		
+		$startIndexPopulationB	= $this->Session->read('startIndexPopulationB');
+		$populations 			= $this->Session->read('populations');	
+		$mode				 	= $this->Session->read('mode');
+	
 		$matrixContent = "";
 		$id = time();
 
@@ -170,8 +170,7 @@ class RComponent extends Object {
 		$metastatsRScriptContent  = "#!".RSCRIPT_PATH."\n";
 		$metastatsRScriptContent .= "source(\"".METAREP_WEB_ROOT."/scripts/r/metastats/detect_DA_features.r\")\n";
 		$metastatsRScriptContent .= "jobj <- load_frequency_matrix(\"".METAREP_TMP_DIR."/$metastatsFrequencyMatrixFile"."\")\n";
-		$metastatsRScriptContent .= "detect_differentially_abundant_features(jobj,$compareStartSecondPopulation,\"".METAREP_TMP_DIR."/$metastatsResultsFile"."\",B=".NUM_METASTATS_BOOTSTRAP_PERMUTATIONS.")\n";
-
+		$metastatsRScriptContent .= "detect_differentially_abundant_features(jobj,$startIndexPopulationB,\"".METAREP_TMP_DIR."/$metastatsResultsFile"."\",B=".NUM_METASTATS_BOOTSTRAP_PERMUTATIONS.")\n";
 
 		#write metastats r script to file
 		$fh = fopen(METAREP_TMP_DIR."/$metastatsRscriptFile", 'w');
@@ -191,8 +190,8 @@ class RComponent extends Object {
 		$fh = fopen(METAREP_TMP_DIR."/$metastatsResultsFile", 'r');
 			
 		$newCounts   = array();
-		$populationA = $comparePopulations[0];
-		$populationB = $comparePopulations[1];
+		$populationA = $populations[0];
+		$populationB = $populations[1];
 
 		$categoryCount = count($counts);
 		
@@ -229,7 +228,7 @@ class RComponent extends Object {
 					
 				#sum up library counts for each category to set population totals	
 				for($i=0;$i<count($datasets);$i++) {
-					if($i < ($compareStartSecondPopulation-1)) {
+					if($i < ($startIndexPopulationB - 1)) {
 						$newCounts[$category][$populationA]['total'] += $counts[$category][$datasets[$i]];
 					}
 					else {
@@ -265,11 +264,9 @@ class RComponent extends Object {
 		}
 		fclose($fh);
 		
-		$this->Session->write('selectedDatasets',$comparePopulations);
+		$this->Session->write('selectedDatasets',$populations);
 		
 		$counts= $newCounts;
-
-		return;
 	}
 	
 	/**
@@ -390,12 +387,13 @@ class RComponent extends Object {
 	 * @access public
 	 */	
 	function writeWilcoxonMatrix($selectedDatasets,&$counts) {
+		
+		$startIndexPopulationB = $this->Session->read('startIndexPopulationB');
+		$populations 		   = $this->Session->read('populations');
+		
 		$categoryCount = count($counts);
-		$compareStartSecondPopulation = $this->Session->read('compareStartSecondPopulation');
-		$comparePopulations 			= $this->Session->read('comparePopulations');
-
-		$populationA = $comparePopulations[0];
-		$populationB = $comparePopulations[1];
+		$populationA = $populations[0];
+		$populationB = $populations[1];
 		
 		$id = time();
 		$inFile = "metarep_wilcox.in_".$id.'.txt';
@@ -432,10 +430,10 @@ class RComponent extends Object {
 			$testCommand="wilcox.test(wca_c".$categoryCounter.",wcb_c".$categoryCounter.",alternative=\"two.sided\")\$p.value\n";
 			
 			//create vector A string
-			for($i =0;$i < ($compareStartSecondPopulation-1); $i++) {
+			for($i =0;$i < ($startIndexPopulationB - 1); $i++) {
 				$countCategory = $row[$selectedDatasets[$i]];
 				//if last element
-				if($i == $compareStartSecondPopulation-2) {
+				if($i == $startIndexPopulationB - 2) {
 					$vectorA .= "$countCategory)\n";
 				}
 				else {
@@ -444,7 +442,7 @@ class RComponent extends Object {
 			}
 			
 			//create vector B string
-			for($i = $compareStartSecondPopulation-1;$i < count($selectedDatasets); $i++) {
+			for($i = $startIndexPopulationB - 1;$i < count($selectedDatasets); $i++) {
 				$countCategory = $row[$selectedDatasets[$i]];
 				//if last element
 				if($i == count($selectedDatasets)-1) {
@@ -528,7 +526,7 @@ class RComponent extends Object {
 		}
 		fclose($fh);
 		
-		$this->Session->write('selectedDatasets',$comparePopulations);
+		$this->Session->write('selectedDatasets',$populations);
 		
 		$counts = $newCounts;
 		

@@ -13,7 +13,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.0.1
+  @version METAREP v 1.2.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -38,6 +38,7 @@
 <h2><?php __('Populations'); ?></h2>
 <p>
 <?php
+
 echo $paginator->counter(array(
 'format' => __('Page %page% of %pages%, showing %current% records out of %count% total, starting on record %start%, ending on %end%', true)
 ));
@@ -49,6 +50,7 @@ echo $paginator->counter(array(
 	<th><?php echo $paginator->sort('name');?></th>
 	<th><?php echo $paginator->sort('description');?></th>
 	<th><?php echo $paginator->sort('project_id');?></th>
+	<th class="actions"><?php __('Action');?></th>
 	<th class="actions"><?php __('Analyze');?></th>
 </tr>
 <?php
@@ -75,6 +77,9 @@ foreach ($population as $population):
 		<td style="width:15%;text-align:left">
 			<?php echo $population['Project']['name']; ?>
 		</td>
+		<td class="actions" style="width:4%;text-align:left">
+			<?php echo $html->link(__('View', true), array('action'=>'view', $population['Population']['id'])); ?>
+		</td>		
 		<td class="actions" style="width:4%;text-align:center">
 	
 			<?php 	echo("<select onChange=\"goThere(this.options[this.selectedIndex].value)\" name=\"s1\">

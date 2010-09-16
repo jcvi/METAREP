@@ -16,7 +16,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.0.1
+  @version METAREP v 1.2.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -55,48 +55,52 @@
 	}?>
 	
 </tr>
-<?php
+
+	<?php
 
 $i =0;
 
-foreach ($projects as $project):
-	$class = null;
+if(!empty($projects)) {	
+	foreach ($projects as $project) {
+		$class = null;
 	
-	if ($i++ % 2 == 0) {
-		$class = ' class="altrow"';
-	}
-?>
-	<tr<?php echo $class;?>>
-		<td style="width:3%;text-align:right">
-			<?php echo $project['Project']['id']; ?>
+		if ($i++ % 2 == 0) {
+			$class = ' class="altrow"';
+		}
+		echo("
+		<tr $class>
+		<td style=\"width:3%;text-align:right\">
+			{$project['Project']['id']}
 		</td>
-		<td style="width:6%;text-align:center">
-			<?php echo $project['Project']['updated']; ?>
+		<td style=\"width:6%;text-align:center\">
+			{$project['Project']['updated']}
 		</td>		
 		<td>
-			<?php echo  $project['Project']['name']; ?>
+			{$project['Project']['name']}
 		</td>
-		<td class="actions">
-			<?php echo $html->link(__('View', true), array('action'=>'view', $project['Project']['id'])); ?>
+		<td class=\"actions\">");
+			echo $html->link(__('View', true), array('action'=>'view', $project['Project']['id']));
+		echo("	
 		</td>
-		<td style="width:8%;text-align:right">
-			<?php echo  count($project['Population']); ?>
+			<td style=\"width:8%;text-align:right\">");
+			echo count($project['Population']);
+		echo("		
 		</td>	
-		<td style="width:8%;text-align:right">
-			<?php echo  count($project['Library']); ?>
-		</td>				
-		<?php 
+		<td style=\"width:8%;text-align:right\">");
+			echo count($project['Library']);
+		echo("</td>");					
 		if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {
-			echo('<td style="width:10%;text-align:center">');
+			echo('<td style=\"width:10%;text-align:center\">');
 				echo $project['Project']['charge_code'];
 			echo('</td>');
 			
 			echo('<td>');
 				echo $html->link($project['Project']['jira_link'], $project['Project']['jira_link'], array('target'=>'_blank')); 
 			echo('</td>');
-		}
-		?>
-	</tr>
-<?php endforeach; ?>
+		} //end if
+	echo('</tr>');
+	} //end foreach
+}//end if
+?>	
 </table>
 </div>

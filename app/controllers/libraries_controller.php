@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -27,38 +27,58 @@ class LibrariesController extends AppController {
 	var $components = array('Solr');
 
 	function edit($id = null) {	
+		$this->loadModel('Library');
+		$this->Library->contain('Project');
+		
 		if (!$id && empty($this->data)) {
-			$this->flash(__('Invalid Library', true), array('action'=>'index'));
+			$this->Session->setFlash("Invalid library id.");
+			$this->redirect("/projects/view/$projectId");
 		}
 		if (!empty($this->data)) {
-
 			if ($this->Library->save($this->data)) {
 				$this->data = $this->Library->read(null, $id);
+				
+				$projectId = $this->data['Library']['project_id'];
+				
+				//delete project view cache
+				Cache::delete($projectId.'project');
+				
 				$this->Session->setFlash("Library changes have been saved.");
-				$this->redirect("/projects/view/".$this->data['Library']['project_id']);
+				$this->redirect("/projects/view/$projectId");
 			}
 		}
 		if (empty($this->data)) {
-			$this->data = $this->Library->read(null, $id);
+			$this->data = $this->Library->read(null, $id);			
+			if(empty($this->data)) {
+				$this->Session->setFlash("Invalid library id.");
+				$this->redirect("/projects/index");
+			}
 		}
 		$projects = $this->Library->Project->find('list');
 		$this->set(compact('projects'));
 	}
 
 	function delete($id = null) {
-		if (!$id) {
-			$this->flash(__('Invalid Library', true), array('action'=>'index'));
-		}
-		else{
-			$this->data = $this->Library->read(null, $id);
-			$projectId = $this->data['Project']['id'];
-		
-			if($this->Library->delete($id)) {		
-				$this->Solr->deleteIndex($this->data['Library']['name']);
-				$this->flash(__('Library deleted', true), array('action'=>'index'));
-				$this->redirect("/projects/view/$projectId");
-			}
-		}
+//		$this->loadModel('Library');
+//		
+//		if (!$id) {
+//			$this->flash(__('Invalid Library', true), array('action'=>'index'));
+//		}
+//		else{
+//			$this->data = $this->Library->read(null, $id);
+//			$projectId  = $this->data['Library']['project_id'];
+//
+//			if($this->Library->delete($id)) {	
+//							
+//				$this->Solr->deleteIndex($this->data['Library']['name']);
+//				
+//				//delete project view cache
+//				Cache::delete($projectId.'project');
+//								
+//				$this->flash(__('Library deleted', true), array('action'=>'index'));
+//				$this->redirect("/projects/view/$projectId");
+//			}
+//		}
 	}
 	
 	//future implementation

@@ -18,7 +18,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -28,14 +28,14 @@ ini_set('memory_limit', '256M');
 
 class MatrixComponent extends Object {
 
-	var $components = array('Solr','Session','R');
+	var $components = array('Session','R');
 	
-	public function formatCounts($option,$filter,$minCount,$selectedDatasets,&$counts) {
-
+	public function formatCounts($option,$filter,$minCount,$selectedDatasets,&$totalCounts,&$counts) {
 
 		#get total peptide counts for each dataset and store them in totalCounts class variable
-		$this->totalCounts = $this->getTotalCounts($filter,$selectedDatasets,$counts);
-
+		//$this->totalCounts = $this->getTotalCounts($filter,$selectedDatasets,$counts);
+		$this->totalCounts = $totalCounts;
+		
 		#filter out empty categories
 		$this->filterCounts($minCount,$selectedDatasets,$counts);
 
@@ -73,22 +73,7 @@ class MatrixComponent extends Object {
 		asort($counts);
 	}
 
-	#returns associative array containing the total peptide counts for all selected datasets
-	#conuts are used to generate relative and relative row counts
-	private function getTotalCounts($filter,$datasets,&$counts) {
-		$totalCounts = array();
 
-		#loop through datasets
-		foreach($datasets as $dataset) {
-			try	{
-				$totalCounts[$dataset] =  $this->Solr->count($dataset,$filter);
-			}
-			catch (Exception $e) {
-				throw new Exception($e);
-			}
-		}
-		return $totalCounts;
-	}
 
 	#adds another coategory to the counts array called 'unclassified'.
 	#this category contains the difference between total and classified counts

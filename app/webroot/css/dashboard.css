@@ -6,7 +6,7 @@ CSS for dash board page
 ----------------------------------*/
 .dash-board h2 {
 	position: absolute;
-	top: 140px;
+	top: 110px;
 	margin: 0px !important;
 	padding-top: 0px !important;
 }
@@ -15,10 +15,14 @@ CSS for dash board page
 	font-size: 1.25em;	
 }
 
+#header-url-panel {
+	left:630px;
+	top:10px;
+}
 
 .dash-board-main-panel {
 	position: absolute;
-	top: 175px;
+	top: 145px;
 	width:600px;	
 	height:620px;	
 }
@@ -26,7 +30,7 @@ CSS for dash board page
 
 .dash-board-login-panel {
 	position: absolute;
-	top: 175px;
+	top: 145px;
 	left:650px;
 	width:300px;
 	height:260px;
@@ -53,22 +57,28 @@ CSS for dash board page
 
 .dash-board-news-panel {
 	position: absolute;
-	top: 420px;
+	top: 390px;
 	left:650px;
 	width:300px;
-	height:570px;
+	height:60px;
 	font-size: 1em;	
 	scroll: auto;
 }
 
 .dash-board-powered-by-panel {
 	position: absolute;
-	top: 420px;
+	top: 610px;
 	left:650px;
 	width:300px;
-	height:570px;
+	height:100px;
 	font-size: 1em;	
 	scroll: auto;
+}
+
+.img-alignment {
+	float:left; margin: 0 0 0px 40px; 
+	width: auto;
+	height: 50px ;
 }
 
 .input {

@@ -14,7 +14,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.0.1
+  @version METAREP v 1.2.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -26,13 +26,14 @@
 
 <div id="search-all">
 <?php 	
-	#read session variables
+	//read session variables
 	$query = $session->read('query');
 	$searchFields = $session->read('searchFields');
 	$searchResults = $session->read('searchResults');
 	$field = $session->read('searchField');
 	$facets = $session->read('facets');
 	$numHits = $session->read('numHits');
+	$suggestions = $session->read('suggestions');
 		
 ?>
 <ul id="breadcrumb">
@@ -73,7 +74,22 @@
 			
 		</fieldset>
 	</div>
-	
+	<?php if(!empty($suggestions)) { ?>
+	<div id="search-suggestions">
+			<fieldset>
+		<legend>Search Terms (<?php echo count($suggestions)?>)</legend>
+		<div id="search-suggestions-panel">
+		<?php
+			echo('<ul>');
+			foreach($suggestions as $suggestion) {
+					echo("<li>$suggestion</li>");
+			}
+			echo('</ul>');
+		?>
+		</div>
+		</fieldset>
+	</div>
+	<?php }?>	
 	<div id="search-all-result-panel">
 		<?php  if($numHits > 0):?>	
 			<?php echo $html->div('download', $html->link($html->image("download-medium.png",array("title" => "Download Top Ten List")), array('controller'=> 'search','action'=>'downloadMetaInformationFacets'),array('escape' => false)));?>	
@@ -147,8 +163,9 @@
 		echo($searchResultPanel);
 		?>
 		<?php  endif;?>	
-	</div>
+	</div>	
 </div>
+
 <?php
 echo $ajax->observeField( 'SearchField', 
     array(

@@ -18,17 +18,19 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
 
 class PopulationsController extends AppController {
-
-	var $helpers 	= array('Html', 'Form','Ajax');
-	var $uses 		= array('Population','Library','Project');	
 	var $components = array('Solr');
+	var $uses = array();
+	
+	var $paginate = array(
+	    'contain' => array('Project.name','Project.id'),
+	    'order' => 'Population.id');
 
 	/**
 	 * Initializes index population page
@@ -36,9 +38,10 @@ class PopulationsController extends AppController {
 	 * @return void
 	 * @access public
 	 */		
-	function index() {
-		$this->Population->recursive = 1;
-		$this->set('population', $this->paginate());
+	function index() {		
+		$this->loadModel('Population');		
+		$populations = $this->paginate('Population');
+		$this->set('population', $populations);		
 	}
 
 	/**
@@ -47,11 +50,16 @@ class PopulationsController extends AppController {
 	 * @return void
 	 * @access public
 	 */	
-	function view($id = null) {		
+	function view($id = null) {	
+		$this->loadModel('Population');	
+		$this->Population->contain('Project','Library');
+		
 		if (!$id) {
 			$this->flash(__('Invalid Population', true), array('action'=>'index'));
 		}
-		$this->set('population', $this->Population->read(null, $id));
+		$population = $this->Population->read(null, $id);
+		
+		$this->set('population', $population);
 	}
 
 	/**
@@ -62,12 +70,15 @@ class PopulationsController extends AppController {
 	 * @access public
 	 */	
 	function ajaxView($id = null) {
+		$this->loadModel('Population');	
+		$this->Population->contain('Project','Library');
 		
 		if (!$id) {
 			$this->flash(__('Invalid Population', true), array('action'=>'index'));
 		}
+		$population = $this->Population->read(null, $id);
 		
-		$this->set('population', $this->Population->read(null, $id));
+		$this->set('population', $population);
 		$this->set('status','Created');
 		$this->render('view','ajax');
 	}	
@@ -79,59 +90,69 @@ class PopulationsController extends AppController {
 	 * @return void
 	 * @access public
 	 */		
-	function add($projectId = 0) {	
-		
-		if (!empty($this->data)) {
-			
+	function add($projectId = 0) {
+		$this->loadModel('Population');
+		$this->Population->contain('Project','Library');
+
+		//if post data has been provided
+		if(!empty($this->data)) {
+								
+			//to store library information of selected libraries
+			$libraries = array() ;
+			$this->loadModel('Project');
+			$this->loadModel('Library');
+
 			$this->Population->create();
-			$projectId= $this->data['Population']['project_id'];
-			
+			$projectId = $this->data['Population']['project_id'];
+
+			//get population libraries
 			$datasets = $this->Population->Library->find('list',array('conditions'=>array('project_id'=>$projectId)));
-			$projects = $this->Population->Project->find('list');			
-			
-			#continue if more than one library has been selected
-			if(isset($this->data['Library']['Library']) && $this->data['Library']['Library']>=2) {
 				
-				$libraries = array() ;
-				
-				#get selected libraries selected inmulti-select box
-				foreach($this->data['Library']['Library'] as $library) {	
+			//get population project information
+			$projects = $this->Population->Project->find('list');
+
+			//continue if more than one library has been selected
+			if(isset($this->data['Library']['Library']) && count($this->data['Library']['Library']) >= 2) {
+				//get selected libraries from multi-select box
+				foreach($this->data['Library']['Library'] as $library) {
 					$libraryEntry = $this->Library->findById($library);
 					array_push($libraries,$libraryEntry['Library']['name']);
-				}	
-								
-				#check if all libraries have a certain optional data type
+				}
+					
+				//set optional data types based on library types
 				$optionalDatatypes  = $this->Project->checkOptionalDatatypes($libraries);
-												
-				#set optional data types
 				$this->data['Population']['has_apis'] 	 = $optionalDatatypes['apis'];
-				$this->data['Population']['has_clusters'] = $optionalDatatypes['clusters'];
-				$this->data['Population']['has_filter'] 	 = $optionalDatatypes['filter'];
+				$this->data['Population']['has_clusters']= $optionalDatatypes['clusters'];
+				$this->data['Population']['has_filter']  = $optionalDatatypes['filter'];
 				$this->data['Population']['is_viral'] 	 = $optionalDatatypes['viral'];
-							
-				#if population could be saved
-				if ($this->Population->save($this->data)) {					
-						$populationId = $this->Population->getLastInsertId();
-						$dataset 	  = $this->data['Population']['name'];
-						
-						#start solr index merging process
-						$this->Solr->mergeIndex($projectId,$dataset,$libraries);						
-						$this->redirect("/populations/ajaxView/$populationId");	
+
+				//if population could be saved
+				if ($this->Population->save($this->data)) {
+					$populationId = $this->Population->getLastInsertId();
+					$dataset 	  = $this->data['Population']['name'];
+
+					//start solr index merging process
+					$this->Solr->mergeIndex($projectId,$dataset,$libraries);
+								
+					//delete project view cache
+					Cache::delete($projectId.'project');
+					
+					$this->redirect("/populations/ajaxView/$populationId");
 				}
 				else {
 					$this->set(compact('projectId','projects','datasets'));
 					$this->render('add','ajax');
-				}	
+				}
 			}
+			//if no library or only one library has been selected
 			else {
-				$multiSelectErrorMessage = "Please select at least two datasets.";			
+				$multiSelectErrorMessage = "Please select at least two datasets.";
 				$this->set(compact('multiSelectErrorMessage','projectId','projects','datasets'));
 				$this->render('add','ajax');
 			}
 		}
 		$datasets = $this->Population->Library->find('list',array('conditions'=>array('project_id'=>$projectId)));
 		$projects = $this->Population->Project->find('list');
-		
 		$this->set(compact('projectId','projects','datasets'));
 	}
 
@@ -143,25 +164,34 @@ class PopulationsController extends AppController {
 	 * @access public
 	 */		
 	function edit($id = null) {
+		$this->loadModel('Population');
+		$this->Population->contain('Project','Library');
+		
 		if (!$id && empty($this->data)) {
 			$this->flash(__('Invalid Population', true), array('action'=>'index'));
 		}
 		if (!empty($this->data)) {
-			#debug($this->data);
+			
 			$projectId= $this->data['Population']['project_id'];
 			#$this->LibraryPopulation->deleteAll($this->data, array( 'population_id' => $this->data['Population']['project_id']));
 			
 			if ($this->Population->save($this->data)) {
 				
+				//delete project view cache
+				Cache::delete($projectId.'project');
+				
 				$this->Session->setFlash("Population changes have been saved.");
 				$this->redirect("/projects/view/$projectId");
-			} else {
+			} 
+			else {
+			
 			}
 		}
 		if (empty($this->data)) {
 			$this->Library->recursive = 1;
 			$this->data = $this->Population->read(null, $id);
 		}
+		
 		$datasets = $this->Population->Library->find('list',array('conditions'=>array('project_id'=>$this->data['Population']['project_id'])));
 		$projects = $this->Population->Project->find('list');		
 		$this->set(compact('projectId','projects','datasets'));
@@ -175,6 +205,9 @@ class PopulationsController extends AppController {
 	 * @access public
 	 */		
 	function delete($id = null) {
+		$this->loadModel('Population');
+		$this->Population->contain('Project');		
+		
 		if (!$id) {
 			$this->flash(__('Invalid Population', true), array('action'=>'index'));
 		}
@@ -183,10 +216,14 @@ class PopulationsController extends AppController {
 			$populationName = $this->data['Population']['name'];
 			$projectId = $this->data['Project']['id'];
 						
-			if ($this->Population->delete($id)) {
-				#delete solr index file and core meta information
+			if($this->Population->delete($id)) {
+				//delete solr index
 				$this->Solr->deleteIndex($this->data['Population']['name']);
 				$this->Session->setFlash("Population changes have been saved.");
+				
+				//delete project view cache
+				Cache::delete($projectId.'project');				
+				
 				$this->redirect("/projects/view/$projectId");
 			}
 		}

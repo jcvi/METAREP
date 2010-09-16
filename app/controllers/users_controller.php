@@ -16,7 +16,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -30,15 +30,21 @@ define('FEEDBACK_OTHER','other');
 class UsersController extends AppController {
 	
 	var $name = 'Users';
-	var $uses = array('User','Project','UserGroup');
+	#var $uses = array('User','Project','UserGroup');
+	var $uses = array();
 	
     function index() {
+    	$this->loadModel('User');
+    	$this->User->order = 'User.id ASC';
+    	$this->User->recursive = 0;
         $users = $this->paginate('User');
         $this->set('users',$users);
     }
 
     function edit($id=null) {	
-		$currentUser		= $this->Authsome->get();
+    	$this->loadModel('User');
+		$this->User->contain('UserGroup');		
+    	$currentUser		= $this->Authsome->get();
 		$currentUsername 	= $currentUser['User']['username'];	    	
     	
         if (!empty($this->data)) {      
@@ -67,6 +73,7 @@ class UsersController extends AppController {
         }
     }
     function feedback() {
+    	$this->loadModel('User');
     	$currentUser	= $this->Authsome->get();
 		$userName 		= $currentUser['User']['username'];	
 		$userEmail 		= $currentUser['User']['email'];	
@@ -79,6 +86,7 @@ class UsersController extends AppController {
     }
     
     function delete($id) {
+    	$this->loadModel('User');
         $this->User->delete($id);
         $this->Session->setFlash('User was deleted.');
         $this->redirect('/users/index');
@@ -100,6 +108,7 @@ class UsersController extends AppController {
 		}
 		else {		
 			if ($this->data) {
+				$this->loadModel('User');
 				if ($this->User->save($this->data)) {
 					$this->Session->setFlash("Thank you you very much for registering. Please check your email to activate your METAREP account.");
 					$this->redirect("/dashboard");
@@ -115,6 +124,7 @@ class UsersController extends AppController {
 	function activatePassword() {		
 		if ($this->data) {
 			if (!empty($this->data['User']['ident']) && !empty($this->data['User']['activate'])) {
+				$this->loadModel('User');
 				$this->set('ident',$this->data['User']['ident']);
 				$this->set('activate',$this->data['User']['activate']);
 
@@ -139,7 +149,9 @@ class UsersController extends AppController {
 	}
 	
 	function changePassword() { 
+		$this->loadModel('User');
 		if ($this->data) {
+			
 			if ($this->User->changePassword($this->data)) {
 				$this->Session->setFlash("Your password has been changed.");
 				$this->redirect("/dashboard");	
@@ -153,12 +165,15 @@ class UsersController extends AppController {
 	}
 	
 	function editProjectUsers($projectId=null) {
+		$this->loadModel('User');
 		
 		$currentUser	= $this->Authsome->get();
 		$currentUserId 	= $currentUser['User']['id'];			
 		
 		if(!empty($this->data)) {	
 			$projectId = $this->data['Project']['id'];  
+			
+			$this->User->contain('ProjectsUser');
 			
 			#delete all previous users except current user
 			$this->User->ProjectsUser->deleteAll(array('project_id'=>$projectId,'user_id !=' => $currentUserId));
@@ -173,15 +188,9 @@ class UsersController extends AppController {
 			}
 		}
 		else {
-			#get current user
-			
-			#adjust database models
-			$this->Project->recursive=1;
-			$this->User->recursive=1;
-			$this->Project->unbindModel(array('hasMany' => array('Library'),),false);
-			$this->Project->unbindModel(array('hasMany' => array('Population'),),false);
-			$this->User->unbindModel(array('belongsTo' => array('UserGroup'),),false);	
 
+			$this->User->Project->contain('User');
+			
 			#get all users except current user and admin for multi-user select box	
 			$users  = $this->User->findAll(array('NOT'=>array('User.username'=>'admin','User.id'=>$currentUserId)));
 			
@@ -207,6 +216,7 @@ class UsersController extends AppController {
 		}
 	}
     function guestLogin(){
+    	
     	$guestUser = array('username'=>'guest',
     					   'password' => 'guest',
     					   'remember' => 0);
@@ -229,7 +239,7 @@ class UsersController extends AppController {
 	
 	function login() {
 		#account activation
-		if (isset($_GET["ident"])) {
+		if(isset($_GET["ident"])) {
 			#on success
 			if ($this->User->activateAccount($_GET)) {
 				$this->Session->setFlash("Thank you. Your METAREP account has been activated. Please login.");
@@ -248,7 +258,7 @@ class UsersController extends AppController {
 			if (empty($this->data)) {
 				return;
 			}
-		
+			
 			$user = Authsome::login($this->data['User']);
 			
 			//if authentification failed
@@ -272,7 +282,8 @@ class UsersController extends AppController {
 		}
     }
 
-	function forgotPassword() {		
+	function forgotPassword() {	
+		$this->loadModel('User');	
 		if ($this->data) {
 			$email = $this->data["User"]["email"];
 			if ($this->User->forgotPassword($email)) {
@@ -284,6 +295,5 @@ class UsersController extends AppController {
 			}
 		}
 	}
-
 }
 ?>

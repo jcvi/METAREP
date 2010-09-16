@@ -16,7 +16,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -31,7 +31,13 @@ class FacetHelper extends AppHelper {
 	//private $pieChartColor = "666666";
 	//private $pieChartColor = "CCC999";
 	//private $pieChartColor = "003d4c";
-	private $pieChartColor = "2C2416";
+	//private $pieChartColor = "2C2416";
+	//private $pieChartColor = '9E0142,D53E4F,F46D43,FDAE61,FEE08B,FFFFBF,E6F598,ABDDA4,66C2A5,3288BD,5E4FA2';
+	//private $pieChartColor = '8DD3C7,FFFFB3,BEBADA,FB8072,80B1D3,FDB462,B3DE69,FCCDE5,D9D9D9,BC80BD,CCEBC5';
+	//private $pieChartColor = 'A6CEE3,1F78B4,B2DF8A,33A02C,FB9A99,E31A1C,FDBF6F,FF7F00,CAB2D6,6A3D9A,FFFF99';
+	private $pieChartColor = 'F99D31,6DB33F,00A4E4,E31B23';
+	
+	
 	//private $pieChartColor = "5C4033";
 	
 	function printFacet($facet,$results,$hits) {
@@ -51,8 +57,7 @@ class FacetHelper extends AppHelper {
 		$fgColor='cccccc';
 		$bgColor='f4f4f4';
 		//$bgColor='ffffff';
-		
-		
+				
 		$html ='';		
 		$html .= "<img src=\"http://chart.apis.google.com/chart?cht=bhs&chs=400x15&chco=$fgColor,$bgColor&chbh=20&chd=t:$percPos|$percNeg\">";
 		return $html; 		
@@ -63,8 +68,7 @@ class FacetHelper extends AppHelper {
 		$fgColor='cccccc';
 		$bgColor='f4f4f4';
 		//$bgColor='ffffff';
-		
-		
+			
 		$html ='';		
 		$html .= "<img src=\"http://chart.apis.google.com/chart?cht=bhs&chs=400x15&chco=$fgColor,$bgColor&chbh=20&chd=t:$count&chds=$min,$max\">";
 		return $html; 		
@@ -331,19 +335,22 @@ class FacetHelper extends AppHelper {
 	}	
 	
 	function pieChart($facet,$results,$hits,$size="600x150"){
+				
 		$sortedResults = (array) $results;
 		ksort($sortedResults);
-			
+		
+		$colors = $this->getPieChartColors(count($sortedResults));
+		
 		$sum = 0;
 		$html = null;
 		$html .= "<b>$facet</b><BR><ol>";
-		$html .= "<img src=\"http://chart.apis.google.com/chart?chco=$this->pieChartColor&chs=".$size."&cht=p&chd=t:";
+		$html .= "<img src=\"http://chart.apis.google.com/chart?chco=$colors&chs=".$size."&cht=p&chd=t:";
 		//<img src="http://chart.apis.google.com/chart?chco=4D89F9&chs=950x250&cht=p&chd=t:&chl">
 		
 		foreach($sortedResults as $class => $count) {					
 			$perc = (float) round(($count/$hits)*100,0);	
 			$html .= $perc.",";
-			$sum +=$perc; 			
+			$sum += $perc; 			
 		}
 		
 		//add last category (other)
@@ -460,6 +467,12 @@ class FacetHelper extends AppHelper {
 				</fieldset>
 			</div>";
 	}	
+	
+	private function getPieChartColors($categoryCount) {
+		$colorArray = explode(',',$this->pieChartColor);
+		arsort($colorArray);
+		return  implode(',',array_slice($colorArray, 0,$categoryCount));
+	}
 }
 
 ?>

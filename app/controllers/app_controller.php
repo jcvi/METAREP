@@ -16,16 +16,16 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
 class AppController extends Controller {
-
-	#global helpers
-	var $helpers 	= array('Session','Html', 'Form','Javascript','Ajax');
-	var $components = array('Session','Cookie','RequestHandler','Authsome' => array('model' => 'User'));
+	
+	var $persistModel 	= true;	
+	var $helpers 		= array('Session','Html', 'Form','Javascript','Ajax');
+	var $components 	= array('Session','Cookie','RequestHandler','Authsome' => array('model' => 'User'));
 
 	var $openAccessUrls = array(
 							'users/login',
@@ -78,7 +78,8 @@ class AppController extends Controller {
 	var $adminAccessUrls = array(
 							'projects/add',	
 							'projects/delete',
-							'users/editProjectUsers'						
+							'users/editProjectUsers',
+							'libraries/delete'						
 	);
 	
 	var $projectAccessUrls = array(
@@ -95,7 +96,6 @@ class AppController extends Controller {
 							'populations/edit',
 							'populations/delete',	
 							'libraries/edit',
-							'libraries/delete',	
 							'projects/editProjectUsers',						
 	);	
 		
@@ -111,11 +111,9 @@ class AppController extends Controller {
 			return;
 		}		
 		
-		#handle all other permissions
+		//handle all other permissions
 		if($this->Authsome->get()) {
-			
-			
-			
+						
 			if(in_array($url,$this->loginUrls))  {		
 				return;
 			}
@@ -133,7 +131,7 @@ class AppController extends Controller {
 			$currentUserId 	= $currentUser['User']['id'];
 			$userGroup  	= $currentUser['UserGroup']['name'];			
 
-			#admin users have access to all sites and data
+			//admin users have access to all sites and data
 			if($userGroup === ADMIN_USER_GROUP) {
 				return;
 			}
@@ -149,9 +147,11 @@ class AppController extends Controller {
 				}
 				else {
 					if($controller === 'populations') {
+						$this->loadModel('Population');
 						$dataset = $this->Population->getNameById($parameters[0]);
 					}
 					elseif($controller === 'libraries') {
+						$this->loadModel('Library');
 						$dataset = $this->Library->getNameById($parameters[0]);
 					}
 					elseif($controller === 'search' && $action === 'link') {
@@ -167,6 +167,7 @@ class AppController extends Controller {
 						$dataset = $parameters[0];
 					}
 					
+					$this->loadModel('Project');				
 					if($this->Project->hasDatasetAccess($dataset,$currentUserId)) {
 						return;
 					}	
@@ -177,7 +178,8 @@ class AppController extends Controller {
 					return;
 				}	
 				else {			
-					$projectId  = $parameters[0];					
+					$projectId  = $parameters[0];	
+					$this->loadModel('Project');				
 					if($this->Project->hasProjectAccess($projectId,$currentUserId)) {
 						return;
 					}
@@ -185,6 +187,7 @@ class AppController extends Controller {
 			}
 			else if(in_array($url,$this->projectAdminUrls))  {
 				$projectId  = $parameters[0];	
+				$this->loadModel('Project');
 				if($this->Project->isProjectAdmin($projectId,$currentUserId)) {
 					return;
 				}
@@ -216,6 +219,6 @@ class AppController extends Controller {
 	    }
 	    $ajax = ($this->RequestHandler->isAjax()) ? ($temp{0} != '/') ? '/ajax/' : '/ajax' : null;
 	    parent::redirect($ajax.$temp, $status, $exit);
-	} 
+	} 	
 }
 ?>

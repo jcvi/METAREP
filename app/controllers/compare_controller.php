@@ -16,7 +16,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.0.1
+* @version METAREP v 1.2.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -54,7 +54,8 @@ class CompareController extends AppController {
 
 	var $name 		= 'Compare';	
 	var $helpers 	= array('Matrix','Dialog','Ajax');
-	var $uses 		= array('Project','Library','Population');
+	var $uses 		= array();
+	#var $uses 		= array('Project','Library','Population');
 	var $components = array('Solr','RequestHandler','Session','Matrix','Format');
 
 	var $taxonomyLevels = array(
@@ -135,7 +136,8 @@ class CompareController extends AppController {
 	 * @access public
 	 */			
 	function index($dataset = null,$mode = SHOW_PROJECT_DATASETS) {
-		
+		$this->loadModel('Project');
+			
 		//increase memory size
 		ini_set('memory_limit', '856M');
 				
@@ -178,6 +180,7 @@ class CompareController extends AppController {
 	 * @access public
 	 */		
 	function ajaxTabPanel() {
+		$this->loadModel('Project');
 		
 		#get compare form data
 		$option				= $this->data['Compare']['option'];
@@ -251,6 +254,9 @@ class CompareController extends AppController {
 				$this->render('/compare/result_panel','ajax');
 			}		
 			
+			//get associative array of total counts
+			$totalCounts = $this->getTotalCounts($filter,$selectedDatasets);
+			
 			//write variables to sessions				
 			$this->Session->write('option',$option);
 			$this->Session->write('minCount',$minCount);
@@ -259,6 +265,7 @@ class CompareController extends AppController {
 			$this->Session->write('optionalDatatypes',$optionalDatatypes);
 			$this->Session->write('tabs',$tabs);
 			$this->Session->write('flipAxis',0);
+			$this->Session->write('totalCounts',$totalCounts);
 			$this->Session->write('heatmapColor',$heatMapColor);		
 			$this->render('/compare/tab_panel','ajax');
 		}
@@ -300,6 +307,7 @@ class CompareController extends AppController {
 	 */	
 	private function taxonomy($facetField = 'blast_tree') {
 		$this->loadModel('Taxonomy');
+		$this->loadModel('Population');
 				
 		if($facetField === 'blast_tree') {
 			$mode = 'blastTaxonomy';
@@ -311,7 +319,7 @@ class CompareController extends AppController {
 		$counts	= array();
 		$level  = 'root';
 		
-		#read post data
+		//read post data
 		if(!empty($this->data['Post']['level'])) {
 			$level = $this->data['Post']['level'];
 		}
@@ -323,21 +331,15 @@ class CompareController extends AppController {
 
 		$levels = $this->taxonomyLevels;
 						
-		#read session variables
+		//read session variables
 		$option 			= $this->Session->read('option');
 		$minCount 			= $this->Session->read('minCount');
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
+		$totalCounts		= $this->Session->read('totalCounts');
 		
 		if($option == METASTATS || $option == WILCOXON) {
-			#split the two populations into their libraries; store population 
-			#names and start position of secontd population
-			$this->Session->write('comparePopulations',$selectedDatasets);
-			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
-			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
-			
-			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);
+			$this->transformPopulationsIntoLibraries($selectedDatasets);
 		}		
 		
 		#write session variables
@@ -369,7 +371,7 @@ class CompareController extends AppController {
 		
 	
 		
-		////populate count matrix with solr facet counts using solr's filter query
+		//populate count matrix with solr facet counts using solr's filter query
 		foreach($selectedDatasets as $dataset) {
 			
 			$facetQueryChunks = array_chunk($facetQueries,6700);
@@ -402,9 +404,7 @@ class CompareController extends AppController {
 			}
 		}
 		
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$counts);
-		
-		#debug($counts);
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
 		
 		$this->Session->write('counts',$counts);
 		
@@ -419,7 +419,8 @@ class CompareController extends AppController {
 	 */
 	function geneOntology() {
 		$this->loadModel('GoGraph');
-		
+		$this->loadModel('Population');
+			
 		$mode 			= __FUNCTION__;
 		$counts			= array();
 		$subontology 	= 'universal';
@@ -462,15 +463,10 @@ class CompareController extends AppController {
 		$minCount 			= $this->Session->read('minCount');
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
+		$totalCounts		= $this->Session->read('totalCounts');
 
 		if($option == METASTATS || $option == WILCOXON) {
-			#split the two populations into their libraries; store population 
-			#names and start position of secontd population
-			$this->Session->write('comparePopulations',$selectedDatasets);
-			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
-			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
-			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);		
+			$this->transformPopulationsIntoLibraries($selectedDatasets);
 		}			
 		
 		#write session variables
@@ -478,7 +474,7 @@ class CompareController extends AppController {
 		$this->Session->write('mode',$mode);
 		$this->Session->write("$mode.level", $levelLabel);
 
-		#datastructure of dataset names and ids
+		//find GO children
 		$goChildren = $this->GoGraph->find('all', array('fields' => array('Descendant.acc','Descendant.name'),'conditions' => array('Ancestor.acc' => $ancestor,'distance'=>$level, 'Ancestor.term_type'=>$subontology,'Descendant.is_obsolete'=>0)));
 
 		$facetQueries = array();
@@ -511,32 +507,35 @@ class CompareController extends AppController {
 		
 			////populate count matrix with solr facet counts using solr's filter query
 		foreach($selectedDatasets as $dataset) {
-			try	{
-				$result 	  = $this->Solr->search($dataset,$filter,0,0,$solrArguments);				
-			}
-			catch(Exception $e){
-				$this->set('exception',SOLR_CONNECT_EXCEPTION);
-				$this->render('/compare/result_panel','ajax');
-			}
 			
-			#debug($result->facet_counts->facet_queries);
+			$facetQueryChunks = array_chunk($facetQueries,6700);
 			
-			$facets = $result->facet_counts->facet_queries;
-			
-			foreach($facets as $facetQuery =>$count) {
-				$tmp 	= explode(":", $facetQuery);
-				$id 	= $tmp[1];	
+			foreach($facetQueryChunks as $facetQueryChunk) {		
+				try	{
+					#$result = $this->Solr->search($dataset,$filter,0,0,$solrArguments);
+					#while(!$result->facet_counts->facet_queries) {
+						$result = $this->Solr->search($dataset,$filter,0,0,$solrArguments);
+					#}			
+				}
+				catch(Exception $e){
+					$this->set('exception',SOLR_CONNECT_EXCEPTION);
+					$this->render('/compare/result_panel','ajax');
+				}
 				
-				$counts[$id][$dataset] = $count;	
-				$counts[$id]['sum'] += $count;
+				$facets = $result->facet_counts->facet_queries;
+				
+				foreach($facets as $facetQuery =>$count) {
+					$tmp 	= explode(":", $facetQuery);
+					$id 	= $tmp[1];	
+					
+					$counts[$id][$dataset] = $count;	
+					$counts[$id]['sum'] += $count;
+				}
 			}
 		}
 		
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$counts);
-
-
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
 		$this->Session->write('counts',$counts);
-
 
 		#reset label to alpha numeric version to allow selection of drop down
 		$this->set(compact('mode','counts','filter','option','minCount','selectedDatasets','level','levels','test'));
@@ -551,6 +550,7 @@ class CompareController extends AppController {
 	 */
 	function enzymes() {
 		$this->loadModel('Enzymes');
+		$this->loadModel('Population');
 		
 		$mode = __FUNCTION__;
 		$counts	= array();
@@ -573,15 +573,10 @@ class CompareController extends AppController {
 		$minCount 			= $this->Session->read('minCount');
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
+		$totalCounts		= $this->Session->read('totalCounts');
 
 		if($option == METASTATS || $option == WILCOXON) {
-			#split the two populations into their libraries; store population 
-			#names and start position of secontd population
-			$this->Session->write('comparePopulations',$selectedDatasets);
-			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
-			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
-			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);
+			$this->transformPopulationsIntoLibraries($selectedDatasets);
 		}	
 
 		#write session variables
@@ -641,9 +636,8 @@ class CompareController extends AppController {
 			}
 		}
 
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$counts);
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
 			
-
 		$this->Session->write('counts',$counts);
 
 		$this->render('/compare/result_panel','ajax');
@@ -657,6 +651,7 @@ class CompareController extends AppController {
 	 */
 	function hmms() {
 		$this->loadModel('Hmm');
+		$this->loadModel('Population');
 		
 		$mode = __FUNCTION__;
 		$counts	= array();
@@ -666,7 +661,8 @@ class CompareController extends AppController {
 		$minCount 			= $this->Session->read('minCount');
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
-		$optionalDatatypes  = $this->Session->read('optionalDatatypes');		
+		$optionalDatatypes  = $this->Session->read('optionalDatatypes');	
+		$totalCounts		= $this->Session->read('totalCounts');	
 		
 		//drop down selection
 		$levels = $this->hmmLevels;
@@ -696,13 +692,7 @@ class CompareController extends AppController {
 		}
 		
 		if($option == METASTATS || $option == WILCOXON) {
-			#split the two populations into their libraries; store population 
-			#names and start position of secontd population
-			$this->Session->write('comparePopulations',$selectedDatasets);
-			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
-			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
-			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);
+			$this->transformPopulationsIntoLibraries($selectedDatasets);
 		}			
 		
 		#write session variables
@@ -752,7 +742,7 @@ class CompareController extends AppController {
 			}				
 		}
 
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$counts);
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
 
 		$this->Session->write('counts',$counts);
 
@@ -766,6 +756,8 @@ class CompareController extends AppController {
 	 * @access public
 	 */	
 	function clusters() {
+		$this->loadModel('Population');
+		
 		$mode   = __FUNCTION__;
 		$counts	= array();
 		$level	='CAM_CR';
@@ -788,15 +780,10 @@ class CompareController extends AppController {
 		$minCount 			= $this->Session->read('minCount');
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
+		$totalCounts		= $this->Session->read('totalCounts');
 
 		if($option == METASTATS || $option == WILCOXON) {
-			#split the two populations into their libraries; store population 
-			#names and start position of secontd population
-			$this->Session->write('comparePopulations',$selectedDatasets);
-			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
-			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
-			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);
+			$this->transformPopulationsIntoLibraries($selectedDatasets);
 		}			
 		
 		if($minCount==0) {
@@ -850,7 +837,7 @@ class CompareController extends AppController {
 			}
 		}
 
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$counts);
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
 
 		$this->Session->write('counts',$counts);
 
@@ -865,6 +852,7 @@ class CompareController extends AppController {
 	 */
 	function environmentalLibraries() {
 		$this->loadModel('EnvironmentalLibrary');
+		$this->loadModel('Population');
 		
 		$mode   = __FUNCTION__;
 		$counts	= array();
@@ -914,15 +902,10 @@ class CompareController extends AppController {
 		$minCount 			= $this->Session->read('minCount');
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');		
+		$totalCounts		= $this->Session->read('totalCounts');
 
 		if($option == METASTATS || $option == WILCOXON) {
-			#split the two populations into their libraries; store population 
-			#names and start position of secontd population
-			$this->Session->write('comparePopulations',$selectedDatasets);
-			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
-			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
-			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);
+			$this->transformPopulationsIntoLibraries($selectedDatasets);
 		}			
 		
 		//specify facet behaviour (fetch all facets)
@@ -969,7 +952,7 @@ class CompareController extends AppController {
 
 		#debug($counts);
 		
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$counts);
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
 
 		$this->Session->write('counts',$counts);
 
@@ -984,6 +967,7 @@ class CompareController extends AppController {
 	 */
 	function pathways() {
 		$this->loadModel('Pathway');
+		$this->loadModel('Population');
 		
 		$mode   = __FUNCTION__;
 		$counts	= array();
@@ -1008,15 +992,10 @@ class CompareController extends AppController {
 		$minCount 			= $this->Session->read('minCount');
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
+		$totalCounts		= $this->Session->read('totalCounts');
 
 		if($option == METASTATS || $option == WILCOXON) {
-			#split the two populations into their libraries; store population 
-			#names and start position of second population
-			$this->Session->write('comparePopulations',$selectedDatasets);
-			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
-			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
-			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);
+			$this->transformPopulationsIntoLibraries($selectedDatasets);
 		}			
 				
 		#write session variables
@@ -1057,7 +1036,7 @@ class CompareController extends AppController {
 			}
 		}
 
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$counts);
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
 
 		$this->Session->write('counts',$counts);
 
@@ -1071,6 +1050,8 @@ class CompareController extends AppController {
 	 * @access public
 	 */	
 	function commonNames() {
+		$this->loadModel('Population');
+		
 		$mode   = __FUNCTION__;
 		$counts = array();
 		$level	= 10;
@@ -1092,15 +1073,10 @@ class CompareController extends AppController {
 		$minCount 			= $this->Session->read('minCount');
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
+		$totalCounts		= $this->Session->read('totalCounts');
 
 		if($option == METASTATS || $option == WILCOXON) {
-			#split the two populations into their libraries; store population 
-			#names and start position of secontd population
-			$this->Session->write('comparePopulations',$selectedDatasets);
-			$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
-			$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
-			$selectedDatasets = array_merge($librariesA,$librariesB);
-			$this->Session->write('compareStartSecondPopulation',count($librariesA)+1);	
+			$this->transformPopulationsIntoLibraries($selectedDatasets);
 		}			
 		
 		#write session variables
@@ -1151,7 +1127,7 @@ class CompareController extends AppController {
 			}
 		}
 
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$counts);
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
 		
 		$this->Session->write('counts',$counts);
 
@@ -1221,7 +1197,6 @@ class CompareController extends AppController {
 	 * @access public
 	 */	
 	function changeHeatmapColor() {
-
 		if(!empty($this->data['Post']['heatmap'])) {
 			$heatmapColor = $this->data['Post']['heatmap'];
 			$this->Session->write('heatmapColor',$heatmapColor);
@@ -1251,6 +1226,40 @@ class CompareController extends AppController {
 		$this->Session->write('flipAxis',$flipAxis);
 
 		$this->render('/compare/result_panel','ajax');
+	}
+	
+	//split the two populations into their libraries; store population 
+	//names and start position of secontd population
+	private function transformPopulationsIntoLibraries(&$selectedDatasets) {
+		$this->Session->write('populations',$selectedDatasets);
+		
+		$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
+		$librariesB = $this->Population->getLibraries($selectedDatasets[1]);
+		
+		$countA = count($librariesA);
+		$countB = count($librariesB);
+		
+		$selectedDatasets = array_merge($librariesA,$librariesB);
+		$this->Session->write('startIndexPopulationB',count($librariesA)+1);
+		$this->Session->write('libraryCountPopulationA',$countA);
+		$this->Session->write('libraryCountPopulationB',$countB);
+	}
+	
+	#returns associative array containing the total peptide counts for all selected datasets
+	#conuts are used to generate relative and relative row counts
+	private function getTotalCounts($filter,$datasets) {
+		$totalCounts = array();
+		
+		#loop through datasets
+		foreach($datasets as $dataset) {
+			try	{				
+				$totalCounts[$dataset] =  $this->Solr->count($dataset,$filter);
+			}
+			catch (Exception $e) {
+				throw new Exception($e);
+			}
+		}
+		return $totalCounts;
 	}
 }
 ?>

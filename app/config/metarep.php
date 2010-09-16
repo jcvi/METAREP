@@ -13,11 +13,18 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.1.0
+* @version METAREP v 1.2.0
 * @author Johannes Goll
-* @lastmodified 2010-08-11
+* @lastmodified 2010-09-16
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
+
+/**
+ * METAREP Version
+ * 
+ */
+
+define('METAREP_VERSION','1.2.0-beta');
 
 /**
  * METAREP Running Title
