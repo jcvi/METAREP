@@ -515,12 +515,36 @@ class SolrComponent extends BaseModelComponent {
 	 * @param string $value
 	 * @return string
 	 */
-	public function escape($value) {
+	private function escapeWord($value) {
 		//list taken from http://lucene.apache.org/java/docs/queryparsersyntax.html#Escaping%20Special%20Characters
 		$pattern = '/(\+|-|&&|\|\||!|\(|\)|\{|}|\[|]|\^|"|~|\*|\?|:|\\\)/';
 		$replace = '\\\$1';
 
 		return preg_replace($pattern, $replace, $value);
+	}
+
+	/**
+	 * Escape a value meant to be contained in a phrase for special query characters
+	 *
+	 * @param string $value
+	 * @return string
+	 */
+	private function escapePhrase($value) {
+		$pattern = '/("|\\\)/';
+		$replace = '\\\$1';
+
+		return preg_replace($pattern, $replace, $value);
 	}	
+	
+	public function escape($value) {
+		if(str_word_count($value) >1) {
+			$value = $this->escapePhrase($value);
+			$value = "\"$value\"";
+		}	
+		else {
+			$value = $this->escapeWord($value);
+		}	
+		return $value;
+	}
 }
 ?>

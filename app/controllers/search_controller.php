@@ -491,10 +491,6 @@ class SearchController extends AppController {
 				$query = $this->Solr->escape($query);
 				$query = "com_name_txt:$query";
 			}
-			elseif($field == 1 && count($queryParts) > 1) {
-				$query = preg_replace('/[gG][oO]\:/i','GO\:',$query);
-			}
-			
 			//handle non-Lucene queries
 			else if(!in_array($firstField,$this->luceneFields) && $field != 1) {
 						
@@ -506,9 +502,6 @@ class SearchController extends AppController {
 						throw new ShortQueryException();	
 					}		
 				}		
-				else {
-					$query = $this->Solr->escape($query);
-				}
 								
 				//translate selected field and query into a lucene query
 				switch($field) {
@@ -561,8 +554,9 @@ class SearchController extends AppController {
 					case "kegg_id":
 						$this->loadModel('Pathway');
 						$searchByNameResults = $this->Pathway->getEnzymeQueryByKeggPathwayId($query);
-						break;
+						break;					
 					default:
+						$query = $this->Solr->escape($query);
 						$query = "$field:$query";
 				}
 				

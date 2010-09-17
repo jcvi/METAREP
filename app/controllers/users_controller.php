@@ -98,7 +98,7 @@ class UsersController extends AppController {
 		$this->redirect('/dashboard');
 	}
 
-	function register() {		
+	function register() {	
 		#get user credentials
 		$user = $this->Authsome->get();
 		
@@ -150,8 +150,7 @@ class UsersController extends AppController {
 	
 	function changePassword() { 
 		$this->loadModel('User');
-		if ($this->data) {
-			
+		if ($this->data) {			
 			if ($this->User->changePassword($this->data)) {
 				$this->Session->setFlash("Your password has been changed.");
 				$this->redirect("/dashboard");	
@@ -167,13 +166,15 @@ class UsersController extends AppController {
 	function editProjectUsers($projectId=null) {
 		$this->loadModel('User');
 		
+		
 		$currentUser	= $this->Authsome->get();
 		$currentUserId 	= $currentUser['User']['id'];			
 		
 		if(!empty($this->data)) {	
-			$projectId = $this->data['Project']['id'];  
-			
+			$this->loadModel('Project');
 			$this->User->contain('ProjectsUser');
+			
+			$projectId = $this->data['Project']['id'];  
 			
 			#delete all previous users except current user
 			$this->User->ProjectsUser->deleteAll(array('project_id'=>$projectId,'user_id !=' => $currentUserId));
@@ -188,7 +189,6 @@ class UsersController extends AppController {
 			}
 		}
 		else {
-
 			$this->User->Project->contain('User');
 			
 			#get all users except current user and admin for multi-user select box	
@@ -238,6 +238,7 @@ class UsersController extends AppController {
 	
 	
 	function login() {
+		$this->loadModel('User');	
 		#account activation
 		if(isset($_GET["ident"])) {
 			#on success

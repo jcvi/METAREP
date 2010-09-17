@@ -179,7 +179,7 @@ class Project extends AppModel {
 	
 	#returns projects depending on permissions
 	public function findUserProjects() {
-		$userProjects = array(); 
+		
 		$currentUser	= Authsome::get();
 		$currentUserId 	= $currentUser['User']['id'];	    	        	
         $userGroup  	= $currentUser['UserGroup']['name'];			
@@ -200,10 +200,10 @@ class Project extends AppModel {
 			} 
 			//return selective projects for external users
 			else if($userGroup === EXTERNAL_USER_GROUP) {
+				$userProjects = array(); 
 				
 				$results = $this->query("SELECT distinct Project.id as id FROM projects as Project LEFT JOIN projects_users as pu on(Project.id=pu.project_id) WHERE pu.user_id = $currentUserId OR Project.user_id = $currentUserId OR Project.is_public=1"); 
-				#debug("SELECT distinct Project.id as id FROM projects as Project LEFT JOIN projects_users as pu on(Project.id=pu.project_id) WHERE pu.user_id = $currentUserId OR Project.user_id = $currentUserId OR Project.is_public=1");
-				#debug($results);
+				
 				foreach($results as $result) {	
 					
 					$this->contain('Population.id','Population.project_id','Population.name','Population.has_apis',

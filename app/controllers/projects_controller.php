@@ -40,11 +40,9 @@ class ProjectsController extends AppController {
         $userGroup  	= $currentUser['UserGroup']['name'];			
 		
 		if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {		
-			
 			$this->paginate['Project'] = array(
 		    'contain' => array('Population.id','Population.project_id','Library.id','Library.project_id'),
 		    'order' => 'Project.id');
-
 			$this->set('projects', $this->paginate());
 		}   
 		else {
@@ -134,6 +132,7 @@ class ProjectsController extends AppController {
 	 * @access public
 	 */
 	function edit($id = null) {
+		$this->loadModel('Projectmake test');
 		$this->loadModel('User');
 		
 		if (!$id && empty($this->data)) {
@@ -198,12 +197,32 @@ class ProjectsController extends AppController {
 	 * @param String $dataset dataset name
 	 */
 	function ftp($projectId,$dataset) {
+		$this->loadModel('Project');
+		$this->Project->contain('Library','Population');
 		if(defined('FTP_HOST') && defined('FTP_USERNAME') && defined('FTP_PASSWORD')) {
 			$fileName = "$dataset.tgz";
 			$filePath = "ftp://".FTP_USERNAME.":".FTP_PASSWORD."@".FTP_HOST."/$projectId/$fileName";	
 			$this->set('ftpLink',$filePath);
-			$this->set('project', $this->Project->read(null,$projectId));
 		}
+		
+		//cache project view page 
+		if (($project = Cache::read($projectId.'project')) === false) {
+			$project =  $this->Project->read(null, $projectId);	
+			
+			if($project['Library']) {					
+				foreach($project['Library'] as &$library) {
+					$library['count'] = number_format($this->Solr->count($library['name']));				
+				}
+			}
+			if($project['Population']) {
+				foreach($project['Population'] as &$population) {
+					$population['count'] = number_format($this->Solr->count($population['name']));				
+				}			
+			}						
+			Cache::write($projectId.'project', $project);
+		}		
+		
+		$this->set('project',$project);
 		$this->render('view');
 	}
 
@@ -216,7 +235,7 @@ class ProjectsController extends AppController {
 //		
 //		$this->autoRender=false;
 //
-//		$content = $this->Format->infoString($title,$selectedDatasets,$filter,null);
+//		$content = $this->Format->infoString($ti$this->Project->contain('Library','Population');tle,$selectedDatasets,$filter,null);
 //		$content.= $this->Format->comparisonResultsToDownloadString($counts,$selectedDatasets,$option);
 //
 //		$fileName = "jcvi_metagenomics_report_".time().'.txt';
