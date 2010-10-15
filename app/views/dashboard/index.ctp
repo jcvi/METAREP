@@ -55,7 +55,7 @@
 			</td >
 			<td style="text-align:center">
 			<h6>Download Manual</h6>
-			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Manual')),'http://github.com/downloads/jcvi/METAREP/METAREP-manual.pdf',array('escape' => false)));?>	
+			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Manual')),"http://github.com/downloads/jcvi/METAREP/METAREP-".METAREP_VERSION."-manual.pdf",array('escape' => false)));?>	
 			</td>	
 			<td style="text-align:center">
 			<h6>Open Source</h6>
