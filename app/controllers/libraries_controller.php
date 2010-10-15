@@ -32,7 +32,7 @@ class LibrariesController extends AppController {
 		
 		if (!$id && empty($this->data)) {
 			$this->Session->setFlash("Invalid library id.");
-			$this->redirect("/projects/view/$projectId");
+			$this->redirect("/projects/view/$projectId",null,true);
 		}
 		if (!empty($this->data)) {
 			if ($this->Library->save($this->data)) {
@@ -44,14 +44,14 @@ class LibrariesController extends AppController {
 				Cache::delete($projectId.'project');
 				
 				$this->Session->setFlash("Library changes have been saved.");
-				$this->redirect("/projects/view/$projectId");
+				$this->redirect("/projects/view/$projectId",null,true);
 			}
 		}
 		if (empty($this->data)) {
 			$this->data = $this->Library->read(null, $id);			
 			if(empty($this->data)) {
 				$this->Session->setFlash("Invalid library id.");
-				$this->redirect("/projects/index");
+				$this->redirect("/projects/index",null,true);
 			}
 		}
 		$projects = $this->Library->Project->find('list');
@@ -59,26 +59,26 @@ class LibrariesController extends AppController {
 	}
 
 	function delete($id = null) {
-//		$this->loadModel('Library');
-//		
-//		if (!$id) {
-//			$this->flash(__('Invalid Library', true), array('action'=>'index'));
-//		}
-//		else{
-//			$this->data = $this->Library->read(null, $id);
-//			$projectId  = $this->data['Library']['project_id'];
-//
-//			if($this->Library->delete($id)) {	
-//							
-//				$this->Solr->deleteIndex($this->data['Library']['name']);
-//				
-//				//delete project view cache
-//				Cache::delete($projectId.'project');
-//								
-//				$this->flash(__('Library deleted', true), array('action'=>'index'));
-//				$this->redirect("/projects/view/$projectId");
-//			}
-//		}
+		$this->loadModel('Library');
+		
+		if (!$id) {
+			$this->flash(__('Invalid Library', true), array('action'=>'index'));
+		}
+		else{
+			$this->data = $this->Library->read(null, $id);
+			$projectId  = $this->data['Library']['project_id'];
+
+			if($this->Library->delete($id)) {	
+							
+				$this->Solr->deleteIndex($this->data['Library']['name']);
+				
+				//delete project view cache
+				Cache::delete($projectId.'project');
+								
+				$this->flash(__('Library deleted', true), array('action'=>'index'));
+				$this->redirect("/projects/view/$projectId",null,true);
+			}
+		}
 	}
 	
 	//future implementation
@@ -87,7 +87,7 @@ class LibrariesController extends AppController {
 	//		$this->Library->create();
 	//		if ($this->Library->save($this->data)) {
 	//			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-	//			$this->redirect('/projects/index');
+	//			$this->redirect('/projects/index',null,true);
 	//		} else {
 	//		}
 	//	}

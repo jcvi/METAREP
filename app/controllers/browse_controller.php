@@ -86,7 +86,7 @@ class BrowseController extends AppController {
 			catch(Exception $e) {
 				debug("$query AND blast_tree:{$taxon['Taxonomy']['taxon_id']}");
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-				$this->redirect('/projects/index');
+				$this->redirect('/projects/index',null,true);
 			}
 				
 			//set count
@@ -116,7 +116,7 @@ class BrowseController extends AppController {
 		}
 		catch(Exception $e) {
 			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-			$this->redirect('/projects/index');
+			$this->redirect('/projects/index',null,true);
 		}
 		$numHits = (int) $result->response->numFound;
 		$facets = $result->facet_counts;
@@ -191,7 +191,7 @@ class BrowseController extends AppController {
 			}	
 			catch(Exception $e) {
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-				$this->redirect('/projects/index');
+				$this->redirect('/projects/index',null,true);
 			}
 			//set count
 			$taxon['Taxonomy']['count'] = $count;
@@ -221,7 +221,7 @@ class BrowseController extends AppController {
 		}
 		catch(Exception $e) {
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-				$this->redirect('/projects/index');
+				$this->redirect('/projects/index',null,true);
 		}
 		$numHits = (int) $result->response->numFound;
 		$facets = $result->facet_counts;
@@ -307,7 +307,7 @@ class BrowseController extends AppController {
 			}
 			catch (Exception $e) {
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-				$this->redirect('/projects/index');
+				$this->redirect('/projects/index',null,true);
 			}
 			//set count
 			$taxon['Enzymes']['count'] = $count;
@@ -338,7 +338,7 @@ class BrowseController extends AppController {
 		}
 		catch(Exception $e){
 			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-			$this->redirect('/projects/index');
+			$this->redirect('/projects/index',null,true);
 		}
 			
 		$numHits = (int) $result->response->numFound;
@@ -433,7 +433,7 @@ class BrowseController extends AppController {
 			}
 			catch(Exception $e){
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-				$this->redirect('/projects/index');
+				$this->redirect('/projects/index',null,true);
 			}
 			#FIXME	temporary fix for GO parsing error		
 //			if($count==0) {				
@@ -444,7 +444,7 @@ class BrowseController extends AppController {
 //				}
 //				catch(Exception $e){
 //					$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-//					$this->redirect('/projects/index');
+//					$this->redirect('/projects/index',null,true);
 //				}				
 //			}
 			
@@ -487,7 +487,7 @@ class BrowseController extends AppController {
 		}
 		catch(Exception $e){
 			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-			$this->redirect('/projects/index');
+			$this->redirect('/projects/index',null,true);
 		}
 		
 		
@@ -503,7 +503,7 @@ class BrowseController extends AppController {
 //			}
 //			catch(Exception $e){
 //				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-//				$this->redirect('/projects/index');
+//				$this->redirect('/projects/index',null,true);
 //			}
 //		}		
 				
@@ -575,13 +575,23 @@ class BrowseController extends AppController {
 		$parentLevel = $parent['Pathway']['level'];	
 		$pathwayUrl  = "http://www.genome.jp/kegg-bin/show_pathway?ec".str_pad($parent['Pathway']['kegg_id'],5,0,STR_PAD_LEFT);		
 		
-		//get pathway facets and overall counts 
-		if($parentLevel === 'enzyme') {
-			$parentSolrResults = $this->Solr->getPathwayFacets($query,$dataset,$parentLevel,$expandNode,$children,$parent['Pathway']['ec_id']);
-			$parentName = $parent['Pathway']['name']." (".$parent['Pathway']['ec_id'].")";	
+		//get pathway facets and overall counts
+		try { 
+			if($parentLevel === 'enzyme') {
+				$parentSolrResults = $this->Solr->getPathwayFacets($query,$dataset,$parentLevel,$expandNode,$children,$parent['Pathway']['ec_id']);
+				$parentName = $parent['Pathway']['name']." (".$parent['Pathway']['ec_id'].")";	
+			}
+			else {		
+				$parentSolrResults = $this->Solr->getPathwayFacets($query,$dataset,$parentLevel,$expandNode,$children);
+			}			
 		}
-		else {
-			$parentSolrResults = $this->Solr->getPathwayFacets($query,$dataset,$parentLevel,$expandNode,$children);
+		catch(Exception $e){
+			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
+			if($this->Session->check($function.'.browse.query')) {
+				$this->Session->delete($function.'.browse.query');
+			}	
+			$this->redirect('/projects/index',null,true);
+			//$this->redirect('/browse/pathways',$dataset,false);
 		}
 				
 		$childArray 	= array();
@@ -673,6 +683,10 @@ class BrowseController extends AppController {
 		$this->autoRender=false; 
 
 		$query = urldecode($query);
+
+		if($mode === PATHWAY) {
+			$node = base64_decode($node);
+		}		
 		
 		#get facet data from session
 		$facets = $this->Session->read($mode.'.facets');

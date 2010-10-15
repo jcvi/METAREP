@@ -23,7 +23,12 @@
 **/
 class AppController extends Controller {
 	
-	var $persistModel 	= true;	
+	//$persistModel = true speeds up site by caching model classes. However it has to be 
+	//treated with caution. It caused a chache exception and returned imcomplete
+	//model objects google"$persistModel cakephp incomplete object". Setting this to false
+	//until the root cause for this exception has been identified.
+	var $persistModel 	= false;	
+	
 	var $helpers 		= array('Session','Html', 'Form','Javascript','Ajax');
 	var $components 	= array('Session','Cookie','RequestHandler','Authsome' => array('model' => 'User'));
 
@@ -186,24 +191,36 @@ class AppController extends Controller {
 				}
 			}
 			else if(in_array($url,$this->projectAdminUrls))  {
-				$projectId  = $parameters[0];	
 				$this->loadModel('Project');
+				
+				
+				if($controller === 'libraries') {
+					$this->loadModel('Library');
+					$projectId = $this->Library->getProjectIdById($parameters[0]);			
+				}
+				elseif($controller === 'populations') {
+					$this->loadModel('Population');
+					$projectId = $this->Population->getProjectIdById($parameters[0]);					
+				}
+				else {
+					$projectId  = $parameters[0];	
+				}
+						
 				if($this->Project->isProjectAdmin($projectId,$currentUserId)) {
-					return;
+						return;
 				}
 			}
-			else {				
+			else if(!in_array($url,$this->adminAccessUrls)) {				
 				if($userGroup === INTERNAL_USER_GROUP) {
 					return;
 				}
 			}
-
 			$this->Session->setFlash("You don't have permissions to view this page.");
-			$this->redirect("/dashboard/index");
+			$this->redirect("/dashboard/index",null,true);
 		}
 		else {	
 			$this->Session->setFlash("Please log in.");
-			$this->redirect("/dashboard/index");
+			$this->redirect("/dashboard/index",null,true);
 			
 		}
 	}

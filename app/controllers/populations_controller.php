@@ -132,12 +132,19 @@ class PopulationsController extends AppController {
 					$dataset 	  = $this->data['Population']['name'];
 
 					//start solr index merging process
-					$this->Solr->mergeIndex($projectId,$dataset,$libraries);
+					try {
+						$this->Solr->mergeIndex($projectId,$dataset,$libraries);
+					}
+					catch (Exception $e) {
+						$this->Population->delete($populationId);
+						$this->Session->setFlash(__('Solr Index Merge Exception. Population could not be generated.'.$e->getMessage(), true));
+						$this->setAction('delete',$populationId);
+					}
 								
 					//delete project view cache
 					Cache::delete($projectId.'project');
 					
-					$this->redirect("/populations/ajaxView/$populationId");
+					$this->redirect("/populations/ajaxView/$populationId",null,true);
 				}
 				else {
 					$this->set(compact('projectId','projects','datasets'));
@@ -181,11 +188,8 @@ class PopulationsController extends AppController {
 				Cache::delete($projectId.'project');
 				
 				$this->Session->setFlash("Population changes have been saved.");
-				$this->redirect("/projects/view/$projectId");
+				$this->redirect("/projects/view/$projectId",null,true);
 			} 
-			else {
-			
-			}
 		}
 		if (empty($this->data)) {
 			$this->Library->recursive = 1;
@@ -211,7 +215,7 @@ class PopulationsController extends AppController {
 		if (!$id) {
 			$this->flash(__('Invalid Population', true), array('action'=>'index'));
 		}
-		else {
+		else {		
 			$this->data = $this->Population->read(null, $id);
 			$populationName = $this->data['Population']['name'];
 			$projectId = $this->data['Project']['id'];
@@ -224,7 +228,7 @@ class PopulationsController extends AppController {
 				//delete project view cache
 				Cache::delete($projectId.'project');				
 				
-				$this->redirect("/projects/view/$projectId");
+				$this->redirect("/projects/view/$projectId",null,true);
 			}
 		}
 	}

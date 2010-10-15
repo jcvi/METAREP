@@ -68,7 +68,7 @@ else {
 					} 
 					else {
 						$treeData = $session->read($mode.'.tree');
-						echo $tree->taxonomy($dataset,$treeData,$taxon,'blastTaxonomy');
+						echo $tree->taxonomy($dataset,$treeData,$taxon,'apisTaxonomy');
 					}
 					?>
 				</fieldset>
@@ -79,7 +79,7 @@ else {
 				<div id="browse-classification-panel">	
 					<fieldset>
 					<legend>Taxonomic Distribution</legend>
-					<?php echo $html->div('browse-download-classification', $html->link($html->image("download-medium.png"), array('controller'=> 'browse','action'=>'downloadChildCounts',$dataset,$taxon,$mode,$numHits,urlencode($filter)),array('escape' => false)));?>						
+					<?php echo $html->div('browse-download-classification', $html->link($html->image("download-medium.png"), array('controller'=> 'browse','action'=>'downloadChildCounts',$dataset,$taxon,$mode,array_sum($childCounts),urlencode($filter)),array('escape' => false)));?>						
 					<h2 <span class="selected_library"><?php echo($taxon)?></h2>
 					<?php 
 					echo $facet->pieChart('',$childCounts,$numHits,"700x300");

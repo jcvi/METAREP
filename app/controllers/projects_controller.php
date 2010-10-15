@@ -66,7 +66,7 @@ class ProjectsController extends AppController {
 		
 		if(!$id) {
 			$this->Session->setFlash(__('Invalid Project.', true));
-			$this->redirect(array('action'=>'index'));
+			$this->redirect(array('action'=>'index'),null,true);
 		}
 		else {
 			//cache project view page 
@@ -101,7 +101,7 @@ class ProjectsController extends AppController {
 			$this->Project->create();
 			if ($this->Project->save($this->data)) {
 				$this->Session->setFlash(__('The Project has been saved', true));
-				$this->redirect(array('action'=>'index'));
+				$this->redirect(array('action'=>'index'),null,true);
 			} else {
 				$this->Session->setFlash(__('The Project could not be saved. Please, try again.', true));
 			}
@@ -132,18 +132,18 @@ class ProjectsController extends AppController {
 	 * @access public
 	 */
 	function edit($id = null) {
-		$this->loadModel('Projectmake test');
+		$this->loadModel('Project');
 		$this->loadModel('User');
 		
 		if (!$id && empty($this->data)) {
 			$this->Session->setFlash(__('Invalid Project', true));
-			$this->redirect(array('action'=>'index'));
+			$this->redirect(array('action'=>'index'),null,true);
 		}
 		if (!empty($this->data)) {
 			
 			if ($this->Project->save($this->data)) {
 				$this->Session->setFlash(__('The Project has been saved',true));
-				$this->redirect("/dashboard");	
+				$this->redirect("/dashboard",null,true);	
 			} else {
 				$this->Session->setFlash(__('The Project could not be saved. Please, try again.', true));
 			}
@@ -180,11 +180,11 @@ class ProjectsController extends AppController {
 		$this->loadModel('User');
 		if (!$id) {
 			$this->Session->setFlash(__('Invalid id for Project', true));
-			$this->redirect(array('action'=>'index'));
+			$this->redirect(array('action'=>'index'),null,true);
 		}
 		if ($this->Project->delete($id)) {
 			$this->Session->setFlash(__('Project deleted', true));
-			$this->redirect(array('action'=>'index'));
+			$this->redirect(array('action'=>'index'),null,true);
 		}
 	}
 	

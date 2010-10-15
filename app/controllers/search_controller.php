@@ -120,7 +120,7 @@ class SearchController extends AppController {
 			}
 			else {
 				$this->Session->setFlash("Your search session has expired. Please reenter your query.");
-				$this->redirect(array('controller'=>'search','action' => 'index', $dataset));
+				$this->redirect(array('controller'=>'search','action' => 'index', $dataset),null,true);
 			}
 		}
 
@@ -372,7 +372,7 @@ class SearchController extends AppController {
 		}
 		catch(Exception $e) {
 			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-			$this->redirect('/projects/index');
+			$this->redirect('/projects/index',null,true);
 		}
 		return $this->Solr->count($dataset);
 	}
@@ -436,14 +436,13 @@ class SearchController extends AppController {
 
 		#get rows in batches of 10,000 and add to content string
 		for($i=0;$i<$numHits+20000;$i+=20000) {
-				
-				
+							
 			try{
 				$result = $this->Solr->search($dataset,$query,$i,20000,$solrArguments);
 			}
 			catch (Exception $e) {
 				$this->Session->setFlash("METAREP Lucene Query Exception. Please correct your query and try again.");
-				$this->redirect(array('action' => 'search', $solrArguments));
+				$this->redirect(array('action' => 'index'),null,true);
 			}
 
 			$rows 	= $result->response->docs;

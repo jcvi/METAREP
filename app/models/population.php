@@ -38,9 +38,15 @@ class Population extends AppModel {
          ),
 	);
 
+	public function getProjectIdById($id) {
+		$this->contain('Project.id');
+		$population = $this->find('first', array('fields'=>array('Population.id'),'conditions' => array('Population.id' => $id)));
+		return $population['Project']['id'];
+	} 	
+	
 	public function getProjectName($dataset) {
 		$this->contain('Project.name');
-		$population = $this->find('first', array('conditions' => array('Population.name' => $dataset)));
+		$population = $this->find('first', array('fields'=>array('Population.id'),'conditions' => array('Population.name' => $dataset)));
 		return $population['Project']['name'];
 	} 
 

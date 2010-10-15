@@ -161,7 +161,7 @@ class MatrixComponent extends Object {
 				$absoluteCount = $row[$dataset];
 					
 				#get the total count for the dataset
-				$totalCount    = $this->totalCounts[$dataset];
+				$totalCount = $this->totalCounts[$dataset];
 					
 				#calculate relative counts (precision=4)
 				if($totalCount==0) {

@@ -53,10 +53,10 @@ class UsersController extends AppController {
                 $this->Session->setFlash('Account information has been saved.');
                 
                 if($currentUsername === 'admin') {
-                	$this->redirect('/users/index');
+                	$this->redirect('/users/index',null,true);
             	}
             	else {
-            		$this->redirect('/dashboard');
+            		$this->redirect('/dashboard',null,true);
             	}
             }
             else {
@@ -82,20 +82,20 @@ class UsersController extends AppController {
 		$feedback = urldecode($feedback);
 		$this->User->sendFeedbackConfirmation($userName,$userEmail,$feedbackType,$feedback);
 		$this->Session->setFlash('Thank you very much for your feedback. An email confirmation has been sent to your account.');
-		$this->redirect('/dashboard');
+		$this->redirect('/dashboard',null,true);
     }
     
     function delete($id) {
     	$this->loadModel('User');
         $this->User->delete($id);
         $this->Session->setFlash('User was deleted.');
-        $this->redirect('/users/index');
+        $this->redirect('/users/index',null,true);
     }
     
 	function logout() {
 		$this->Authsome->logout();
 		$this->Session->setFlash('You are now logged out.');
-		$this->redirect('/dashboard');
+		$this->redirect('/dashboard',null,true);
 	}
 
 	function register() {	
@@ -104,14 +104,14 @@ class UsersController extends AppController {
 		
 		#if no user exists redirect to dashboard
 		if ($user) {
-			$this->redirect("/dashboard");
+			$this->redirect("/dashboard",null,true);
 		}
 		else {		
 			if ($this->data) {
 				$this->loadModel('User');
 				if ($this->User->save($this->data)) {
 					$this->Session->setFlash("Thank you you very much for registering. Please check your email to activate your METAREP account.");
-					$this->redirect("/dashboard");
+					$this->redirect("/dashboard",null,true);
 					
 				} else {
 					$this->data['User']['password'] = null;
@@ -131,11 +131,11 @@ class UsersController extends AppController {
 				$return = $this->User->activatePassword($this->data);
 				if ($return) {
 					$this->Session->setFlash("Your new password has been saved. Please log in.");
-					$this->redirect("/dashboard");					
+					$this->redirect("/dashboard",null,true);					
 				}
 				else {
 					$this->Session->setFlash("Your new password could not be saved. Please check your email and click the password reset link again");
-					$this->redirect("/dashboard");	
+					$this->redirect("/dashboard",null,true);	
 				}
 			}
 		}
@@ -150,10 +150,11 @@ class UsersController extends AppController {
 	
 	function changePassword() { 
 		$this->loadModel('User');
+		
 		if ($this->data) {			
 			if ($this->User->changePassword($this->data)) {
 				$this->Session->setFlash("Your password has been changed.");
-				$this->redirect("/dashboard");	
+				$this->redirect("/dashboard",null,true);	
 			}
 		}
 		else {
@@ -181,11 +182,11 @@ class UsersController extends AppController {
 			
 			if($this->Project->save($this->data)) {
 				$this->Session->setFlash("Your user project permissions have been saved.");
-				$this->redirect("/dashboard");	
+				$this->redirect("/dashboard",null,true);	
 			}		
 			else {
 				$this->Session->setFlash("Your new project permissions could not be saved.");
-				$this->redirect("/dashboard");	
+				$this->redirect("/dashboard",null,true);	
 			}
 		}
 		else {
@@ -225,7 +226,7 @@ class UsersController extends AppController {
 
     	if (!$user) {				
 				$this->Session->setFlash('Unknown user or wrong password');
-				$this->redirect('/dashboard');
+				$this->redirect('/dashboard',null,true);
 		}
 		
 		$this->Session->write("User",$user);
@@ -233,7 +234,7 @@ class UsersController extends AppController {
 		$this->Session->write("UserGroup.id",$user["UserGroup"]["id"]);
 		$this->Session->write("UserGroup.name",$user["UserGroup"]["name"]);
 
-		$this->redirect('/projects/index');		    	  	
+		$this->redirect('/projects/index',null,true);		    	  	
     }
 	
 	
@@ -244,12 +245,12 @@ class UsersController extends AppController {
 			#on success
 			if ($this->User->activateAccount($_GET)) {
 				$this->Session->setFlash("Thank you. Your METAREP account has been activated. Please login.");
-				$this->redirect("/dashboard");		
+				$this->redirect("/dashboard",null,true);		
 			}
 			#on failure 
 			else {
 				$this->Session->setFlash("There was a problem with your account information. Please contact ".METAREP_SUPPORT_EMAIL);
-				$this->redirect("/dashboard");				
+				$this->redirect("/dashboard",null,true);				
 				$this->flash("Sorry. There were problems in your account activation.",Configure::read('httpRootUrl').'/users/login');
 			}
 		}
@@ -265,7 +266,7 @@ class UsersController extends AppController {
 			//if authentification failed
 			if (!$user) {				
 				$this->Session->setFlash('Unknown user or wrong password');
-				$this->redirect('/dashboard');
+				$this->redirect('/dashboard',null,true);
 			}
 
 			$remember = (!empty($this->data['User']['remember']));
@@ -279,7 +280,7 @@ class UsersController extends AppController {
 			$this->Session->write("UserGroup.id",$user["UserGroup"]["id"]);
 			$this->Session->write("UserGroup.name",$user["UserGroup"]["name"]);
 
-			$this->redirect('/dashboard');
+			$this->redirect('/dashboard',null,true);
 		}
     }
 
@@ -289,10 +290,10 @@ class UsersController extends AppController {
 			$email = $this->data["User"]["email"];
 			if ($this->User->forgotPassword($email)) {
 				$this->Session->setFlash('Please check your email.');
-				$this->redirect('/dashboard');				
+				$this->redirect('/dashboard',null,true);				
 			} else {
 				$this->Session->setFlash('Your email is invalid or not registered.');
-				$this->redirect('/dashboard');					
+				$this->redirect('/dashboard',null,true);					
 			}
 		}
 	}

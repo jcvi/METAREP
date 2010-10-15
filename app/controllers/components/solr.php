@@ -168,12 +168,17 @@ class SolrComponent extends BaseModelComponent {
 	 * @access private
 	 */
 	private function unloadCore($dataset) {
-		$this->executeUrl($this->getSolrUrl(SOLR_MASTER_HOST,SOLR_PORT)."/solr/admin/cores?action=UNLOAD&core=$dataset");
-		
-		//unload slave core if a Solr slave host has been defined in the METAREP configuration file
-		if(defined('SOLR_SLAVE_HOST')) {
-			$this->executeUrl($this->getSolrUrl(SOLR_SLAVE_HOST,SOLR_PORT)."/solr/admin/cores?action=UNLOAD&core=$dataset");
+		try {
+			$this->executeUrl($this->getSolrUrl(SOLR_MASTER_HOST,SOLR_PORT)."/solr/admin/cores?action=UNLOAD&core=$dataset");
+			
+			//unload slave core if a Solr slave host has been defined in the METAREP configuration file
+			if(defined('SOLR_SLAVE_HOST')) {
+				$this->executeUrl($this->getSolrUrl(SOLR_SLAVE_HOST,SOLR_PORT)."/solr/admin/cores?action=UNLOAD&core=$dataset");
+			}
 		}
+		catch (Exception $e) {
+			throw new Exception($e);
+		}				
 	}
 
 	/**
@@ -185,13 +190,17 @@ class SolrComponent extends BaseModelComponent {
 	 * @return void
 	 * @access private
 	 */
-	private function createCore($projectId,$dataset) {
-		$this->executeUrl($this->getSolrUrl(SOLR_MASTER_HOST,SOLR_PORT)."/solr/admin/cores?action=CREATE&name=$dataset&instanceDir=".SOLR_INSTANCE_DIR."&dataDir=".SOLR_DATA_DIR."/$projectId/$dataset");
-		
-		//create slave core if a Solr slave host has been defined in the METAREP configuration file
-		if(defined('SOLR_SLAVE_HOST')) {
-			$this->executeUrl($this->getSolrUrl(SOLR_SLAVE_HOST,SOLR_PORT)."/solr/admin/cores?action=CREATE&name=$dataset&instanceDir=".SOLR_INSTANCE_DIR."&dataDir=".SOLR_DATA_DIR."/$projectId/$dataset");
+	private function createCore($projectId,$dataset) {		
+		try {
+			$this->executeUrl($this->getSolrUrl(SOLR_MASTER_HOST,SOLR_PORT)."/solr/admin/cores?action=CREATE&name=$dataset&instanceDir=".SOLR_INSTANCE_DIR."&dataDir=".SOLR_DATA_DIR."/$projectId/$dataset");				
+			//create slave core if a Solr slave host has been defined in the METAREP configuration file
+			if(defined('SOLR_SLAVE_HOST')) {
+				$this->executeUrl($this->getSolrUrl(SOLR_SLAVE_HOST,SOLR_PORT)."/solr/admin/cores?action=CREATE&name=$dataset&instanceDir=".SOLR_INSTANCE_DIR."&dataDir=".SOLR_DATA_DIR."/$projectId/$dataset");
+			}
 		}
+		catch (Exception $e) {
+			throw new Exception($e);
+		}	
 	}
 	
 	/**
@@ -203,8 +212,14 @@ class SolrComponent extends BaseModelComponent {
 	 */
 	private function commitAndOptimize($dataset) {
 		$solr = new Apache_Solr_Service( SOLR_MASTER_HOST, SOLR_PORT, "/solr/$dataset");
-		$solr->commit();
-		$solr->optimize();
+		
+		try {
+			$solr->commit();
+			$solr->optimize();
+		}
+		catch (Exception $e) {
+			throw new Exception($e);
+		}				
 	} 
 
 	/**
@@ -224,25 +239,35 @@ class SolrComponent extends BaseModelComponent {
 	 * Merges Solr indices
 	 *
 	 **@param Integer $projectId Project ID
-	 * @param Sttring $core name of new index file/core after merging
+	 * @param Sttring $		}
+		catch (Exception $e) {
+			throw new Exception($e);
+		}	core name of new index file/core after merging
 	 * @param Array $datasets Datasets to be mergede
 	 * @return void
 	 * @access private
 	 */
 	public function mergeIndex($projectId,$core,$datasets) {		
-		#create cores
-		$this->createCore($projectId,$core);	
-
-		#populate newly created core with existing cores
-		$url = $this->getSolrUrl(SOLR_MASTER_HOST,SOLR_PORT)."/solr/admin/cores?action=mergeindexes&core=$core";
 		
-		#add index information for cores that are going to be merged
+		//create merge url string
+		$mergeUrl = $this->getSolrUrl(SOLR_MASTER_HOST,SOLR_PORT)."/solr/admin/cores?action=mergeindexes&core=$core";
+		
+		//add index information for cores that are going to be merged
 		foreach($datasets as $dataset) {
-			$url .= "&indexDir=".SOLR_DATA_DIR."/$projectId/$dataset/index";
+			$mergeUrl .= "&indexDir=".SOLR_DATA_DIR."/$projectId/$dataset/index";
 		}
 		
-		$this->executeUrl($url);	
-		$this->commitAndOptimize($core);
+		try {
+			$this->log("Create Core: $projectId,$core");
+			$this->createCore($projectId,$core);	
+			$this->log("Execute Merge Url: $mergeUrl");
+			$this->executeUrl($mergeUrl,3600);	
+			$this->log("Commit & Optimize Core: $core");
+			$this->commitAndOptimize($core);
+		}
+		catch (Exception $e) {
+			throw new Exception($e);
+		}		
 	}
 	
 	/**
@@ -252,15 +277,15 @@ class SolrComponent extends BaseModelComponent {
 	 * @return void
 	 * @access public
 	 */	
-	public function executeUrl($url) {	
+	public function executeUrl($url,$timeout = 600) {	
+		
 		//write request to log file
 		$this->log("solr request: $url",LOG_DEBUG);
 		
 		try {
 			$solr = new Apache_Solr_Service();
-			$response = $solr->_sendRawGet($url);
-			$response=serialize($response);
-			
+			$response = $solr->_sendRawGet($url,$timeout);
+			$response = serialize($response);
 			//write response to log file
 			$this->log("solr response: $response",LOG_DEBUG);
 		}
@@ -323,14 +348,15 @@ class SolrComponent extends BaseModelComponent {
 				$result = $this->search($dataset,$filter,0,0,$solrArguments);			
 			}
 			catch(Exception $e){			
-				$this->set('exception',SOLR_CONNECT_EXCEPTION);
-				$this->redirect('/projects/index');
+				//rethrow exception
+				throw new Exception($e);
 			}
 			
 			if(!$result->facet_counts->facet_queries) {
-				$this->set('exception',SOLR_CONNECT_EXCEPTION);
-				$this->redirect('/projects/index');
-			}			
+				//rethrow exception
+				throw new Exception($e);
+			}		
+				
 			$facetsQueryResults = $result->facet_counts->facet_queries;			
 			
 			foreach($facetsQueryResults as $facetQuery =>$count) {
@@ -386,8 +412,8 @@ class SolrComponent extends BaseModelComponent {
 				$result = $this->search($dataset,$filter,0,0,$solrArguments,true);			
 			}
 			catch(Exception $e){
-				$this->set('exception',SOLR_CONNECT_EXCEPTION);
-				$this->redirect('/projects/index');
+				//rethrow exception
+				throw new Exception($e);
 			}
 			unset($facetQueries);	
 						

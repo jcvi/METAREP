@@ -59,13 +59,19 @@ class Library extends AppModel {
                 )
         ), 
 	);	
-		
+
+	public function getProjectIdById($id) {
+		$this->contain('Project.id');
+		$library = $this->find('first', array('fields'=>array('Library.id'),'conditions' => array('Library.name' => $id)));
+		return $library['Project']['id'];
+	}	
+	
 	public function getProjectName($dataset) {
-		$this->contain('Project');
+		$this->contain('Project.name');
 		$library = $this->find('first', array('conditions' => array('Library.name' => $dataset)));
 		return $library['Project']['name'];
 	}
-
+	
 	public function getNameById($id) {
 		$library = $this>findById($id);	
 		return $library['Library']['name'];	

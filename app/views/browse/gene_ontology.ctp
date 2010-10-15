@@ -78,7 +78,7 @@ else {
 			<div id="browse-classification-panel">	
 				<fieldset>
 				<legend>Gene Ontology Distribution</legend>
-				<?php echo $html->div('browse-download-classification', $html->link($html->image("download-medium.png"), array('controller'=> 'browse','action'=>'downloadChildCounts',$dataset,$node,$mode,$numHits,urlencode($filter)),array('escape' => false)));?>						
+				<?php echo $html->div('browse-download-classification', $html->link($html->image("download-medium.png"), array('controller'=> 'browse','action'=>'downloadChildCounts',$dataset,$node,$mode,array_sum($childCounts),urlencode($filter)),array('escape' => false)));?>						
 				<h2 <span class="selected_library"><?php echo $node?></h2>
 				<?php 
 				if(isset($childCounts)) {

@@ -63,7 +63,7 @@
 			</td>	
 			<td style="text-align:center; border-right:none">
 			<h6>Download Publication</h6>
-			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Publication')), 'http://bioinformatics.oxfordjournals.org/content/early/2010/08/26/bioinformatics.btq455.full.pdf+html',array('escape' => false,'target' => '_blank')));?>	
+			<?php echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => 'Publication')), 'http://bioinformatics.oxfordjournals.org/content/26/20/2631.full.pdf+html',array('escape' => false,'target' => '_blank')));?>	
 			</td>				
 		</tr>
 		</table>
@@ -138,8 +138,29 @@
 		<legend>Powered By</legend>
 			<?php echo $html->link($html->image("solr.jpg",array("title" => 'Solr','class'=>'img-alignment')), 'http://lucene.apache.org/solr',array('escape' => false,'target' => '_blank'));?>	
 			<?php echo $html->link($html->image("cake.png",array("title" => 'CakePHP','class'=>'img-alignment')), 'http://cakephp.org/',array('escape' => false,'target' => '_blank'));?>		
-	</fieldset>
+
+</fieldset>
 </div>
+
+<div class="dash-board-share-panel" >
+
+<!-- AddThis Button BEGIN -->
+<div class="addthis_toolbox addthis_default_style">
+<fieldset >
+		<legend >Share</legend>
+<a class="addthis_button_email"></a>
+<a class="addthis_button_facebook"></a>
+<a class="addthis_button_twitter"></a>
+<a class="addthis_button_linkedin"></a>
+<span class="addthis_separator">|</span>
+<a href="http://www.addthis.com/bookmark.php?v=250&amp;username=xa-4c98e7150949e930"   style="text-decoration:none;" class="addthis_button">More</a>
+</fieldset>
+</div>
+
+<script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#username=xa-4c98e7150949e930"></script>
+<!-- AddThis Button END -->
+</div>
+
 
 <script type="text/javascript">
 jQuery(function() {
@@ -213,3 +234,4 @@ function gallery() {
 	
 }
 </script>
+

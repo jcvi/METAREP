@@ -339,7 +339,7 @@ class CompareController extends AppController {
 		$totalCounts		= $this->Session->read('totalCounts');
 		
 		if($option == METASTATS || $option == WILCOXON) {
-			$this->transformPopulationsIntoLibraries($selectedDatasets);
+			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}		
 		
 		#write session variables
@@ -368,9 +368,7 @@ class CompareController extends AppController {
 		}
 		
 		unset($taxonResults);
-		
-	
-		
+				
 		//populate count matrix with solr facet counts using solr's filter query
 		foreach($selectedDatasets as $dataset) {
 			
@@ -466,7 +464,7 @@ class CompareController extends AppController {
 		$totalCounts		= $this->Session->read('totalCounts');
 
 		if($option == METASTATS || $option == WILCOXON) {
-			$this->transformPopulationsIntoLibraries($selectedDatasets);
+			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}			
 		
 		#write session variables
@@ -576,7 +574,7 @@ class CompareController extends AppController {
 		$totalCounts		= $this->Session->read('totalCounts');
 
 		if($option == METASTATS || $option == WILCOXON) {
-			$this->transformPopulationsIntoLibraries($selectedDatasets);
+			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}	
 
 		#write session variables
@@ -692,10 +690,10 @@ class CompareController extends AppController {
 		}
 		
 		if($option == METASTATS || $option == WILCOXON) {
-			$this->transformPopulationsIntoLibraries($selectedDatasets);
+			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}			
 		
-		#write session variables
+		//write session variables
 		$this->Session->write("$mode.level", $level);
 		$this->Session->write('levels',$levels);
 		$this->Session->write('mode',$mode);
@@ -731,7 +729,7 @@ class CompareController extends AppController {
 			}
 			catch(Exception $e){
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-				$this->redirect('/projects/index');
+				$this->redirect('/projects/index',null,true);
 			}
 				
 			$facets = $result->facet_counts->facet_fields->hmm_id;
@@ -783,7 +781,7 @@ class CompareController extends AppController {
 		$totalCounts		= $this->Session->read('totalCounts');
 
 		if($option == METASTATS || $option == WILCOXON) {
-			$this->transformPopulationsIntoLibraries($selectedDatasets);
+			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}			
 		
 		if($minCount==0) {
@@ -809,7 +807,7 @@ class CompareController extends AppController {
 			}
 			catch(Exception $e){
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-				$this->redirect('/projects/index');
+				$this->redirect('/projects/index',null,true);
 			}
 				
 			$facets = $result->facet_counts->facet_fields->cluster_id;
@@ -905,7 +903,7 @@ class CompareController extends AppController {
 		$totalCounts		= $this->Session->read('totalCounts');
 
 		if($option == METASTATS || $option == WILCOXON) {
-			$this->transformPopulationsIntoLibraries($selectedDatasets);
+			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}			
 		
 		//specify facet behaviour (fetch all facets)
@@ -995,7 +993,7 @@ class CompareController extends AppController {
 		$totalCounts		= $this->Session->read('totalCounts');
 
 		if($option == METASTATS || $option == WILCOXON) {
-			$this->transformPopulationsIntoLibraries($selectedDatasets);
+			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}			
 				
 		#write session variables
@@ -1076,7 +1074,7 @@ class CompareController extends AppController {
 		$totalCounts		= $this->Session->read('totalCounts');
 
 		if($option == METASTATS || $option == WILCOXON) {
-			$this->transformPopulationsIntoLibraries($selectedDatasets);
+			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}			
 		
 		#write session variables
@@ -1099,7 +1097,7 @@ class CompareController extends AppController {
 			}
 			catch(Exception $e){
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-				$this->redirect('/projects/index');
+				$this->redirect('/projects/index',null,true);
 			}
 				
 			$facets = $result->facet_counts->facet_fields->com_name;
@@ -1229,8 +1227,8 @@ class CompareController extends AppController {
 	}
 	
 	//split the two populations into their libraries; store population 
-	//names and start position of secontd population
-	private function transformPopulationsIntoLibraries(&$selectedDatasets) {
+	//names and store position of second population; return adjusted total count array
+	private function transformPopulationsIntoLibraries(&$selectedDatasets,$filter) {
 		$this->Session->write('populations',$selectedDatasets);
 		
 		$librariesA = $this->Population->getLibraries($selectedDatasets[0]);
@@ -1240,13 +1238,17 @@ class CompareController extends AppController {
 		$countB = count($librariesB);
 		
 		$selectedDatasets = array_merge($librariesA,$librariesB);
+		$totalCounts = $this->getTotalCounts($filter,$selectedDatasets);
+		
 		$this->Session->write('startIndexPopulationB',count($librariesA)+1);
 		$this->Session->write('libraryCountPopulationA',$countA);
 		$this->Session->write('libraryCountPopulationB',$countB);
+
+		return $totalCounts;		
 	}
 	
 	#returns associative array containing the total peptide counts for all selected datasets
-	#conuts are used to generate relative and relative row counts
+	#counts are used to generate relative and relative row counts
 	private function getTotalCounts($filter,$datasets) {
 		$totalCounts = array();
 		

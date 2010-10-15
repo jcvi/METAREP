@@ -26,9 +26,12 @@
 <?php
 
 	$viewResults= $session->read($sessionId);
-	$facetCounts= $viewResults['facetCounts']; 
-	$filters	= $viewResults['filters'];	
+	$facetCounts= $viewResults['facetCounts'];
 	$numHits	= $viewResults['numHits'];
+		
+	if(isset($viewResults['filters'])) {
+		$filters	= $viewResults['filters'];	
+	}
 	 
 	if(isset($viewResults['limit']))  {
 		$limit  	= $viewResults['limit'];

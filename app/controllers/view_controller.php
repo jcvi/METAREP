@@ -135,7 +135,7 @@ class ViewController extends AppController {
 		}
 		catch(Exception $e) {
 			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-			$this->redirect('/projects/index');
+			$this->redirect('/projects/index',null,true);
 		}
 			
 		$numHits= (int) $result->response->numFound;
@@ -195,7 +195,7 @@ class ViewController extends AppController {
 		}
 		catch(Exception $e) {
 			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-			$this->redirect('/projects/index');
+			$this->redirect('/projects/index',null,true);
 		}
 			
 		$numHits= (int) $result->response->numFound;

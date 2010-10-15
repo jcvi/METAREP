@@ -529,7 +529,7 @@ class RComponent extends Object {
 		$this->Session->write('selectedDatasets',$populations);
 		
 		$counts = $newCounts;
-		
+
 		return;
 	} 
 }

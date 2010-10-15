@@ -79,7 +79,7 @@ class TreeHelper extends AppHelper {
 				$class ="class=\"last\"";
 			}
 
-			$html .="<li $class><span style=\"white-space: nowrap\">".$link." (".$taxonEntry['rank'].") <strong>[".number_format($taxonEntry['count'])." peptides]</strong></span>";
+			$html .="<li $class><span style=\"white-space: nowrap\">".$link." (".$taxonEntry['rank'].") <strong>[".number_format($taxonEntry['count'])." hits]</strong></span>";
 
 			//if has children
 			if($taxonEntry['children'] != null){
@@ -120,7 +120,7 @@ class TreeHelper extends AppHelper {
 				$class ="class=\"last\"";
 			}
 
-			$html .="<li $class><span style=\"white-space: nowrap\">".$link." (".$taxonEntry['level'].") <strong>[".number_format($taxonEntry['count'])." peptides]</strong></span>";
+			$html .="<li $class><span style=\"white-space: nowrap\">".$link." (".$taxonEntry['level'].") <strong>[".number_format($taxonEntry['count'])." hits]</strong></span>";
 
 			//if has children
 			if($taxonEntry['children'] !=null){
@@ -160,7 +160,7 @@ class TreeHelper extends AppHelper {
 				$class ="class=\"last\"";
 			}
 
-			$html .="<li $class><span style=\"white-space: nowrap\">".$link." (".$taxonEntry['rank'].") <strong>[".number_format($taxonEntry['count'])." peptides]</strong></span>";
+			$html .="<li $class><span style=\"white-space: nowrap\">".$link." (".$taxonEntry['rank'].") <strong>[".number_format($taxonEntry['count'])." hits]</strong></span>";
 
 			//if has children
 			if($taxonEntry['children'] !=null){
@@ -195,7 +195,7 @@ class TreeHelper extends AppHelper {
 			if($counter==count($level)) {
 				$class ="class=\"last\"";
 			}
-			$html .="<li $class><span style=\"white-space: nowrap\">".$link." <strong>[".number_format($taxonEntry['count'])." peptides]</strong></span>";
+			$html .="<li $class><span style=\"white-space: nowrap\">".$link." <strong>[".number_format($taxonEntry['count'])." hits]</strong></span>";
 
 			//if has children
 			if($taxonEntry['children'] !=null){
