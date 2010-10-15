@@ -4,6 +4,7 @@ METAREP DIRECTORIES
 /cake    cake framework files
 /data    example dataset*
 /scripts perl and R scripts
+/doc     documentation
 /mysql   mysql database dump
 /solr    solr/lucene configuration files
 /vendors 3rd-party php tools
