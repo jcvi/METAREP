@@ -19,7 +19,7 @@
 
 FRACT_NOISE_THRESHOLD <- 0.00025
 
-progname <- commandArgs(FALSE)[4]
+progname <- commandArgs(FALSE)[5]
 args <- commandArgs(TRUE)
 
 arg_count=1
@@ -44,6 +44,8 @@ if(is.na(args[arg_count])){
 
 while(!(is.na(args[arg_count]))){
 	InputFileName=args[arg_count]
+	Option = as.numeric(args[2])
+	
 	
 	CompleteLinkagePlotPDF = paste(InputFileName, "_hclust_plot.pdf", sep="")
 	MDSPlotPDF = paste(InputFileName, "_mds_plot.pdf", sep="")
@@ -135,26 +137,28 @@ while(!(is.na(args[arg_count]))){
 	    Z<-rbind(Z,M[i,]*100/Mi.[i])
 	}
 
+	#calculate euclidian distances
 	library(MASS)
 	row.names(Z) <- row.names(M)
-	#Zdist<-dist(Z)
 	Zdist<-dist(Z)
 
-	# Scale the labels sizes so they don't overlap each other.
-	# But limit the scaling so it's not ridiculously large.
+	#Scale the labels sizes so they don't overlap each other.
+	#But limit the scaling so it's not too large.
 	numRows<-nrow(A);
 	label_scale=42/numRows
+	
 	if(label_scale > 1){
 		label_scale = 1
 	}
 
+	if(Option >= 7 & Option <= 13) {
 	###############################################################################
 	###############################################################################
 	# Draw Hierarchical Clustering Plot
 	pdf(CompleteLinkagePlotPDF,width=8.5,height=11)
 
 	# hclust: "Complete" Hierarchical Clustering
-	plot(hclust(Zdist,method=args[3]), cex=label_scale, main=args[2])
+	plot(hclust(Zdist,method=args[4]), cex=label_scale, main=args[3])
 
 	# If there were samples eliminated, throw a message on the plot
 	if(num_samples_eliminated > 0){
@@ -163,9 +167,14 @@ while(!(is.na(args[arg_count]))){
 		ranges <- cur_parameters$usr
 		text(0,ranges[3]+1.4, elimination_message, pos=4, col="red")
 	}
+	
+	#write distance matrix to file
+	write.table(as.matrix(Zdist),args[5], sep = "\t",append=TRUE)
 
 	dev.off()
+	}
 
+	if(Option == 14) {
 	###############################################################################
 	##############################################################################
 	# Draw MDS Plot
@@ -194,7 +203,7 @@ while(!(is.na(args[arg_count]))){
 	width=(max-min)
 	margin=width*(0.1)
 
-	plot(mds$points,type="n", main=args[2], xlim=c(min-margin, max+margin))
+	plot(mds$points,type="n", main=args[3], xlim=c(min-margin, max+margin),xlab="Dimension 1", ylab="Dimension 2")
 	text(mds$points,labels=names(M[,1]), cex=label_scale)
 
 	# If there were samples eliminated, throw a message on the plot
@@ -204,22 +213,38 @@ while(!(is.na(args[arg_count]))){
 		ranges <- cur_parameters$usr
 		text(ranges[1],ranges[4]-2, elimination_message, pos=4, col="red")
 	}
-
 	dev.off()
+	
+	#write distance matrix to file
+	write.table(as.matrix(Zdist),args[5], sep = "\t",append=TRUE)
+	}
 
-
+	if(Option == 15) {
 	###############################################################################
 	###############################################################################
 	# Draw Dendrogram Heatmap Plot
 	pdf(HeatMapPDF, width=11,height=8.5)
+	
+	library(gplots)
+	heatmap.2(Z,trace="none",col=rev(rainbow(2^8, start=0, end=0.65)), distfun = dist,
+           hclustfun = hclust,cexRow=label_scale* 0.80,keysize = 1.2,scale = c("none"),
+	cexCol=label_scale * 0.63,main=args[3],density.info=c('density'),margins=c(18,8))
 
-	heatmap(Z, cexRow=label_scale* 0.80,  cexCol=label_scale * 0.63,
-		main=args[2],key=TRUE,
-		col=rev(rainbow(2^16, start=0, end=0.65)),
-		margins=c(18,8)
-		)
+	
+
+	#heatmap(Z, cexRow=label_scale* 0.80,  cexCol=label_scale * 0.63,	
+	#main=args[3],key=TRUE,
+	#col=rev(rainbow(2^16, start=0, end=0.65)),
+	#margins=c(18,8)
+	#)
 
 	dev.off()
+	
+	#write distance matrix to file
+	write.table(as.matrix(Zdist),args[5], sep = "\t",append=TRUE)
+	write.table(NULL,args[5], sep = "\t",append=TRUE)
+	write.table(as.matrix(t(Z)),args[5], sep = "\t",append=TRUE)
+	}	
 
 	##############################################################################
 	##############################################################################
