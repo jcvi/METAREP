@@ -183,7 +183,7 @@ while(!(is.na(args[arg_count]))){
 	#
 	# Multidimensional scaling (MDS) is a set of related statistical techniques often used in information visualization for exploring similarities or 
 	# dissimilarities in data. MDS is a special case of ordination. An MDS algorithm starts with a matrix of item.item similarities, then assigns a 
-	# location of each item in a low-dimensional space, suitable for graphing or 3D visualisation.
+	# location of each item in a low-dimensional space, suitable for graphing or 3D visualization.
 
 	# Get rid of errors when ismMDS doesn't like 0's in the distance matrix
 	for(i in 1:length(Zdist)){
