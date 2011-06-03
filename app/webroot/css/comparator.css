@@ -22,6 +22,10 @@ CSS for comparator pages
 	
 }
 
+/* TODO stable tbale header
+tbody {max-height:180px;width: 800px;overflow:auto;}
+*/
+
 .comparator-main-panel { 	
 	position: absolute;
 	top: 400px;
@@ -66,9 +70,6 @@ form {
 	width: 390px;
 }
 
-label {
-	float: left;
-}
 
 #dialog_link {
 	position: absolute;
@@ -85,6 +86,13 @@ input[type="submit"] {
 	height: 25px;
 }
 
+.compare-radio-box label {
+    display:inline !important;
+    padding-left: 25px;
+    text-indent: -35px;
+    padding-right:20px;
+}
+
 .compare-radio-box {
 	display: inline !important;
 	position:absolute;
@@ -94,13 +102,6 @@ input[type="submit"] {
 	width:300px;
 	line-height:11px;
 	vertical-align: midle;
-}
-
-.compare-radio-box label {
-    display:inline !important;
-    padding-left: 25px;
-    text-indent: -35px;
-    padding-right:20px;
 }
 
 input[type="text"] {
@@ -114,7 +115,7 @@ input[type="text"] {
 }
 	
 input[type="radio"] {
-	float: right;
+	float: none !important;
 	width:20px;
 	hight:10px;
 	padding:10em;
@@ -133,16 +134,47 @@ select {
 	padding: 0px;
 }
 
-.comparator-level-select {	
+.comparator-drop-down-one {	
 	position:absolute;
 	left: 9px;
-	top: 55px;
+	top: 45px;
+	font-size:0.9em;
+	float:top;
 }
 
-.comparator-heatmap-color-select {	
+.comparator-drop-down-two {	
 	position:absolute;
-	left: 635px;
-	top: 55px;
+	left: 200px;
+	top: 45px;
+	font-size:0.9em;
+	float:top;
+}
+
+.comparator-drop-down-three {	
+	position:absolute;
+	left: 370px;
+	top: 45px;
+	font-size:0.9em;
+	float:top;
+}
+
+.comparator-drop-down-four {	
+	position:absolute;
+	left: 550px;
+	top: 45px;
+	font-size:0.9em;	
+}
+
+.comparator-drop-down-five {	
+	position:absolute;
+	left: 740px;
+	top: 45px;
+	font-size:0.9em;	
+}
+
+label {
+    float: top !important;
+    font-size:0.9em;
 }
 
 #comparison-results {
@@ -163,9 +195,6 @@ select {
 	font-size: 0.7em;	
 }
 
-.comparator-heatmap {  	
-	
-}
 
 .comparator-min-count-option {
 	position: absolute;
@@ -225,8 +254,8 @@ fieldset {
 
 .comparator-download {  	
 	position: absolute;
-	top: 5px;
-	left:955px;
+	top: 47px;
+	left:975px;
 }
 
 .tab{
@@ -243,7 +272,7 @@ table.tablesorter thead tr .header {
        
 }
 table.tablesorter thead tr .headerSortUp {
-        background-image: url(../img/sort-asc.gif);
+        background-image: url(../img/sort-asc.gif);  
         padding-left:5px;
 }
 table.tablesorter thead tr .headerSortDown {
@@ -252,6 +281,10 @@ table.tablesorter thead tr .headerSortDown {
 }
 table.tablesorter tbody tr.odd td {
         background-color:#f4f4f4;
+        height: 10px !important;
+}
+table.tablesorter tbody tr.even td {
+        height: 10px !important;
 }
 
 #resize-box{
@@ -259,7 +292,7 @@ table.tablesorter tbody tr.odd td {
 	border:1px dashed #a0a0a0;
 	position:absolute;
 	top:54px;
-	right:42px;
+	right:72px;
 }
 
 #resize-box:hover{

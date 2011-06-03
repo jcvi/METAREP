@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -25,13 +25,22 @@ class Library extends AppModel {
 	var $belongsTo 			 = array('Project');	
 	var $hasAndBelongsToMany = array('Population');
 	
-    var $validate = array(
+    var $validate = array(        
+        'sample_id' => array(
+           		'alphaNumeric' => array(
+      				'required' => false,
+   				 	'allowEmpty' => true,
+    				'rule' => 'alphaNumeric',
+    				'maxLength'=> 30, 
+                	'message' => 'Please enter a alphanumeric value (max 30 characters).'
+             ),          
+        ),      
         'sample_altitude' => array(
            		'numeric' => array(
-      			'required' => false,
-   				 'allowEmpty' => true,
-    			'rule' => 'numeric',
-                'message' => 'Please enter a numeric value.'
+	      			'required' => false,
+	   				 'allowEmpty' => true,
+	    			'rule' => 'numeric',
+	                'message' => 'Please enter a numeric value.'
              ),          
         ),
         'sample_depth' => array(
@@ -46,20 +55,29 @@ class Library extends AppModel {
             	'alphaNumeric' => array(
           		'required' => false,
          		'allowEmpty' => true,
-                'rule' => "/^[0-9.]+.*[0-9.]+'[0-9.]+\"[WE]$/i", 
-                'message' => 'Please enter latitude in the specified format.'
+	    			'rule' => 'numeric',
+	                'message' => 'Please enter a numeric value.'
              ),          
         ),
         'sample_longitude' => array(
      		 'alphaNumeric' => array(
        			 'required' => false,
         		 'allowEmpty' => true,
-                'rule' => "/^[0-9.]+.*[0-9.]+'[0-9.]+\"[NS]$/i", 
-                'message' => 'Please enter latitude in the specified format.'
+	    			'rule' => 'numeric',
+	                'message' => 'Please enter a numeric value.'
                 )
-        ), 
+        ),       
+        'label' => array(
+            'alphaNumeric' => array(
+                'rule' => '/^[a-z0-9_-]{0,30}$/i', 
+       			'maxLength'=> 30,
+        		'allowEmpty' => true,
+                'message' => 'Alphabets, underscores and numbers only (max. 30 characters).',
+             ),          
+        	
+         ), 	         
 	);	
-
+	
 	public function getProjectIdById($id) {
 		$this->contain('Project.id');
 		$library = $this->find('first', array('fields'=>array('Library.id'),'conditions' => array('Library.name' => $id)));

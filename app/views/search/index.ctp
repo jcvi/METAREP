@@ -18,14 +18,14 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.2.0
+  @version METAREP v 1.3.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
   
 <!---------------------------------------------------------->
 
-<?php echo $html->css('search_dataset.css'); ?>
+<?php echo $html->css('search_dataset.css');?>
 
 <div id="search-dataset">
 
@@ -57,7 +57,7 @@
 			echo('<div class="search-box">');
 			
 			if(!isset($exception)) {
-				$label = "Found <B>$numHits hits</b> in <b>$dataset</b> for";
+				$label = "Found <B>$numHits hits </b> in <b>$dataset</b> for";
 			}
 			else {
 				$label = "<b><FONT COLOR=\"#990000\">$exception</FONT><b>";
@@ -90,19 +90,22 @@
 	<?php }?>
 	
  	<div id="search-results">
-		<?php if($numHits>0) { ?>
+		<?php if($numHits != 0) { ?>
 		
 			<?php echo $html->div('download', $html->link($html->image("download-medium.png",array("title" => "Download Top Ten List")), array('controller'=> 'search','action'=>'dowloadFacets',$dataset,$numHits,$sessionQueryId),array('escape' => false)));?>	
-			<?php echo $facet->topTenList($facets,$numHits);?>	
-		
+			
+			<?php echo $facet->topTenList($facets,$facetFields,$numHits);?>	
+					
 			<div class="facet-pie-panel">
 			<?php echo $html->div('download', $html->link($html->image("download-medium.png",array("title" => "Download Top Ten List")), array('controller'=>  'search','action'=>'dowloadFacets',$dataset,$numHits,$sessionQueryId),array('escape' => false)));?>	
-			<?php  echo $facet->topTenPieCharts($facets,$numHits,"700x200");?>
+			<?php echo $facet->topTenPieCharts($facets,$facetFields,$numHits,"700x200");?>
 			</div>
 			
 			<div class="data-panel">
 			<?php echo $html->div('download', $html->link($html->image("download-medium.png",array("title" => "Download Peptide Id List")), array('controller'=>  'search','action'=>'dowloadData',$dataset,$numHits,$sessionQueryId),array('escape' => false)));?>	
-			<?php  echo $luceneResultPaginator->data($dataset,$hits,$page,$numHits,$sessionQueryId);?>
+			<?php  
+					echo $luceneResultPaginator->data($dataset,$documents,$page,$numDocuments,NUM_SEARCH_RESULTS,$sessionQueryId,$resultFields);				
+			?>
 			</div>
 		<?php }?>
 	</div>

@@ -29,7 +29,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.2.0
+  @version METAREP v 1.3.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -130,17 +130,10 @@ new Form.Element.EventObserver('CompareSelection.all', function(element, value) 
 												5 =>'Wilcoxon Rank Sum Test',
 												6 =>'METASTATS - non parametric t-test',),
 							
-									'Hierarchical Clustering Plot' => array( 
-												7 =>'Complete Linkage Cluster Plot',
-												8 =>'Average Linkage Cluster Plot',
-												9 =>'Single Linkage Cluster Plot',
-												10 =>'Ward\'s Minimum Variance Cluster Plot',
-												11 =>'Median Cluster Plot',
-												12 =>'McQuitty Cluster Plot',
-												13 =>'Centroid Cluster Plot'),
-									'Other Plot'=>array(
-												14 => 'Multidimensional Scaling Plot',
-												15 =>'HeatMap Plot',),			
+									'Plots' => array( 
+												HIERARCHICAL_CLUSTER_PLOT  =>'Hierarchical Cluster Plot',												
+												HEATMAP_PLOT =>'HeatMap Plot',
+												MDS_PLOT =>'Multidimensional Scaling Plot',),			
 							),
 							'label' => false,'selected' => $option,'div'=>'comparator-select-option')
 						);
@@ -165,31 +158,7 @@ echo $ajax->observeField( 'CompareOption',
     ) 
 );
 
-//echo $ajax->observeField( 'ComparePlot', 
-//    array(
-//        'url' => array('controller'=>'compare', 'action'=>'ajaxTabPanel'),
-//        'frequency' => 0.1,
-//    	'update' => 'tab-panel', 'indicator' => 'spinner','complete' => 'Element.hide(\'tab-panel\');Effect.Appear(\'tab-panel\',{ duration: 1.5 })',
-//		'with' => 'Form.serialize(\'CompareAddForm\')'
-//    ) 
-//);
 
-//echo $ajax->observeField( 'CompareOption1', 
-//    array(
-//        'url' => array('controller'=>'compare', 'action'=>'ajaxTabPanel'),
-//        'frequency' => 0.1,
-//    	'update' => 'tab-panel', 'loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Element.hide(\'tab-panel\');Effect.Appear(\'tab-panel\',{ duration: 1.5 })',
-//		'with' => 'Form.serialize(\'CompareAddForm\')'
-//    ) 
-//);
-//echo $ajax->observeField( 'CompareOption2', 
-//    array(
-//        'url' => array('controller'=>'compare', 'action'=>'ajaxTabPanel'),
-//        'frequency' => 0.1,
-//    	'update' => 'tab-panel', 'loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Element.hide(\'tab-panel\');Effect.Appear(\'tab-panel\',{ duration: 1.5 })',
-//		'with' => 'Form.serialize(\'CompareAddForm\')'
-//    ) 
-//);
 
 ?>
 <script type="text/javascript">
@@ -222,5 +191,6 @@ function changeUrl() {
 	  //$(".multiselect").multiselect({sortable: false, searchable: false});
 	  jQuery("#tabs").tabs({ spinner: '<img src="/metarep/img/ajax.gif\"/>' });
 	});
+
 </script>
 </div>

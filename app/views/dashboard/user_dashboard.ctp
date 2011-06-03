@@ -21,7 +21,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.2.0
+  @version METAREP v 1.3.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -32,7 +32,7 @@
 <?php echo $html->css('jquery-ui-1.7.2.custom.css');?>
 
 <div class="user-dash-board">
-	<h2><?php __('Dash Board - Welcome '); echo Authsome::get('username'); ?></h2>
+	<h2><?php __('Dash Board - Welcome '); echo Authsome::get('first_name'); echo(' ');echo Authsome::get('last_name');?></h2>
 	
 	<div class="user-dash-board-manage-panel" >
 		<fieldset >

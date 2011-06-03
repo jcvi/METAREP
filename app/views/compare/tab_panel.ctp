@@ -19,7 +19,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.2.0
+  @version METAREP v 1.3.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -77,7 +77,7 @@ elseif($option > 6) {
 	$downloadTitle = 'Download Distance Matrix';
 }
 
-echo $html->div('comparator-download', $html->link($html->image("download-large.png",array("title" => $downloadTitle)), array('controller'=> 'compare','action'=>'download'),array('escape' => false)));	
+echo $html->div('comparator-download', $html->link($html->image("download-medium.png",array("title" => $downloadTitle)), array('controller'=> 'compare','action'=>'download'),array('escape' => false)));	
 echo("</fieldset>");
 ?>
 
@@ -89,15 +89,8 @@ jQuery(function() {
 	 
 });
 
-
-
-/*jQuery("#tabs").bind( "tabsselect", function(event, ui) {
-	var tabId = jQuery("#tabs").tabs( "option", "selected");
-	alert(tabId);
-	
-	});
-	
-	
-	*/
+jQuery('img[src$="download-medium.png"]').qtip({
+	   content: 'Click to download result panel contents in tab delimited format.',
+	   style: 'mystyle' });	
 </script>	
 

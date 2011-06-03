@@ -25,8 +25,12 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
+set_time_limit(0);
+ini_set('memory_limit', '512M');
+
 //add METAREP configuration 
 include_once('metarep.php');
+
 
 /**
  * CakePHP Debug Level:
@@ -43,7 +47,7 @@ include_once('metarep.php');
  * In development mode, you need to click the flash message to continue.
  */
 
-	Configure::write('debug', '0');
+	Configure::write('debug', '1');
 	
 /**
  * Application wide charset encoding

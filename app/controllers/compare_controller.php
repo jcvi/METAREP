@@ -16,39 +16,11 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
-
-#define heatmap colors
-define('HEATMAP_COLOR_YELLOW_RED', 0);
-define('HEATMAP_COLOR_YELLOW_BLUE', 1);
-define('HEATMAP_COLOR_BLUE', 2);
-define('HEATMAP_COLOR_GREEN', 3);
-
-#define comparative options
-define('FISHER', 0);
-define('ABSOLUTE_COUNTS', 1);
-define('RELATIVE_COUNTS', 2);
-define('HEATMAP', 3);
-define('CHISQUARE', 4);
-define('WILCOXON', 5);
-define('METASTATS', 6);
-define('COMPLETE_LINKAGE_CLUSTER_PLOT', 7);
-define('AVERAGE_LINKAGE_CLUSTER_PLOT', 8);
-define('SINGLE_LINKAGE_CLUSTER_PLOT', 9);
-define('WARDS_CLUSTER_PLOT', 10);
-define('MEDIAN_CLUSTER_PLOT', 11);
-define('MCQUITTY_CLUSTER_PLOT', 12);
-define('CENTROID_CLUSTER_PLOT', 13);
-define('MDS_PLOT', 14);
-define('HEATMAP_PLOT', 15);
-
-
-define('SHOW_ALL_DATASETS',0);
-define('SHOW_PROJECT_DATASETS',1);
 
 class CompareController extends AppController {
 
@@ -56,8 +28,8 @@ class CompareController extends AppController {
 	var $helpers 	= array('Matrix','Dialog','Ajax');
 	var $uses 		= array();
 	#var $uses 		= array('Project','Library','Population');
-	var $components = array('Solr','RequestHandler','Session','Matrix','Format');
-
+	var $components = array('Solr','RequestHandler','Session','Matrix','Format','Color'); 
+	
 	var $taxonomyLevels = array(
 		'root' 		=> 'root',
 		'kingdom' 	=> 'kingdom',
@@ -70,34 +42,39 @@ class CompareController extends AppController {
 	
 	var $geneOntologyLevels = array(
 		1 =>'root',
-		'Molecular Function' =>
+		'go slim' =>
 			array(
-				'MF2' => 'Molecular Function Root Distance 2',
-				'MF3' => 'Molecular Function Root Distance 3',
-				'MF4' => 'Molecular Function Root Distance 4',
-				'MF5' => 'Molecular Function Root Distance 5',
+				'goslim_pir.obo' => 'goslim_pir.obo',
+				'goslim_generic.obo' => 'goslim_generic.obo',
+			),		
+		'molecular function (mf)' =>
+			array(
+				'MF2' => 'mf root distance 2',
+				'MF3' => 'mf root distance 3',
+				'MF4' => 'mf root distance 4',
+				'MF5' => 'mf root distance 5',
 			),
-		'Cellular Component' =>
+		'cellular component (cc)' =>
 			array(
-				'CC2' => 'Cellular Component Root Distance 2',
-				'CC3' => 'Cellular Component Root Distance 3',
-				'CC4' => 'Cellular Component Root Distance 4',
-				'CC5' => 'Cellular Component Root Distance 5',
+				'CC2' => 'cc root distance 2',
+				'CC3' => 'cc root distance 3',
+				'CC4' => 'cc root distance 4',
+				'CC5' => 'cc root distance 5',
 			),
-		'Biological Process' =>
+		'biological process (bp)' =>
 			array(
-				'BP2' => 'Biological Process Root Distance 2',
-				'BP3' => 'Biological Process Root Distance 3',
-				'BP4' => 'Biological Process Root Distance 4',
-				'BP5' => 'Biological Process Root Distance 5',
+				'BP2' => 'bp root distance 2',
+				'BP3' => 'bp root distance 3',
+				'BP4' => 'bp root distance 4',
+				'BP5' => 'bp root distance 5',
 			)									
 	);	
 	
 	var $enzymeLevels = array(
-		'level 1' => 'Enzyme Commission Level 1',
-		'level 2' => 'Enzyme Commission Level 2',
-		'level 3' => 'Enzyme Commission Level 3',
-		'level 4' => 'Enzyme Commission Level 4',
+		'level 1' => 'level 1',
+		'level 2' => 'level 2',
+		'level 3' => 'level 3',
+		'level 4' => 'level 4',
 	);
 		
 	var $hmmLevels = array(
@@ -106,26 +83,32 @@ class CompareController extends AppController {
 	);
 
 	var $clusterLevels  = array(
-		'CAM_CR' => 'Core Clusters',
-		'CAM_CL' => 'Final Clusters'
+		'CAM_CR' => 'core clusters',
+		'CAM_CL' => 'final clusters'
 	);
 	
 	var $environmentalLibrariesLevels = array(
-		'level1' => 'Level 1',					
-		'level2' => 'Level 2',
+		'level1' => 'level 1',					
+		'level2' => 'level 2',
 	);
 	
-	var $pathwayLevels = array(
-		'level 2' => 'Metabolic Pathways (level 2)',	
-		'level 3' => 'Metabolic Pathways (level 3)',				
-	);	
+	var $pathwayLevelsEc = array(
+		'super-pathway' => 'super pathways',	
+		'pathway' => 'pathways',				
+	);		
 
+	var $pathwayLevelsKo = array(
+		'level 1' => 'root',	
+		'super-pathway' => 'super pathways',	
+		'pathway' => 'pathways',				
+	);		
+	
 	var $commonNamelevels = array(
-		'10'  => 'Top 10 Hits',
-		'20'  => 'Top 20 Hits',
-		'50'  => 'Top 50 Hits',
-		'100' => 'Top 100 Hits',
-		'1000'=> 'Top 1000 Hits',
+		'10'  => 'top 10 hits',
+		'20'  => 'top 20 hits',
+		'50'  => 'top 50 hits',
+		'100' => 'top 100 hits',
+		'1000'=> 'top 1000 hits',
 	);	
 	
 	/**
@@ -136,13 +119,16 @@ class CompareController extends AppController {
 	 * @access public
 	 */			
 	function index($dataset = null,$mode = SHOW_PROJECT_DATASETS) {
+		
 		$this->loadModel('Project');
+		$this->loadModel('Population');
 			
 		//increase memory size
 		ini_set('memory_limit', '856M');
 				
 		$this->pageTitle = 'Compare Multiple Datasets';
 
+		//set default values
 		if(!$this->Session->check('filter')) {
 			$this->Session->write('filter',"*:*");
 		}	
@@ -152,6 +138,18 @@ class CompareController extends AppController {
 		if(!$this->Session->check('option')) {
 			$this->Session->write('option',ABSOLUTE_COUNTS);
 		}	
+		if(!$this->Session->check('plotLabel')) {
+			$this->Session->write('plotLabel',PLOT_LIBRARY_NAME);
+		}	
+		if(!$this->Session->check('distanceMatrix')) {
+			$this->Session->write('distanceMatrix',DISTANCE_BRAY);
+		}	
+		if(!$this->Session->check('clusterMethod')) {
+			$this->Session->write('clusterMethod',CLUSTER_AVERAGE);
+		}		
+		if(!$this->Session->check('maxPvalue')) {
+			$this->Session->write('maxPvalue',PVALUE_ALL);
+		}						
 
 		$projectId = $this->Project->getProjectId($dataset);
 		
@@ -163,13 +161,15 @@ class CompareController extends AppController {
 		else if($mode == SHOW_PROJECT_DATASETS) {
 			$allDatasets = $this->Project->findUserDatasetsCompareFormat(POPULATION_AND_LIBRARY_DATASETS,$projectId);
 		}
-		
+					
 		$this->Session->write('allDatasets',$allDatasets);
 		
+		$this->set('projectName',$this->Project->getProjectName($dataset));
 		$this->set('projectId', $projectId);
 		$this->set('selectedDatasets', $selectedDatasets);
-		$this->set('dataset', $dataset);	
-		$this->set('mode', $mode);		
+		$this->set('dataset', $dataset);
+		
+		$this->set('mode', $mode);	
 	}
 	
 	/**
@@ -189,40 +189,73 @@ class CompareController extends AppController {
 
 		if(isset($this->data['selectedDatasets'])) {						
 			$selectedDatasets	= $this->data['selectedDatasets'];
+
+			//get pipeline summary for all selected datasets
+			$datasetPipelines 	= $this->Project->checkDatasetPipelines($selectedDatasets);
+			
+					//configure result tabs for each pipeline type
+			if($datasetPipelines[PIPELINE_DEFAULT] || $datasetPipelines[PIPELINE_JCVI_META_PROK] ) {			
+			$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
+						  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree','rootLevel'=>1),
+						  array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+						  array('function'=>'metacycPathways','isActive'=>1,'tabName' => 'Metacyc Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+						  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzyme','dbTable' => 'Enzymes','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
+						  array('function'=>'hmms','isActive'=>1,'tabName' => 'HMM','dbTable' => 'Hmm','sorlField' => 'hmm_id','rootLevel'=>'TIGR'),
+						  array('function'=>'commonNames','isActive'=>1,'tabName' => 'Common Names','dbTable' => null,'sorlField' => 'com_name','rootLevel'=>10));
+			}
+			else if($datasetPipelines[PIPELINE_JCVI_META_VIRAL]) {	
+			$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
+						  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree','rootLevel'=>1),
+						  array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+						  array('function'=>'metacycPathways','isActive'=>1,'tabName' => 'Metacyc Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+						  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzyme','dbTable' => 'Enzymes','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
+						  array('function'=>'hmms','isActive'=>1,'tabName' => 'HMM','dbTable' => 'Hmm','sorlField' => 'hmm_id','rootLevel'=>'TIGR'),
+						  array('function'=>'commonNames','isActive'=>1,'tabName' => 'Common Names','dbTable' => null,'sorlField' => 'com_name','rootLevel'=>10),
+ 						  array('function'=>'environmentalLibraries','isActive'=>1,'tabName' => 'Environmental Libraries','dbTable' => 'environemental_libraries','sorlField' => 'env_lib','rootLevel'=>'level1'));						  							
+			}			
+			else if($datasetPipelines[PIPELINE_HUMANN]) {	
+			$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
+							  //array('function'=>'keggOrtholog','isActive'=>1,'tabName' => 'Kegg Ortholog','dbTable' => 'KeggOrtholog','sorlField' => 'ko_id'),
+							  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree','rootLevel'=>1),
+							  array('function'=>'keggPathwaysKo','isActive'=>1,'tabName' => 'Kegg Pathway (KO)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'level 1'),
+							  array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+							  array('function'=>'metacycPathways','isActive'=>1,'tabName' => 'Metacyc Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+							  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzymes','dbTable' => 'Enzyme','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
+							  );				
+			}			
+			//tabs that are valid for all pipelines
+			else {
+				$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
+							 // array('function'=>'keggOrtholog','isActive'=>1,'tabName' => 'Kegg Ortholog','dbTable' => 'KeggOrtholog','sorlField' => 'ko_id'),
+							  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree','rootLevel'=>1),
+							  array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+							  array('function'=>'metacycPathways','isActive'=>1,'tabName' => 'Metacyc Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+							  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzymes','dbTable' => 'Enzyme','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
+				);				
+			}
+
 			$optionalDatatypes  = $this->Project->checkOptionalDatatypes($selectedDatasets);
-
-			//core data types			
-			$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree'),
-						  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree'),
-						  array('function'=>'pathways','isActive'=>1,'tabName' => 'Pathways','dbTable' => 'Pathways','sorlField' => 'ec_id'),
-						  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzymes','dbTable' => 'Enzymes','sorlField' => 'enzyme_id'),
-						  array('function'=>'hmms','isActive'=>1,'tabName' => 'HMMs','dbTable' => 'Hmm','sorlField' => 'hmm_id'),
-						  array('function'=>'commonNames','isActive'=>1,'tabName' => 'Common Names','dbTable' => null,'sorlField' => 'com_name'));
-
+						  
 			//set optional data types for JCVI-only installation					  
 			if(JCVI_INSTALLATION) {			  							  
 				if($optionalDatatypes['apis']) {
-					array_push($tabs,array('function'=>'apisTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Apis)','dbTable' => 'Taxonomy','sorlField' => 'apis_tree'));
+					array_push($tabs,array('function'=>'apisTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Apis)','dbTable' => 'Taxonomy','sorlField' => 'apis_tree','rootLevel' =>'root'));
 				}
 				else {
-					array_push($tabs,array('function'=>'apisTaxonomy','isActive'=>0,'tabName' => 'Taxonomy (Apis)','dbTable' => 'Taxonomy','sorlField' => 'apis_tree'));
+					//array_push($tabs,array('function'=>'apisTaxonomy','isActive'=>0,'tabName' => 'Taxonomy (Apis)','dbTable' => 'Taxonomy','sorlField' => 'apis_tree'));
 				}	
 				if($optionalDatatypes['clusters']) {
-					array_push($tabs,array('function'=>'clusters','isActive'=>1,'tabName' => 'Clusters','dbTable' => null,'sorlField' => 'cluster_id'));
+					array_push($tabs,array('function'=>'clusters','isActive'=>1,'tabName' => 'Clusters','dbTable' => null,'sorlField' => 'cluster_id','rootLevel' =>'CAM_CR'));
 				}	
 				else {
-					array_push($tabs,array('function'=>'clusters','isActive'=>0,'tabName' => 'Clusters','dbTable' => null,'sorlField' => 'cluster_id'));
+					//array_push($tabs,array('function'=>'clusters','isActive'=>0,'tabName' => 'Clusters','dbTable' => null,'sorlField' => 'cluster_id'));
 				}		
-				if($optionalDatatypes['viral']) {
-					
+				if($optionalDatatypes['viral']) {					
 					array_push($tabs,array('function'=>'environmentalLibraries','isActive'=>1,'tabName' => 'Environmental Libraries','dbTable' => 'environemental_libraries','sorlField' => 'env_lib'));
-				}					  
-				else {
-					array_push($tabs,array('function'=>'environmentalLibraries','isActive'=>0,'tabName' => 'Environmental Libraries','dbTable' => 'environemental_libraries','sorlField' => 'env_lib'));				
-				}						  
+				}					  					  
 			}
-			
-			#set default variables
+						
+			## set default variables
 			if(empty($option)) {
 				$option = ABSOLUTE_COUNTS;
 			}
@@ -232,7 +265,15 @@ class CompareController extends AppController {
 			if(empty($minCount)) {
 				$minCount = 0;
 			}
-			#handle tests
+			if($this->Session->check('heatmapColor')) {
+				$heatmapColor = $this->Session->read('heatmapColor');
+			}
+			else {
+				$heatmapColor = HEATMAP_COLOR_YELLOW_RED;
+			}
+			$colorGradient =  $this->Color->gradient($heatmapColor);			
+			
+			## handle tests
 			if($option == CHISQUARE) {
 				$minCount = 5;
 			}
@@ -244,10 +285,8 @@ class CompareController extends AppController {
 					$this->render('/compare/result_panel','ajax');
 				}								
 			}			
-				
-			$heatMapColor = HEATMAP_COLOR_YELLOW_RED;
-			
-			#handle plot exception (fewer than 3 datasets)
+					
+			## handle plot exception (fewer than 3 datasets)
 			if(count($selectedDatasets) < 3 && $option > 6 ) {				
 				$this->set('multiSelectException','Please select at least 3 datasets for this plot option.');
 				$this->set('filter',$filter);
@@ -256,6 +295,11 @@ class CompareController extends AppController {
 			
 			//get associative array of total counts
 			$totalCounts = $this->getTotalCounts($filter,$selectedDatasets);
+			
+			//reset level sessions
+			foreach($tabs as $tab) {
+				$this->Session->write("{$tab['function']}.level",$tab['rootLevel']);
+			}
 			
 			//write variables to sessions				
 			$this->Session->write('option',$option);
@@ -266,7 +310,8 @@ class CompareController extends AppController {
 			$this->Session->write('tabs',$tabs);
 			$this->Session->write('flipAxis',0);
 			$this->Session->write('totalCounts',$totalCounts);
-			$this->Session->write('heatmapColor',$heatMapColor);		
+			$this->Session->write('heatmapColor',$heatmapColor);	
+			$this->Session->write('colorGradient',$colorGradient);		
 			$this->render('/compare/tab_panel','ajax');
 		}
 		else {
@@ -306,7 +351,9 @@ class CompareController extends AppController {
 	 * @access private
 	 */	
 	private function taxonomy($facetField = 'blast_tree') {
+		
 		$this->loadModel('Taxonomy');
+		$this->loadModel('Project');
 		$this->loadModel('Population');
 				
 		if($facetField === 'blast_tree') {
@@ -337,15 +384,18 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 		$totalCounts		= $this->Session->read('totalCounts');
+		$plotLabel			= $this->Session->read('plotLabel');
+		$clusterMethod		= $this->Session->read('clusterMethod');
+		$distanceMatrix		= $this->Session->read('distanceMatrix');
+		$datasetPipelines	= $this->Session->read('datasetPipelines');
+		$optionalDatatypes	= $this->Session->read('optionalDatatypes');
 		
 		if($option == METASTATS || $option == WILCOXON) {
 			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}		
-		
-		#write session variables
-		$this->Session->write('mode',$mode);
-		
-		
+	
+		//write session variables
+		$this->Session->write('mode',$mode);	
 		$this->Session->write("$mode.level",$level);
 		$this->Session->write('levels',$levels);
 			
@@ -366,46 +416,10 @@ class CompareController extends AppController {
 			$counts[$id]['sum'] 	= 0;	
 			array_push($facetQueries,"$facetField:$id");			
 		}
-		
-		unset($taxonResults);
-				
-		//populate count matrix with solr facet counts using solr's filter query
-		foreach($selectedDatasets as $dataset) {
-			
-			$facetQueryChunks = array_chunk($facetQueries,6700);
-			
-			foreach($facetQueryChunks as $facetQueryChunk) {
-				
-					//specify facet behaviour (fetch all facets)
-					$solrArguments = array(	"facet" => "true",
-					'facet.mincount' => $minCount,
-					'facet.query' => $facetQueryChunk,
-					"facet.limit" => -1);	
-					try	{
-						$result 	  = $this->Solr->search($dataset,$filter,0,0,$solrArguments);
-						
-					}
-					catch(Exception $e){
-						$this->set('exception',SOLR_CONNECT_EXCEPTION);
-						$this->render('/compare/result_panel','ajax');
-					}
-				
-				$facets = $result->facet_counts->facet_queries;
-				
-				foreach($facets as $facetQuery =>$count) {
-					$tmp 	= explode(":", $facetQuery);
-					$id 	= $tmp[1];	
-					
-					$counts[$id][$dataset] = $count;	
-					$counts[$id]['sum'] += $count;
-				}
-			}
-		}
-		
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
-		
-		$this->Session->write('counts',$counts);
-		
+		unset($taxonResults);	
+		$this->Solr->multiSearch($counts,$selectedDatasets,$facetQueries,$filter,$minCount);
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts,$plotLabel,$clusterMethod,$distanceMatrix);
+		$this->Session->write('counts',$counts);	
 		$this->render('/compare/result_panel','ajax');
 	}
 	
@@ -417,6 +431,7 @@ class CompareController extends AppController {
 	 */
 	function geneOntology() {
 		$this->loadModel('GoGraph');
+		$this->loadModel('Project');
 		$this->loadModel('Population');
 			
 		$mode 			= __FUNCTION__;
@@ -429,7 +444,7 @@ class CompareController extends AppController {
 		//drop down menu information
 		$levels = $this->geneOntologyLevels;
 
-		#read post data
+		//read post data
 		if(!empty($this->data['Post']['level'])) {				
 			//adjust level argument to match differenc subontologies
 			$levelLabel = $this->data['Post']['level'];
@@ -462,7 +477,12 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 		$totalCounts		= $this->Session->read('totalCounts');
-
+		$plotLabel			= $this->Session->read('plotLabel');
+		$clusterMethod		= $this->Session->read('clusterMethod');
+		$distanceMatrix		= $this->Session->read('distanceMatrix');
+		$datasetPipelines	= $this->Session->read('datasetPipelines');
+		$optionalDatatypes	= $this->Session->read('optionalDatatypes');		
+		
 		if($option == METASTATS || $option == WILCOXON) {
 			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}			
@@ -479,63 +499,19 @@ class CompareController extends AppController {
 		
 		//set up count matrix
 		foreach($goChildren as $goChild) {
-				
-			//init taxon information
 			$goAcc	 = $goChild['Descendant']['acc'];
 			$category= $goChild['Descendant']['acc'];
 			$tmp  = split("\\:",$goAcc);
 			$category = ltrim($tmp[1], "0");
-			
 			$counts[$category]['name'] = $goChild['Descendant']['name'];
-			$counts[$category]['sum'] = 0;
-				
-			
+			$counts[$category]['sum'] = 0;			
 			array_push($facetQueries,"go_tree:$category");	
 		}
-		
-		
 		unset($goChildren);
 		
-		//specify facet behaviour (fetch all facets)
-		$solrArguments = array(	"facet" => "true",
-		'facet.mincount' => $minCount,
-		'facet.query' => $facetQueries,
-		"facet.limit" => -1);				
-			
-		
-			////populate count matrix with solr facet counts using solr's filter query
-		foreach($selectedDatasets as $dataset) {
-			
-			$facetQueryChunks = array_chunk($facetQueries,6700);
-			
-			foreach($facetQueryChunks as $facetQueryChunk) {		
-				try	{
-					#$result = $this->Solr->search($dataset,$filter,0,0,$solrArguments);
-					#while(!$result->facet_counts->facet_queries) {
-						$result = $this->Solr->search($dataset,$filter,0,0,$solrArguments);
-					#}			
-				}
-				catch(Exception $e){
-					$this->set('exception',SOLR_CONNECT_EXCEPTION);
-					$this->render('/compare/result_panel','ajax');
-				}
-				
-				$facets = $result->facet_counts->facet_queries;
-				
-				foreach($facets as $facetQuery =>$count) {
-					$tmp 	= explode(":", $facetQuery);
-					$id 	= $tmp[1];	
-					
-					$counts[$id][$dataset] = $count;	
-					$counts[$id]['sum'] += $count;
-				}
-			}
-		}
-		
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
+		$this->Solr->multiSearch($counts,$selectedDatasets,$facetQueries,$filter,$minCount);
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts,$plotLabel,$clusterMethod,$distanceMatrix);
 		$this->Session->write('counts',$counts);
-
-		#reset label to alpha numeric version to allow selection of drop down
 		$this->set(compact('mode','counts','filter','option','minCount','selectedDatasets','level','levels','test'));
 		$this->render('/compare/result_panel','ajax');
 	}
@@ -548,6 +524,7 @@ class CompareController extends AppController {
 	 */
 	function enzymes() {
 		$this->loadModel('Enzymes');
+		$this->loadModel('Project');
 		$this->loadModel('Population');
 		
 		$mode = __FUNCTION__;
@@ -572,7 +549,12 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 		$totalCounts		= $this->Session->read('totalCounts');
-
+		$plotLabel			= $this->Session->read('plotLabel');
+		$clusterMethod		= $this->Session->read('clusterMethod');
+		$distanceMatrix		= $this->Session->read('distanceMatrix');
+		$datasetPipelines	= $this->Session->read('datasetPipelines');
+		$optionalDatatypes	= $this->Session->read('optionalDatatypes');	
+		
 		if($option == METASTATS || $option == WILCOXON) {
 			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}	
@@ -584,19 +566,21 @@ class CompareController extends AppController {
 		
 
 		$facetQueries = array() ;
+		$facetQueryMapping =array();
 		
 		#datastructure of dataset names and ids
 		$enzymeResults 	= $this->Enzymes->find('all', array('conditions' => array('Enzymes.rank' => $level)));
 		
-			//set up count matrix
+		//set up count matrix
 		foreach($enzymeResults as $enzymeResult) {
 
 			$ecId = $enzymeResult['Enzymes']['ec_id'];
 			
 			//add fuzzy matching to handle higher level enzyme classifications, 
 			//e.g. 1.3.-.- becomes 1.3.*.*
-			$solrEcId = str_replace("-","*",$ecId);
-			array_push($facetQueries,"ec_id:$solrEcId");	
+			$solrEcId = "ec_id:".str_replace("-","*",$ecId);
+			array_push($facetQueries,$solrEcId);
+			$facetQueryMapping[$solrEcId] = $ecId;	
 											
 			$name 	= $enzymeResult['Enzymes']['name'];
 
@@ -604,40 +588,12 @@ class CompareController extends AppController {
 			$counts[$ecId]['name'] 	= $name;	
 			$counts[$ecId]['sum'] 	= 0;	
 		}
-		
-		
+				
 		unset($enzymeResults);
 		
-		//specify facet behaviour (fetch all facets)
-		$solrArguments = array(	"facet" => "true",
-		'facet.mincount' => $minCount,
-		'facet.query' => $facetQueries,
-		"facet.limit" => -1);		
-		
-		////populate count matrix with solr facet counts using solr's filter query
-		foreach($selectedDatasets as $dataset) {
-			try	{
-				$result 	  = $this->Solr->search($dataset,$filter,0,0,$solrArguments);				
-			}
-			catch(Exception $e){
-				$this->set('exception',SOLR_CONNECT_EXCEPTION);
-				$this->render('/compare/result_panel','ajax');
-			}
-			
-			$facets = $result->facet_counts->facet_queries;
-			
-			foreach($facets as $facetQuery =>$count) {
-				$tmp 	= explode(":", $facetQuery);
-				$id 	= str_replace('*','-',$tmp[1]);	
-				$counts[$id][$dataset] = $count;	
-				$counts[$id]['sum'] += $count;
-			}
-		}
-
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
-			
+		$this->Solr->multiSearch($counts,$selectedDatasets,$facetQueries,$filter,$minCount,$facetQueryMapping);		
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts,$plotLabel,$clusterMethod,$distanceMatrix);
 		$this->Session->write('counts',$counts);
-
 		$this->render('/compare/result_panel','ajax');
 	}
 	
@@ -661,7 +617,10 @@ class CompareController extends AppController {
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 		$optionalDatatypes  = $this->Session->read('optionalDatatypes');	
 		$totalCounts		= $this->Session->read('totalCounts');	
-		
+		$plotLabel			= $this->Session->read('plotLabel');
+		$clusterMethod		= $this->Session->read('clusterMethod');
+		$distanceMatrix		= $this->Session->read('distanceMatrix');
+				
 		//drop down selection
 		$levels = $this->hmmLevels;
 
@@ -740,11 +699,11 @@ class CompareController extends AppController {
 			}				
 		}
 
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts,$plotLabel,$clusterMethod,$distanceMatrix);
 
 		$this->Session->write('counts',$counts);
-
-		$this->render('/compare/result_panel','ajax');
+		
+		$this->render('/compare/result_panel','ajax');		
 	}
 
 	/**
@@ -755,6 +714,7 @@ class CompareController extends AppController {
 	 */	
 	function clusters() {
 		$this->loadModel('Population');
+		$this->loadModel('Cluster');
 		
 		$mode   = __FUNCTION__;
 		$counts	= array();
@@ -779,16 +739,19 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 		$totalCounts		= $this->Session->read('totalCounts');
-
+		$plotLabel			= $this->Session->read('plotLabel');
+		$clusterMethod		= $this->Session->read('clusterMethod');
+		$distanceMatrix		= $this->Session->read('distanceMatrix');
+		
 		if($option == METASTATS || $option == WILCOXON) {
 			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}			
 		
 		if($minCount==0) {
-			$minCount=2;
+			$minCount=5;
 		}
 
-		#write session variables
+		//write session variables
 		$this->Session->write("$mode.level", $level);
 		$this->Session->write('levels',$levels);
 		$this->Session->write('mode',$mode);
@@ -811,10 +774,11 @@ class CompareController extends AppController {
 			}
 				
 			$facets = $result->facet_counts->facet_fields->cluster_id;
-				
+			
 			foreach($facets as $category => $count) {
 
-				$counts[$category]['name'] =$category;
+				$counts[$category]['name'] = $this->Cluster->getDescription($category);
+				
 				$counts[$category][$dataset] = $count;
 
 				if(!empty($counts[$category]['sum'])) {
@@ -835,7 +799,7 @@ class CompareController extends AppController {
 			}
 		}
 
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts,$plotLabel,$clusterMethod,$distanceMatrix);
 
 		$this->Session->write('counts',$counts);
 
@@ -871,9 +835,7 @@ class CompareController extends AppController {
 		}		
 		
 		
-		$facetQueries = array();
-
-		
+		$facetQueries = array();		
 
 		$taxonResults = $this->EnvironmentalLibrary->find('all',array('conditions'=>array('rank'=>$level)));
 		
@@ -883,7 +845,7 @@ class CompareController extends AppController {
 			$counts[$name]['name'] 	= '';	
 			$counts[$name]['sum'] 	= 0;
 
-			#escape lucene special characters
+			//escape lucene special characters
 			$name = str_replace(' ','?',$name);
 			$name = str_replace('(','\(',$name);
 			$name = str_replace(')','\)',$name);
@@ -901,7 +863,10 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');		
 		$totalCounts		= $this->Session->read('totalCounts');
-
+		$plotLabel			= $this->Session->read('plotLabel');
+		$clusterMethod		= $this->Session->read('clusterMethod');
+		$distanceMatrix		= $this->Session->read('distanceMatrix');
+		
 		if($option == METASTATS || $option == WILCOXON) {
 			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}			
@@ -948,96 +913,99 @@ class CompareController extends AppController {
 		$this->Session->write('levels',$levels);
 		$this->Session->write('mode',$mode);
 
-		#debug($counts);
-		
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
+
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts,$plotLabel,$clusterMethod,$distanceMatrix);
 
 		$this->Session->write('counts',$counts);
 
 		$this->render('/compare/result_panel','ajax');
 	}
 	
+	
+	function keggPathwaysEc() {
+		$this->pathways(KEGG_PATHWAYS);
+	}
+	function keggPathwaysKo() {
+		$this->pathways(KEGG_PATHWAYS_KO);
+	}		
+	function metacycPathways() {
+		$this->pathways(METACYC_PATHWAYS);
+	}	
+	
 	/**
 	 * Compare pathways across selected datasets
 	 * 
 	 * @return void
-	 * @access public
+	 * @access private
 	 */
-	function pathways() {
+	private function pathways($pathwayModel) {
+		
 		$this->loadModel('Pathway');
 		$this->loadModel('Population');
+		$mode = $this->underscoreToCamelCase($pathwayModel);
 		
-		$mode   = __FUNCTION__;
 		$counts	= array();
-
-		$level	='level 2';
-
-		//drop down selection
-		$levels = $this->pathwayLevels;
-
-		#read post data
+		$facetQueries = array();
+		$facetQueryMapping =array();
+		
+		if($pathwayModel === KEGG_PATHWAYS || $pathwayModel === METACYC_PATHWAYS) {
+			$levels = $this->pathwayLevelsEc;
+		}
+		if($pathwayModel === KEGG_PATHWAYS_KO) {
+			$levels = $this->pathwayLevelsKo;		
+		}		
+		
+		//read post data
 		if(!empty($this->data['Post']['level'])) {
 			$level = $this->data['Post']['level'];
 		}
 		else {
 			if($this->Session->check("$mode.level")) {
 				$level = $this->Session->read("$mode.level");
+			}
+			else {
+				if($pathwayModel === KEGG_PATHWAYS || $pathwayModel === METACYC_PATHWAYS) {
+					$level	= 'super-pathway';	
+				}				
+				else if($pathwayModel === KEGG_PATHWAYS_KO) {
+					$level	= 'level 1';		
+				}							
 			}	
 		}
-		
-		#read session variables
+	
+		//read session variables
 		$option 			= $this->Session->read('option');
 		$minCount 			= $this->Session->read('minCount');
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 		$totalCounts		= $this->Session->read('totalCounts');
-
+		$plotLabel			= $this->Session->read('plotLabel');
+		$clusterMethod		= $this->Session->read('clusterMethod');
+		$distanceMatrix		= $this->Session->read('distanceMatrix');
+		$datasetPipelines	= $this->Session->read('datasetPipelines');
+		$optionalDatatypes	= $this->Session->read('optionalDatatypes');	
+		
 		if($option == METASTATS || $option == WILCOXON) {
 			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}			
-				
-		#write session variables
+			
+		//write session variables
 		$this->Session->write("$mode.level", $level);
 		$this->Session->write('levels',$levels);
 		$this->Session->write('mode',$mode);
-
-		$solrArguments = array(	"facet" => "true",
-						'facet.field' => array('ec_id'),
-						'facet.mincount' => $minCount,
-						"facet.limit" => -1);
 			
-		//populate count matrix with solr facet counts
-		$pathways  = $this->Pathway->find('all', array('conditions' => array('Pathway.level' => $level)));
+		$pathways = $this->Pathway->getCategories($level,$pathwayModel);
 		
-		foreach($pathways as $pathway) {
-			
-			#init pathway information
-			$id 	= $pathway['Pathway']['id'];
-			$keggId = str_pad($pathway['Pathway']['kegg_id'],5,0,STR_PAD_LEFT);
-			
-			$name 	= $pathway['Pathway']['name'];			
-			$counts[$keggId]['name'] = $name;
-			$counts[$keggId]['sum']  = 0;	
-		
-			foreach($selectedDatasets as $dataset) {				
-				try {
-					$count= $this->Solr->getPathwayCount($filter,$dataset,$level,$id,0,null);
-
-					$counts[$keggId][$dataset] = $count;
-					$counts[$keggId]['sum'] += $count;
-					
-				}
-				catch(Exception $e){
-					$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-					$this->render('/compare/result_panel','ajax');
-				}
-			}
+		foreach($pathways as $pathwayId=>$entry) {
+			array_push($facetQueries,$entry['query']);
+			$facetQueryMapping[$entry['query']] = $pathwayId;
 		}
-
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
-
+		
+		$counts = $pathways;
+		
+		$this->Solr->multiSearch($counts,$selectedDatasets,$facetQueries,$filter,$minCount,$facetQueryMapping);		
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts,$plotLabel,$clusterMethod,$distanceMatrix);
 		$this->Session->write('counts',$counts);
-
 		$this->render('/compare/result_panel','ajax');
 	}
 	
@@ -1072,7 +1040,10 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 		$totalCounts		= $this->Session->read('totalCounts');
-
+		$plotLabel			= $this->Session->read('plotLabel');
+		$clusterMethod		= $this->Session->read('clusterMethod');
+		$distanceMatrix		= $this->Session->read('distanceMatrix');
+		
 		if($option == METASTATS || $option == WILCOXON) {
 			$totalCounts = $this->transformPopulationsIntoLibraries($selectedDatasets,$filter);
 		}			
@@ -1125,7 +1096,7 @@ class CompareController extends AppController {
 			}
 		}
 
-		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts);
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts,$plotLabel,$clusterMethod,$distanceMatrix);
 		
 		$this->Session->write('counts',$counts);
 
@@ -1147,6 +1118,9 @@ class CompareController extends AppController {
 		$filter 			= $this->Session->read('filter');
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 		$counts				= $this->Session->read('counts');
+		$clusterMethod		= $this->Session->read('clusterMethod');
+		$distanceMatrix		= $this->Session->read('distanceMatrix');
+		$maxPvalue			= $this->Session->read('maxPvalue');
 
 		if($option == CHISQUARE) {
 			$title = 'Comparison Results - Chi-Square Test of Independence';
@@ -1161,16 +1135,16 @@ class CompareController extends AppController {
 		elseif($option == METASTATS) {
 			$title = "Comparison Results - METASTATS non-parametric t-test";
 			$content = $this->Format->infoString($title,$selectedDatasets,$filter,$minCount);
-			$content.= $this->Format->metatstatsResultsToDonwloadString($counts,$selectedDatasets);
+			$content.= $this->Format->metatstatsResultsToDonwloadString($counts,$selectedDatasets,$maxPvalue);
 		}	
 		elseif($option == WILCOXON) {
 			$title = "Comparison Results - Wilcoxon Signed Rank Test";
 			$content = $this->Format->infoString($title,$selectedDatasets,$filter,$minCount);
-			$content.= $this->Format->wilcoxonResultsToDonwloadString($counts,$selectedDatasets);
+			$content.= $this->Format->wilcoxonResultsToDonwloadString($counts,$selectedDatasets,$maxPvalue);
 		}	
 		//plot options
 		elseif($option > 6) {
-			$title = "Comparison Results - Euclidean Distance Matrix";
+			$title = "Comparison Results - $distanceMatrix Distance Matrix";
 			$content = $this->Format->infoString($title,$selectedDatasets,$filter,$minCount);
 			$content .= $this->Session->read('distantMatrices');		
 		}				
@@ -1195,14 +1169,155 @@ class CompareController extends AppController {
 	 * @access public
 	 */	
 	function changeHeatmapColor() {
-		if(!empty($this->data['Post']['heatmap'])) {
-			$heatmapColor = $this->data['Post']['heatmap'];
-			$this->Session->write('heatmapColor',$heatmapColor);
+
+		$option = $this->Session->read('option');
+		
+		if ($option == HEATMAP) {
+			if(!empty($this->data['Post']['heatmap'])) {
+				$heatmapColor = $this->data['Post']['heatmap'];	
+				$colorGradient =  $this->Color->gradient($heatmapColor);			
+				$this->Session->write('heatmapColor',$heatmapColor);
+				$this->Session->write('colorGradient',$colorGradient);
+			}
+		}
+		else if($option == HEATMAP_PLOT) {					
+			if(!empty($this->data['Post']['heatmap'])) {
+				$this->Session->write('heatmapColor',$this->data['Post']['heatmap']);
+				
+				$selectedDatasets	= $this->Session->read('selectedDatasets');
+				$counts				= $this->Session->read('counts');
+				$option 			= $this->Session->read('option');
+				$plotLabel			= $this->Session->read('plotLabel');		
+				$clusterMethod		= $this->Session->read('clusterMethod');		
+				$distanceMatrix		= $this->Session->read('distanceMatrix');
+				
+				$this->Matrix->updatePlot($selectedDatasets,$counts,$option,$plotLabel,$clusterMethod,$distanceMatrix);		
+			}
 		}
 
 		$this->render('/compare/result_panel','ajax');
 	}
 
+	function changePlotLabel() {
+		$selectedDatasets	= $this->Session->read('selectedDatasets');
+		$counts				= $this->Session->read('counts');
+		$option 			= $this->Session->read('option');
+		$minCount 			= $this->Session->read('minCount');
+		$filter 			= $this->Session->read('filter');
+		$totalCounts		= $this->Session->read('totalCounts');
+		$distanceMatrix		= $this->Session->read('distanceMatrix');
+		$clusterMethod		= $this->Session->read('clusterMethod');
+		
+		if($this->Session->check('plotLabel')) {
+			$previousPlotLabel	= $this->Session->read('plotLabel');
+		}
+		else {
+			$previousPlotLabel = PLOT_LIBRARY_NAME;
+		}
+		
+		if(!empty($this->data['Post']['plotLabel'])) {
+			$selectedPlotLabel = $this->data['Post']['plotLabel'];
+			
+			if($selectedPlotLabel != $previousPlotLabel) {
+				$this->Session->write('plotLabel',$selectedPlotLabel);
+				$this->Matrix->updatePlot($selectedDatasets,$counts,$option,$selectedPlotLabel,$clusterMethod,$distanceMatrix);			
+			}		
+		}
+		
+		$this->render('/compare/result_panel','ajax');
+	}
+
+	function changePvalue() {
+		$selectedDatasets	= $this->Session->read('selectedDatasets');
+		$counts				= $this->Session->read('counts');
+		$option 			= $this->Session->read('option');
+		$minCount 			= $this->Session->read('minCount');
+		$filter 			= $this->Session->read('filter');
+		$totalCounts		= $this->Session->read('totalCounts');
+		$distanceMatrix		= $this->Session->read('distanceMatrix');
+		$clusterMethod		= $this->Session->read('clusterMethod');
+		
+		if($this->Session->check('maxPvalue')) {
+			$maxPvalue	= $this->Session->read('maxPvalue');
+		}
+		else {
+			$maxPvalue = PVALUE_ALL;
+		}
+		
+		
+		if(!empty($this->data['Post']['maxPvalue'])) {
+			$selectedMaxPvalue = $this->data['Post']['maxPvalue'];
+			
+			if($selectedMaxPvalue != $maxPvalue) {
+				$this->Session->write('maxPvalue',$selectedMaxPvalue);	
+			}		
+		}
+		
+		$this->render('/compare/result_panel','ajax');
+	}	
+	
+	function changeDistanceMatrix() {
+		
+		$selectedDatasets	= $this->Session->read('selectedDatasets');
+		$counts				= $this->Session->read('counts');
+		$option 			= $this->Session->read('option');
+		$minCount 			= $this->Session->read('minCount');
+		$filter 			= $this->Session->read('filter');
+		$totalCounts		= $this->Session->read('totalCounts');
+		$plotLabel			= $this->Session->read('plotLabel');
+		$clusterMethod		= $this->Session->read('clusterMethod');
+		
+		if($this->Session->check('distanceMatrix')) {
+			$previousPlotDistanceMatrix	= $this->Session->read('distanceMatrix');
+		}
+		else {
+			$previousPlotDistanceMatrix = DISTANCE_BRAY;
+		}
+		
+		if(!empty($this->data['Post']['distanceMatrix'])) {
+			
+			$selectedPlotDistanceMatrix = $this->data['Post']['distanceMatrix'];
+			
+			if($selectedPlotDistanceMatrix != $previousPlotDistanceMatrix) {
+				$this->Session->write('distanceMatrix',$selectedPlotDistanceMatrix);
+				
+				$this->Matrix->updatePlot($selectedDatasets,$counts,$option,$plotLabel,$clusterMethod,$selectedPlotDistanceMatrix);			
+			}		
+		}
+		
+		$this->render('/compare/result_panel','ajax');
+	}	
+	
+	function changeClusterMethod() {
+		
+		$selectedDatasets	= $this->Session->read('selectedDatasets');
+		$counts				= $this->Session->read('counts');
+		$option 			= $this->Session->read('option');
+		$minCount 			= $this->Session->read('minCount');
+		$filter 			= $this->Session->read('filter');
+		$totalCounts		= $this->Session->read('totalCounts');
+		$plotLabel			= $this->Session->read('plotLabel');
+		$distanceMatrix		= $this->Session->read('distanceMatrix');
+		
+		if($this->Session->check('clusterMethod')) {
+			$previousClusterMethod	= $this->Session->read('clusterMethod');
+		}
+		else {
+			$previousClusterMethod = CLUSTER_AVERAGE;
+		}
+		
+		if(!empty($this->data['Post']['clusterMethod'])) {
+			$selectedClusterMethod = $this->data['Post']['clusterMethod'];
+			
+			if($selectedClusterMethod != $previousClusterMethod) {
+				$this->Session->write('clusterMethod',$selectedClusterMethod);
+				
+				$this->Matrix->updatePlot($selectedDatasets,$counts,$option,$plotLabel,$selectedClusterMethod,$distanceMatrix);			
+			}		
+		}
+		
+		$this->render('/compare/result_panel','ajax');
+	}	
 	
 	/**
 	 * Flipps compare result matrix

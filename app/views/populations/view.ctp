@@ -15,7 +15,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.2.0
+  @version METAREP v 1.3.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -69,8 +69,9 @@
 	<table cellpadding = "0" cellspacing = "0">
 	<tr>
 		<th><?php __('Updated'); ?></th>
-		<th><?php __('#Peptides'); ?></th>
+		<th><?php __('#Entries'); ?></th>
 		<th><?php __('Name'); ?></th>
+		<th><?php __('Label'); ?></th>
 		<th><?php __('Description'); ?></th>
 		<th><?php __('Sample Id'); ?></th>
 		<th><?php __('Sample Date'); ?></th>
@@ -98,11 +99,13 @@
 		<td style="width:4%;text-align:right">
 			<?php  echo(number_format($this->requestAction("/search/count/".$library['name']))); ?>
 		</td>				
-		<td style="width:25%;text-align:left">
+		<td style="width:20%;text-align:left">
 			<?php echo $library['name']; ?>
 		</td>
-
-		<td style="width:25%;text-align:left">
+		<td style="width:10%;text-align:left">
+			<?php echo $library['label']; ?>
+		</td>
+		<td style="width:20%;text-align:left">
 			<?php echo $library['description']; ?>
 		</td>
 		<td style="width:4%;text-align:center">
@@ -137,7 +140,8 @@
 						echo("<option value=\"/metarep/browse/apisTaxonomy/{$library['name']}\">Browse Taxonomy (Apis)</option>");
 					}				
 					echo("	
-					<option value=\"/metarep/browse/pathways/{$library['name']}\">Browse Pathways</option>
+					<option value=\"/metarep/browse/keggPathways/{$library['name']}\">Browse Kegg Pathways</option>
+					<option value=\"/metarep/browse/metacycPathways/{$library['name']}\">Browse Metacyc Pathways</option>
 					<option value=\"/metarep/browse/enzymes/{$library['name']}\">Browse Enzymes</option>
 					<option value=\"/metarep/browse/geneOntology/{$library['name']}\">Browse Gene Ontology</option>");
 //					if($library['apis_link'] || $library['has_ftp']) {

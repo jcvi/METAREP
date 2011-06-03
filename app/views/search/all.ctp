@@ -14,7 +14,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.2.0
+  @version METAREP v 1.3.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -91,7 +91,7 @@
 	</div>
 	<?php }?>	
 	<div id="search-all-result-panel">
-		<?php  if($numHits > 0):?>	
+		<?php  if($numHits != 0):?>	
 			<?php echo $html->div('download', $html->link($html->image("download-medium.png",array("title" => "Download Top Ten List")), array('controller'=> 'search','action'=>'downloadMetaInformationFacets'),array('escape' => false)));?>	
 				<?php echo $facet->topTenMetaInformationList($facets,$numHits);?>	
 				
@@ -142,18 +142,15 @@
 								   <option value=\"/metarep/search/index/{$hit['name']}\">Search</option>
 								   <option value=\"/metarep/compare/index/{$hit['name']}\">Compare</option>
 								   <option value=\"/metarep/browse/blastTaxonomy/{$hit['name']}\">Browse Taxonomy (Blast)</option>";
-			
-	//		if($library['apis_database']) {
-	//			$searchResultPanel .="<option value=\"/metarep/browse/apisTaxonomy/{$hit['name']}\">Browse Taxonomy (Apis)</option>";
-	//		}				
-			
-			$searchResultPanel .="<option value=\"/metarep/browse/pathways/{$hit['name']}\">Browse Pathways</option>
+			#TODO add apis option 			
+			//			if($hit['apis_database']) {
+			//				$searchResultPanel .="<option value=\"/metarep/browse/apisTaxonomy/{$hit['name']}\">Browse Taxonomy (Apis)</option>";
+			//			}							
+			$searchResultPanel .="<option value=\"/metarep/browse/keggPathways/{$hit['name']}\">Browse Kegg Pathways</option>
+								<option value=\"/metarep/browse/metacycPathways/{$hit['name']}\">Browse Metacyc Pathways</option>
 								  <option value=\"/metarep/browse/enzymes/{$hit['name']}\">Browse Enzymes</option>
 								  <option value=\"/metarep/browse/geneOntology/{$hit['name']}\">Browse Gene Ontology</option>";
-		
-	//		if($library['has_ftp']) {	
-	//			$searchResultPanel .="<option value=\"/metarep/projects/ftp/{$hit['project_id']}/{$library['name']}\">Download</option>";
-	//		}
+
 						
 			$searchResultPanel .="</select></td>";			
 			$searchResultPanel .= '</tr>';	

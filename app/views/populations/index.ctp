@@ -13,7 +13,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.2.0
+  @version METAREP v 1.3.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -46,7 +46,7 @@ echo $paginator->counter(array(
 <table cellpadding="0" cellspacing="0" style="width:82em;">
 <tr>
 	<th><?php echo $paginator->sort('updated');?></th>
-	<th class="actions"><?php __('#Peptides');?></th>
+	<th class="actions"><?php __('#Entries');?></th>
 	<th><?php echo $paginator->sort('name');?></th>
 	<th><?php echo $paginator->sort('description');?></th>
 	<th><?php echo $paginator->sort('project_id');?></th>
@@ -92,7 +92,8 @@ foreach ($population as $population):
 						echo("<option value=\"/metarep/browse/apisTaxonomy/{$population['Population']['name']}\">Browse Taxonomy (Apis)</option>");
 					}
 					echo("	
-					<option value=\"/metarep/browse/pathways/{$population['Population']['name']}\">Browse Pathways</option>
+					<option value=\"/metarep/browse/keggPathways/{$population['Population']['name']}\">Browse Kegg Pathways</option>
+					<option value=\"/metarep/browse/metacycPathways/{$population['Population']['name']}\">Browse Metacyc Pathways</option>
 					<option value=\"/metarep/browse/enzymes/{$population['Population']['name']}\">Browse Enzymes</option>
 					<option value=\"/metarep/browse/geneOntology/{$population['Population']['name']}\">Browse Gene Ontology</option>
 					</select>");?>	

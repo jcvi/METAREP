@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -35,6 +35,7 @@ class LibrariesController extends AppController {
 			$this->redirect("/projects/view/$projectId",null,true);
 		}
 		if (!empty($this->data)) {
+			
 			if ($this->Library->save($this->data)) {
 				$this->data = $this->Library->read(null, $id);
 				
@@ -46,14 +47,17 @@ class LibrariesController extends AppController {
 				$this->Session->setFlash("Library changes have been saved.");
 				$this->redirect("/projects/view/$projectId",null,true);
 			}
+
 		}
 		if (empty($this->data)) {
-			$this->data = $this->Library->read(null, $id);			
+			$this->data = $this->Library->read(null, $id);	
+			
 			if(empty($this->data)) {
 				$this->Session->setFlash("Invalid library id.");
 				$this->redirect("/projects/index",null,true);
 			}
 		}
+		
 		$projects = $this->Library->Project->find('list');
 		$this->set(compact('projects'));
 	}

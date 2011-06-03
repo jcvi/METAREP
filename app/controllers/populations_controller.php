@@ -18,7 +18,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -113,24 +113,27 @@ class PopulationsController extends AppController {
 
 			//continue if more than one library has been selected
 			if(isset($this->data['Library']['Library']) && count($this->data['Library']['Library']) >= 2) {
-				//get selected libraries from multi-select box
+				
+				//get selected libraries from multi-select box				
 				foreach($this->data['Library']['Library'] as $library) {
 					$libraryEntry = $this->Library->findById($library);
 					array_push($libraries,$libraryEntry['Library']['name']);
 				}
 					
+				
 				//set optional data types based on library types
 				$optionalDatatypes  = $this->Project->checkOptionalDatatypes($libraries);
 				$this->data['Population']['has_apis'] 	 = $optionalDatatypes['apis'];
 				$this->data['Population']['has_clusters']= $optionalDatatypes['clusters'];
 				$this->data['Population']['has_filter']  = $optionalDatatypes['filter'];
 				$this->data['Population']['is_viral'] 	 = $optionalDatatypes['viral'];
+				$this->data['Population']['is_weighted'] = $optionalDatatypes['weighted'];
 
 				//if population could be saved
 				if ($this->Population->save($this->data)) {
 					$populationId = $this->Population->getLastInsertId();
 					$dataset 	  = $this->data['Population']['name'];
-
+					
 					//start solr index merging process
 					try {
 						$this->Solr->mergeIndex($projectId,$dataset,$libraries);
@@ -158,6 +161,15 @@ class PopulationsController extends AppController {
 				$this->render('add','ajax');
 			}
 		}
+		
+//		$libraries = $this->Population->Library->find('all',array('fields'=>array('id','name','description'),'conditions'=>array('project_id'=>$projectId)));
+//		
+//		foreach($libraries as $library) {
+//			//define library label		
+//			$datasets[$library['Library']['id']] = "{$library['Library']['name']} ({$library['Library']['description']})";
+//		}
+		
+	
 		$datasets = $this->Population->Library->find('list',array('conditions'=>array('project_id'=>$projectId)));
 		$projects = $this->Population->Project->find('list');
 		$this->set(compact('projectId','projects','datasets'));

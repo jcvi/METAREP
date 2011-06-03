@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -25,10 +25,10 @@ class LuceneResultPaginatorHelper extends AppHelper {
 	var $limit = NUM_SEARCH_RESULTS;
 	var $helpers = array('Html');
 	
-	function addPagination($page,$numHits,$dataset,$controller,$sessionQueryId) {
+	function addPagination($page,$numHits,$dataset,$controller,$limit,$sessionQueryId) {
 	
 		//calculate the number of pages	
-		$pageLimit = ceil($numHits/($this->limit));
+		$pageLimit = ceil($numHits/($limit));
 		
 		//maximum of displayed page links is 10
 		$paginationPageLimit = $pageLimit >= 10 ?  10 : $pageLimit;
@@ -66,63 +66,48 @@ class LuceneResultPaginatorHelper extends AppHelper {
 		return $paginationString;
 	}
 	
-	function addPageInformation($page,$numHits) {
-		$pageLimit = ceil($numHits/($this->limit)) ;
-		$pageStart = (($page-1)*$this->limit)+1;
-		$pageStop  = ($page==$pageLimit) ? $numHits : ($page)*$this->limit;
-		return "<p>Page $page of $pageLimit, showing $this->limit records out of $numHits total, starting on record $pageStart, ending on $pageStop</p>";
+	function addPageInformation($page,$numHits,$limit) {
+		$pageLimit = ceil($numHits/$limit) ;
+		$pageStart = (($page-1)*$limit)+1;
+		$pageStop  = ($page==$pageLimit) ? $numHits : ($page)*$limit;
+		return "<p>Page $page of $pageLimit, showing $limit records out of $numHits total, starting on record $pageStart, ending on $pageStop</p>";
 	}
 	private function printLink($text,$page,$dataset,$controller,$sessionQueryId){
 		return $this->Html->link($text, array('controller'=>$controller, $dataset,$page,$sessionQueryId));
 	}
 	
-	function data($dataset,$hits,$page,$numHits,$sessionQueryId) {
+	function data($dataset,$hits,$page,$numHits,$limit,$sessionQueryId,$resultFields) {
 		$html= "
 			<fieldset>
-				<legend>Search Results</legend>".$this->addPageInformation($page,$numHits)."
-					<table cellpadding=\"0\" cellspacing=\"0\">	
-					<tr>	
-						<th>Pep Id</th>
-						<th>Common Name</th>
-						<th>Common Name Source</th>
-						<th>Blast Species</th>
-						<th>Blast E-Value</th>
-						<th>Go Id</th>
-						<th>Go Source</th>
-						<th>Ec Id</th>
-						<th>Ec Source</th>
-						<th>HMM</th>
-					</tr>";
+				<legend>Search Results</legend>".$this->addPageInformation($page,$numHits,$limit)."
+					<table cellpadding=\"0\" cellspacing=\"0\" >
+					<tr>";
+		
+		//add field header
+		foreach($resultFields as $fieldId => $fieldName) {
+			$html.= "<th>$fieldName</th>";
+		}
+		$html.= "</tr>";
 					
 		$i = 0;
 	
 		
-		foreach ( $hits as $hit ) {	
+		foreach ($hits as $hit ) {	
 			$class = null;
 			if ($i++ % 2 == 0) {
 				$class = ' class="altrow"';
 			}
-			
 			$html .= "<tr  $class>";
-			$html .= "<td>".$hit->peptide_id."</td>";
-			$html .= "<td>".$this->printMultiValue($hit->com_name)."</td>";
-			$html .= "<td>".$this->printMultiValue($hit->com_name_src)."</td>";
-			$html .= "<td>".$this->printMultiValue($hit->blast_species)."</td>";
-			$html .= "<td>".$hit->blast_evalue."</td>";	
-			$html .= "<td>".$this->printMultiValue($hit->go_id)."</td>";
-			$html .= "<td>".$this->printMultiValue($hit->go_src)."</td>";
-			$html .= "<td>".$this->printMultiValue($hit->ec_id)."</td>";
-			$html .= "<td>".$this->printMultiValue($hit->ec_src)."</td>";
-			$html .= "<td>".$this->printMultiValue($hit->hmm_id)."</td>";
+			
+			//print field values
+			foreach($resultFields as $fieldId => $fieldName) {
+				$html .= "<td>".$this->printMultiValue($hit->{$fieldId})."</td>";
+			}
 			$html .= '</tr>';
 		}
 		$html .= '</table>';
-		$html .= $this->addPagination($page,$numHits,$dataset,"search",$sessionQueryId);
+		$html .= $this->addPagination($page,$numHits,$dataset,"search",$limit,$sessionQueryId);
 		$html .= '</fieldset>';
-		
-		//echo $crumb->getHtml('Home Page', 'reset' ) ;
-		//echo '<br /><br />' ;
-		//echo $html->link('One', 'one') ;
 		
 		return $html;
 				

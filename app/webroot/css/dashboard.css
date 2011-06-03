@@ -55,6 +55,8 @@ CSS for dash board page
 	scroll: auto;
 }*/
 
+
+
 .dash-board-news-panel {
 	position: absolute;
 	top: 355px;
@@ -84,6 +86,26 @@ CSS for dash board page
 	height:100px;
 	font-size: 1em;	
 	scroll: auto;
+}
+
+.dash-board-google-groups-panel {
+	position: absolute;
+	top: 740px;
+	
+	left:650px;
+	width:270px;
+	height:60px;
+	font-size: 1em;	
+	scroll: auto;
+}
+.dash-board-google-groups-panel table {
+	border-width:0 0 0 0 !important;
+	border-right:0px;
+}
+
+.dash-board-google-groups-panel td {
+	border-width:0 0 0 0 !important;
+	border-right:0px;
 }
 
 .img-alignment {
@@ -161,4 +183,3 @@ input[type=submit] {
 	padding:0;
 	color:#ffffff;
 }
-

@@ -16,7 +16,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.2.0
+  @version METAREP v 1.3.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -76,20 +76,23 @@ or has been configured not to display inline frames.]</iframe></p>");
        	$userGroup  	= $currentUser['UserGroup']['name'];	
     ?>	
     <?php 
+    echo("<dl><dt>Options</dt><dd>");
     #display project options (create pppulation | download all datasets) 
-    if($currentUserId == $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP || $project['Project']['has_ftp']) {
-		echo("<dl><dt>Options</dt>");
-			echo "<dd>";
+    if($currentUserId == $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP || $project['Project']['has_ftp']) {		
 			if($currentUserId === $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP) {
 				echo $html->link(__('Add Population', true), array('controller'=>'populations','action'=>'add', $project['Project']['id'])); 
-				echo('&nbsp;');
+				echo('&nbsp;|');
 			}
 			if($project['Project']['has_ftp']) {				
 				echo $html->link(__('Download All Libraries', true), 
 				array('controller'=>'projects','action'=>'ftp', $project['Project']['id'],
 				$project['Project']['id']."_all"));} 
-		echo "</dd></dl>";
+				echo('&nbsp;|');
+
     }
+			echo $html->link(__('Refresh', true), 
+				array('controller'=>'projects','action'=>'refresh', $project['Project']['id'])); 	
+		echo "</dd></dl>";    
     ?>
 </fieldset>	
 </div>
@@ -102,7 +105,7 @@ or has been configured not to display inline frames.]</iframe></p>");
 	<table cellpadding = "0" cellspacing = "0">
 	<tr>
 		<th><?php __('Updated'); ?></th>
-		<th><?php __('#Peptides'); ?></th>
+		<th><?php __('#Entries'); ?></th>
 		<th><?php __('Name'); ?></th>
 		<th><?php __('Description'); ?></th>
 		<th ><?php __('Annotation Pipeline'); ?></th>	
@@ -147,7 +150,8 @@ or has been configured not to display inline frames.]</iframe></p>");
 		
 		<td class="actions" style="width:4%;text-align:center">
 	
-			<?php 	
+			<?php 
+			
 			
 					echo("<select onChange=\"goThere(this.options[this.selectedIndex].value)\" name=\"s1\">
 					<option value=\"\" SELECTED>--Select Action--</option>
@@ -159,7 +163,8 @@ or has been configured not to display inline frames.]</iframe></p>");
 						echo("<option value=\"/metarep/browse/apisTaxonomy/{$population['name']}\">Browse Taxonomy (Apis)</option>");
 					}					
 					echo("	
-					<option value=\"/metarep/browse/pathways/{$population['name']}\">Browse Pathways</option>
+					<option value=\"/metarep/browse/keggPathwaysEc/{$population['name']}\">Browse Kegg Pathways</option>
+					<option value=\"/metarep/browse/metacycPathways/{$population['name']}\">Browse Metacyc Pathways</option>
 					<option value=\"/metarep/browse/enzymes/{$population['name']}\">Browse Enzymes</option>
 					<option value=\"/metarep/browse/geneOntology/{$population['name']}\">Browse Gene Ontology</option>
 					</select>");?>	
@@ -178,8 +183,9 @@ or has been configured not to display inline frames.]</iframe></p>");
 	<table cellpadding = "0" cellspacing = "0">
 	<tr>
 		<th><?php __('Updated'); ?></th>
-		<th><?php __('#Peptides'); ?></th>
+		<th><?php __('#Entries'); ?></th>
 		<th><?php __('Name'); ?></th>
+		<th><?php __('Label'); ?></th>
 		<th><?php __('Description'); ?></th>
 		<th><?php __('Sample Id'); ?></th>
 		<th><?php __('Sample Date'); ?></th>
@@ -213,11 +219,13 @@ or has been configured not to display inline frames.]</iframe></p>");
 		<td style="width:4%;text-align:right">
 			<?php echo $library['count'];  ?>
 		</td>				
-		<td style="width:25%;text-align:left">
+		<td style="width:20%;text-align:left">
 			<?php echo $library['name']; ?>
 		</td>
-
-		<td style="width:25%;text-align:left">
+		<td style="width:10%;text-align:left">
+			<?php echo $library['label']; ?>
+		</td>
+		<td style="width:20%;text-align:left">
 			<?php echo $library['description']; ?>
 		</td>
 		<td style="width:4%;text-align:center">
@@ -256,17 +264,23 @@ or has been configured not to display inline frames.]</iframe></p>");
 					<option value=\"/metarep/browse/blastTaxonomy/{$library['name']}\">Browse Taxonomy (Blast)</option>");
 					if($library['apis_database']) {
 						echo("<option value=\"/metarep/browse/apisTaxonomy/{$library['name']}\">Browse Taxonomy (Apis)</option>");
-					}				
+					}	
+					if($library['is_weighted']) {
+						echo("<option value=\"/metarep/browse/keggPathwaysKo/{$library['name']}\">Browse Kegg Pathways (KO)</option>");
+					}	
+					
+					echo("<option value=\"/metarep/browse/keggPathwaysEc/{$library['name']}\">Browse Kegg Pathways (EC)</option>");
+							
 					echo("	
-					<option value=\"/metarep/browse/pathways/{$library['name']}\">Browse Pathways</option>
+					<option value=\"/metarep/browse/metacycPathways/{$library['name']}\">Browse Metacyc Pathways (EC)</option>
 					<option value=\"/metarep/browse/enzymes/{$library['name']}\">Browse Enzymes</option>
 					<option value=\"/metarep/browse/geneOntology/{$library['name']}\">Browse Gene Ontology</option>");
 					if($library['has_ftp']) {	
 						echo("<option value=\"/metarep/projects/ftp/{$project['Project']['id']}/{$library['name']}\">Download</option>");
 					}
-					if($library['apis_dataset'] && JCVI_INSTALLATION) {	
+					if(!empty($library['apis_database']) && !empty($library['apis_dataset']) && JCVI_INSTALLATION) {	
 						echo("<optgroup label=\"External Links\">");									
-						echo("<option value=\"/metarep/iframe/apis/{$project['Project']['id']}/".base64_encode("http://www.jcvi.org/apis/".$library['apis_database']."/".$library['apis_dataset'])."\">APIS</option>");
+						echo("<option value=\"/metarep/iframe/apis/{$project['Project']['id']}/".base64_encode("http://apis-dev.jcvi.org/apis/".$library['apis_database']."/".$library['apis_dataset'])."\">APIS</option>");
 					}					
 					echo("</select>");?>
 		</td>						

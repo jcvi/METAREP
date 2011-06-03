@@ -14,7 +14,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.2.0
+  @version METAREP v 1.3.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -29,7 +29,7 @@ if($session->check('enzymes.browse.query')) {
 else {
 	$filter = '*:*';
 }
-
+$facetFields = $session->read("$mode.browse.facetFields");
 ?>
 <div id="Browse">
 	<ul id="breadcrumb">
@@ -65,7 +65,7 @@ else {
 							
 					} 
 					else {				
-						$treeData = $session->read($mode.'.tree');
+						$treeData = $session->read($mode.'.browse.tree');
 						echo $tree->enzymes($dataset,$treeData,$node);
 					}
 					?>
@@ -86,11 +86,11 @@ else {
 			</div>
 			<div id="browse-facet-list-panel">
 				<?php echo $html->div('browse-download-facets', $html->link($html->image("download-medium.png"), array('controller'=> 'browse','action'=>'dowloadFacets',$dataset,$node,$mode,$numHits,urlencode($filter)),array('escape' => false)));?>	
-				<?php echo $facet->topTenList($facets,$numHits);?>	
+				<?php echo $facet->topTenList($facets,$facetFields,$numHits);?>	
 			</div>
 			<div id="browse-facet-pie-panel">
 				<?php echo $html->div('browse-download-facets', $html->link($html->image("download-medium.png"), array('controller'=> 'browse','action'=>'dowloadFacets',$dataset,$node,$mode,$numHits,urlencode($filter)),array('escape' => false)));?>	
-				<?php  echo $facet->topTenPieCharts($facets,$numHits,"700x200","300x150");?>
+				<?php  echo $facet->topTenPieCharts($facets,$facetFields,$numHits,"700x200","300x150");?>
 			</div>
 		</div>
 	<?php endif;?>

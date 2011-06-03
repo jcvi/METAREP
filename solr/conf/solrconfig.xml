@@ -7,7 +7,7 @@
  (the "License"); you may not use this file except in compliance with
  the License.  You may obtain a copy of the License at
 
-     http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,6 +31,14 @@
          -Dsolr.abortOnConfigurationError=false
      -->
   <abortOnConfigurationError>${solr.abortOnConfigurationError:true}</abortOnConfigurationError>
+
+  <!-- Controls what version of Lucene various components of Solr
+       adhere to.  Generally, you want to use the latest version to
+       get all bug fixes and improvements. It is highly recommended
+       that you fully re-index after changing this setting as it can
+       affect both how text is indexed and queried.
+    -->
+  <luceneMatchVersion>LUCENE_31</luceneMatchVersion>
 
   <!-- lib directives can be used to instruct Solr to load an Jars identified
        and use them to resolve any "plugins" specified in your solrconfig.xml or
@@ -287,16 +295,110 @@
     <int name="termInfosIndexDivisor">12</int>
   </indexReaderFactory >-->
 
+    <listener event="firstSearcher" class="solr.QuerySenderListener">
+      <arr name="queries">
+        <!-- seed common sort fields -->
+        <lst> 
+        	<str name="q">*:*</str>
+        </lst>        
+        <lst> 
+        	<str name="q">*:*</str>
+        	<str name="stats">true</str>
+            <str name="stats.field">weight</str>
+        </lst>
+       
+        <!-- Search Facets-->            
+        <lst> <str name="q">*:*</str>
+              <str name="facet">true</str>
+              <str name="facet.field">blast_species</str>
+        </lst>
+          <lst> <str name="q">*:*</str>
+              <str name="facet">true</str>
+              <str name="facet.field">ko_id</str>
+        </lst> 
+          <lst> <str name="q">*:*</str>
+              <str name="facet">true</str>
+              <str name="facet.field">go_id</str>
+        </lst>                 
+          <lst> <str name="q">*:*</str>
+              <str name="facet">true</str>
+              <str name="facet.field">ec_id</str>
+        </lst>  
+        
+         <!-- Weighted Facets-->               
+        <lst> <str name="q">*:*</str>
+              <str name="stats">true</str>
+              <str name="stats.field">weight</str>
+              <str name="stats.facet">blast_species</str>
+        </lst>
+        <lst> <str name="q">*:*</str>
+              <str name="stats">true</str>
+              <str name="stats.field">weight</str>
+              <str name="stats.facet">ko_id</str>
+        </lst>
+        <lst> <str name="q">*:*</str>
+              <str name="stats">true</str>
+              <str name="stats.field">weight</str>
+              <str name="stats.facet">go_id</str>
+        </lst>    
+        <lst> <str name="q">*:*</str>
+              <str name="stats">true</str>
+              <str name="stats.field">weight</str>
+              <str name="stats.facet">ec_id</str>
+        </lst> 
+        
+          <!-- Taxonomy Compare tab -->         
+        <lst> <str name="q">*:*</str>
+       		  <str name="fq">blast_tree:2157</str>
+        </lst>       
+        <lst> <str name="q">*:*</str>
+       		  <str name="fq">blast_tree:2</str>
+        </lst>   
+        <lst> <str name="q">*:*</str>
+       		  <str name="fq">blast_tree:2759</str>
+        </lst>   
+           <!-- GO Compare Tab -->          
+        <lst> <str name="q">*:*</str>
+       		  <str name="fq">go_tree:8150</str>
+        </lst>       
+        <lst> <str name="q">*:*</str>
+       		  <str name="fq">go_tree:5575</str>
+        </lst>   
+        <lst> <str name="q">*:*</str>
+       		  <str name="fq">go_tree:3674</str>
+        </lst>   
+           <!-- KEGG KO Compare Tab -->          
+        <lst> <str name="q">*:*</str>
+       		  <str name="fq">kegg_tree:2</str>
+        </lst>       
+        <lst> <str name="q">*:*</str>
+       		  <str name="fq">kegg_tree:5380</str>
+        </lst>   
+        <lst> <str name="q">*:*</str>
+       		  <str name="fq">kegg_tree:6860</str>
+        </lst> 
+        <lst> <str name="q">*:*</str>
+       		  <str name="fq">kegg_tree:9251</str>
+        </lst>                  
+        <lst> <str name="q">*:*</str>
+       		  <str name="fq">kegg_tree:10767</str>
+        </lst> 
+         <lst> <str name="q">*:*</str>
+       		  <str name="fq">kegg_tree:13263</str>
+        </lst>                                                                                      
+      </arr>
+    </listener>
+
 
   <query>
     <!-- Maximum number of clauses in a boolean query... in the past, this affected
         range or prefix queries that expanded to big boolean queries - built in Solr 
         query parsers no longer create queries with this limitation. 
         An exception is thrown if exceeded.  -->
-    <maxBooleanClauses>1024</maxBooleanClauses>
+    <maxBooleanClauses>1024000</maxBooleanClauses>
 
 
-    <!-- There are two implementations of cache available for Solr,
+    <!-- There are two implementations of 	 available for Solr,
          LRUCache, based on a synchronized LinkedHashMap, and
          FastLRUCache, based on a ConcurrentHashMap.  FastLRUCache has faster gets
          and slower puts in single threaded operation and thus is generally faster
@@ -318,29 +420,29 @@
          -->
     <filterCache
       class="solr.FastLRUCache"
-      size="30000"
-      initialSize="10000"
-      autowarmCount="10000"/>
+      size="300000"
+      initialSize="1000"
+      autowarmCount="1000"/>
 
     <!-- Cache used to hold field values that are quickly accessible
          by document id.  The fieldValueCache is created by default
-         even if not configured here.
+         even if not configured here. -->
+         <!--
       <fieldValueCache
         class="solr.FastLRUCache"
-        size="512"
-        autowarmCount="128"
-        showItems="32"
+        size="300000"
+        autowarmCount="1000"
+        showItems="1000"
       />
-    -->
-
+   -->
    <!-- queryResultCache caches results of searches - ordered lists of
          document ids (DocList) based on a query, a sort, and the range
          of documents requested.  -->
     <queryResultCache
       class="solr.LRUCache"
-      size="30000"
-      initialSize="10000"
-      autowarmCount="10000"/>
+      size="45000"
+      initialSize="1000"
+      autowarmCount="1000"/>
 
   <!-- documentCache caches Lucene Document objects (the stored fields for each document).
        Since Lucene internal document ids are transient, this cache will not be autowarmed.  -->
@@ -502,22 +604,22 @@
   <!-- to handle index replication
   --> 
   
-<!--  <requestHandler name="/replication" class="solr.ReplicationHandler" >-->
-<!--	  <lst name="master">-->
-		  Replicate on 'startup' and 'commit'. 'optimize' is also a valid value for replicateAfter. 
-<!--		  <str name="replicateAfter">startup</str>-->
-<!--		  <str name="replicateAfter">commit</str>-->
-<!--		  <str name="replicateAfter">optimize</str>-->
-<!--		  -->
-		  Create a backup after 'optimize'. Other values can be 'commit', 'startup'. It is possible to have multiple entries of this config string.  Note that this is just for backup, replication does not require this. 
-		   <str name="backupAfter">optimize</str> 
-<!--		  -->
-		  If configuration files need to be replicated give the names here, separated by comma 
-<!--		  <str name="confFiles">solrconfig_slave.xml:solrconfig.xml,schema.xml</str>-->
-		  The default value of reservation is 10 secs.See the documentation below . Normally , you should not need to specify this 
-<!--		  <str name="commitReserveDuration">00:00:10</str>-->
-<!--	  </lst>-->
-<!--</requestHandler>-->
+  <requestHandler name="/replication" class="solr.ReplicationHandler" >
+	  <lst name="master">
+		  <!--Replicate on 'startup' and 'commit'. 'optimize' is also a valid value for replicateAfter. -->
+		  <str name="replicateAfter">startup</str>
+		  <str name="replicateAfter">commit</str>
+		  <str name="replicateAfter">optimize</str>
+		  
+		  <!--Create a backup after 'optimize'. Other values can be 'commit', 'startup'. It is possible to have multiple entries of this config string.  Note that this is just for backup, replication does not require this. -->
+		  <!-- <str name="backupAfter">optimize</str> -->
+		  
+		  <!--If configuration files need to be replicated give the names here, separated by comma -->
+		  <str name="confFiles">solrconfig_slave.xml:solrconfig.xml,schema.xml,solrlog.properties</str>
+		  <!--The default value of reservation is 10 secs.See the documentation below . Normally , you should not need to specify this -->
+		  <str name="commitReserveDuration">00:00:10</str>
+	  </lst>
+</requestHandler>
 
 <!-- Please refer to http://wiki.apache.org/solr/SolrReplication for details on configuring replication -->
 <!-- remove the <lst name="master"> section if this is just a slave -->
@@ -950,36 +1052,6 @@
     </lst>
   </requestHandler>
 
-  <highlighting>
-   <!-- Configure the standard fragmenter -->
-   <!-- This could most likely be commented out in the "default" case -->
-   <fragmenter name="gap" class="org.apache.solr.highlight.GapFragmenter" default="true">
-    <lst name="defaults">
-     <int name="hl.fragsize">100</int>
-    </lst>
-   </fragmenter>
-
-   <!-- A regular-expression-based fragmenter (f.i., for sentence extraction) -->
-   <fragmenter name="regex" class="org.apache.solr.highlight.RegexFragmenter">
-    <lst name="defaults">
-      <!-- slightly smaller fragsizes work better because of slop -->
-      <int name="hl.fragsize">70</int>
-      <!-- allow 50% slop on fragment sizes -->
-      <float name="hl.regex.slop">0.5</float>
-      <!-- a basic sentence pattern -->
-      <str name="hl.regex.pattern">[-\w ,/\n\"']{20,200}</str>
-    </lst>
-   </fragmenter>
-
-   <!-- Configure the standard formatter -->
-   <formatter name="html" class="org.apache.solr.highlight.HtmlFormatter" default="true">
-    <lst name="defaults">
-     <str name="hl.simple.pre"><![CDATA[<em>]]></str>
-     <str name="hl.simple.post"><![CDATA[</em>]]></str>
-    </lst>
-   </formatter>
-  </highlighting>
-
   <!-- An example dedup update processor that creates the "id" field on the fly
        based on the hash code of some other fields.  This example has overwriteDupes
        set to false since we are using the id field as the signatureField and Solr
@@ -1024,14 +1096,6 @@
     <queryResponseWriter name="custom" class="com.example.MyResponseWriter"/>
   -->
 
-  <!-- XSLT response writer transforms the XML output by any xslt file found
-       in Solr's conf/xslt directory.  Changes to xslt files are checked for
-       every xsltCacheLifetimeSeconds.  
-   -->
-  <queryResponseWriter name="xslt" class="org.apache.solr.request.XSLTResponseWriter">
-    <int name="xsltCacheLifetimeSeconds">5</int>
-  </queryResponseWriter>
-
 
   <!-- example of registering a query parser
   <queryParser name="lucene" class="org.apache.solr.search.LuceneQParserPlugin"/>
@@ -1043,7 +1107,7 @@
 
   <!-- config for the admin interface -->
   <admin>
-    <defaultQuery>solr</defaultQuery>
+    <defaultQuery>kinase</defaultQuery>
 
     <!-- configure a healthcheck file for servers behind a loadbalancer
     <healthcheck type="file">server-enabled</healthcheck>

@@ -14,7 +14,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.2.0
+  @version METAREP v 1.3.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -56,28 +56,29 @@
 		$currentUserId 	= $currentUser['User']['id'];	    	        	
        	$userGroup  	= $currentUser['UserGroup']['name'];		
 		
-		echo $form->input('id');
+		echo $form->input('id');		
+		echo $form->input('label',array('type' => 'text','size'=>'30','label' => 'Label (max 30 characters)'));
+		echo $form->input('description',array('type' => 'textaerea'));
+		echo $form->input('apis_link',array('type' => 'text'));
 		
 		if($userGroup === ADMIN_USER_GROUP) {
 			echo $form->input('project_id');
 		}
 		else {
 			echo $form->hidden('project_id');
-		}
-		
-		echo $form->input('description',array('type' => 'textaerea'));
-		echo $form->input('apis_link',array('type' => 'text'));
+		}		
 	?>
 	</fieldset>
 		<fieldset>
  		<legend>Sample Meta Information</legend>
  		<?php
+ 		echo $form->input('sample_id',array('type' => 'text','size'=>'50','label' => 'Sample Id (max 30 characters)'));
 		echo $form->input('sample_date',array('type' => 'date'));
-		echo $form->input('sample_habitat',array('type' => 'text'),array('type' => 'text','size'=>'50','label' => 'Habitat (use Environmental Ontology)') );
-		echo $form->input('sample_depth',array('type' => 'text'),array('type' => 'text','size'=>'50','label' => 'Depth [m]') );
-		echo $form->input('sample_altitude',array('type' => 'text'), array('type' => 'text','size'=>'50','label' => 'Altitude [m]'));
-		echo $form->input('sample_latitude',array('type' => 'text','size'=>'50','label' => 'Sample Latitute [63&#176;35\'42"W]'));
-		echo $form->input('sample_longitude',array('type' => 'text','size'=>'50','label' => 'Sample Longitude [32&#176;10\'0"N]'));
+		echo $form->input('sample_habitat',array('type' => 'text','size'=>'50','label' => 'Sample Habitat (use Environmental Ontology)') );
+		echo $form->input('sample_depth',array('type' => 'text','size'=>'50','label' => 'Sample Depth [m]') );
+		echo $form->input('sample_alitude',array('type' => 'text','size'=>'50','label' => 'Altitude [m]') );
+		echo $form->input('sample_latitude',array('type' => 'text','size'=>'50','label' => 'Sample Latitute [ -76.423333]'));
+		echo $form->input('sample_longitude',array('type' => 'text','size'=>'50','label' => 'Sample Longitude [38.946833]'));
 		echo $form->input('sample_filter', array( 'options' => array('3.0'=>'3.0','0.8' => '0.8','0.1' => '0.1'),'label' => 'Sample Filter Size', 'empty'=>'--Select Filter Size--','div'=>'comparator-test-select-option'));
 	?>
 	</fieldset>

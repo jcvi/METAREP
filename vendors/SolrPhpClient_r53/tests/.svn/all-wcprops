@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/ANNOTATION/!svn/ver/34344/metagenomics-reports/trunk/vendors/SolrPhpClient_r53/tests
+END
+phpunit.xml
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/ANNOTATION/!svn/ver/34344/metagenomics-reports/trunk/vendors/SolrPhpClient_r53/tests/phpunit.xml
+END
+run.php
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/ANNOTATION/!svn/ver/34344/metagenomics-reports/trunk/vendors/SolrPhpClient_r53/tests/run.php
+END
+phpunit.bootstrap.inc
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/ANNOTATION/!svn/ver/34344/metagenomics-reports/trunk/vendors/SolrPhpClient_r53/tests/phpunit.bootstrap.inc
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/ANNOTATION/!svn/ver/34344/metagenomics-reports/trunk/vendors/SolrPhpClient_r53/tests/README
+END

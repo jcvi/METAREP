@@ -19,7 +19,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.2.0
+  @version METAREP v 1.3.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -31,7 +31,7 @@
 <?php echo $javascript->link(array('michael-multiselect-2a0569f/js/jquery-ui-1.7.1.custom.min.js')); ?>
 <?php echo $javascript->link(array('michael-multiselect-2a0569f/js/ui.multiselect.js')); ?>
 <?php echo $javascript->link(array('prototype')); ?>
-<?php echo $html->css('ui.multiselect.css'); ?>
+<?php echo $html->css('ui.multiselect.css');?>
 
 
 	

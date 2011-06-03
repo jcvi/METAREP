@@ -16,7 +16,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.2.0
+  @version METAREP v 1.3.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -26,11 +26,17 @@
 <?php
 
 	$viewResults= $session->read($sessionId);
-	$facetCounts= $viewResults['facetCounts'];
+	$tabs = $session->read($sessionId.'tabs');
+	$facetField = $tabs[$tabId]['facetField'];
+	$action 	= $tabs[$tabId]['action'];
+	
+	if(isset($viewResults['facetCounts'])) {
+		$facetCounts= $viewResults['facetCounts'];
+	}
 	$numHits	= $viewResults['numHits'];
 		
 	if(isset($viewResults['filters'])) {
-		$filters	= $viewResults['filters'];	
+		$filters = $viewResults['filters']; 
 	}
 	 
 	if(isset($viewResults['limit']))  {
@@ -39,11 +45,14 @@
 	if(isset($viewResults['filter']))  {
 		$filter		= $viewResults['filter']; 
 	}
+	if(!isset($limit)) {
+		$limit = null;
+	}
 	
-	echo $html->div('download', $html->link($html->image("download-large.png",array("title" => "Download List")), array('controller'=> 'view','action'=>'download',$dataset,$sessionId,$facetField,$numHits,$limit),array('escape' => false)));
+	echo $html->div('download', $html->link($html->image("download-large.png",array("title" => "Download List")), array('controller'=> 'view','action'=>'download',$dataset,$sessionId,$tabId,$numHits,$limit),array('escape' => false)));
 		
 	//handle drop down options
-	if($facetField === 'pathway_id') {		
+	if($tabId === KEGG_PATHWAYS || $tabId === METACYC_PATHWAYS || $tabId === 'summary') {		
 		if(isset($filters)) {
 			echo ('<div id="view-drop-down-panel">');
 			echo $form->create( 'Post' );
@@ -81,7 +90,12 @@
 	
 	//handle results					
 	echo ('<div id="view-facet-result-panel">');
-	if($facetField === 'pathway_id') {
+	
+	if($tabId === 'summary') {
+		
+		echo $facet->summaryTable($facetCounts); 
+	}		
+	else if($tabId === KEGG_PATHWAYS || $tabId === METACYC_PATHWAYS) {		
 		echo $facet->pathwayTable($facetCounts); 
 	}
 	else {		
@@ -90,7 +104,7 @@
 		//handle drop down based ajax select for the limit option
 		echo $ajax->observeField( 'PostLimit', 
 		    array(
-		        'url' => array( 'controller' => 'view','action'=>'facet',$dataset,$sessionId,$facetField),
+		        'url' => array( 'controller' => 'view','action'=>'facet',$dataset,$sessionId,$tabId),
 		        'frequency' => 0.2,
 		    	'update' => 'view-facet-panel', 'loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Element.hide(\'view-facet-panel\');Effect.Appear(\'view-facet-panel\',{ duration: 1.2 })',
 		    	'with' => 'Form.serialize(\'PostAddForm\')'
@@ -98,12 +112,12 @@
 		);
 	}
 	
-	//handle drop down based ajax select for the filter option
-	if(isset($filters)) {
 	
+	//handle drop down based ajax select for the filter option
+	if(isset($filters)) {		
 		echo $ajax->observeField( 'PostFilter', 
 		    array(
-		        'url' => array( 'controller' => 'view','action'=>'facet',$dataset,$sessionId,$facetField),
+		        'url' => array( 'controller' => 'view','action'=>$action,$dataset,$sessionId,$tabId),
 		        'frequency' => 0.2,
 		    	'update' => 'view-facet-panel', 'loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Element.hide(\'view-facet-panel\');Effect.Appear(\'view-facet-panel\',{ duration: 1.2 })',
 		    	'with' => 'Form.serialize(\'PostAddForm\')'

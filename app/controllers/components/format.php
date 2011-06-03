@@ -13,7 +13,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -24,25 +24,27 @@ class FormatComponent extends Object {
 	public function facetToDownloadString($heading,$facets,$numHits) {			
 			$content ="$heading\tAbsolute Count\tRelative Count\n";
 			$content .="----------------------------------------------------------\n";
-			foreach($facets as $category => $count) {	
-				$relativeCount= round($count/$numHits,4);		
+			foreach($facets as $category => $count) {
+				//strip off html code
+				$category = strip_tags($category);
+				$relativeCount= round($count/$numHits,6);		
 				$content .= "$category\t$count\t$relativeCount\n";
 			}
 			return "$content\n\n";
 	}
 	
 
-	public function pathwayToDownloadString($data,$numHits) {
+	public function pathwayToDownloadString($facetName,$data,$numHits) {
 		$content = "";
 		
 		foreach ($data as $level2=>$pathways) {	
-			$content .= "Kegg Pathway Class: $level2 \n";
+			$content .= "$facetName Class: $level2 \n";
 			$content .= "Pathway\tAbsolute Count\tRelative Count\tPathway Enzymes\t#Found Enzymes\t%Found Enzymes\n";
 			foreach($pathways as $pathway) {
-				$relativeCount= round($pathway['numPeptides']/$numHits,4);				
-				$content .= $pathway['pathway']."\t";
-				$content .= $pathway['numPeptides']."\t";				
-				$content .= $relativeCount."\t";		
+		
+				$content .= $pathway['pathwayName']."\t";
+				$content .= $pathway['numPeptidesPathway']."\t";				
+				$content .= $pathway['percPeptidesPathway']."\t";			
 				$content .= $pathway['numPathwayEnzymes']."\t";
 				$content .= $pathway['numFoundEnzymes']."\t";
 				$content .= $pathway['percFoundEnzymes']."\t\n";
@@ -51,6 +53,26 @@ class FormatComponent extends Object {
 		return $content;
 	}
 
+	public function summaryToDownloadString($summary,$numHits) {
+		$content = "";
+				
+		foreach ($summary as $summaryName=>$summaryEntry) {		
+			$content .= "$summaryName \n";
+			
+			$content .= "Category\tAssigned\tUnassigned\t%Assigned\t%Unassigned\n";
+			
+			foreach ($summaryEntry as $field=>$entry) {	
+				$content .= $entry['name']."\t";		
+				$content .= $entry['totalAssigned']."\t";		
+				$content .= $entry['totalUnassigned']."\t";		
+				$content .= $entry['percAssigned']."\t";		
+				$content .= $entry['percUnassigned']."\t\n";			
+			}
+			$content .="\n";
+		}
+		return $content;
+	}	
+	
 	public function infoString($title,$dataset,$query,$minCount,$numHits='',$node =''){
 		$content ="----------------------------------------------------------\n";
 		$timestamp =$today = date("F j, Y, g:i a"); 
@@ -92,13 +114,12 @@ class FormatComponent extends Object {
 			}
 	}
 		
-	public function facetListToDownloadString($title,$dataset,$facets,$query,$numHits,$node = '') {		
+	public function facetListToDownloadString($title,$dataset,$facets,$facetFields,$query,$numHits,$node = '') {	
 		$content =$this->infoString($title,$dataset,$query,0,$numHits,$node);	
-		$content.=$this->facetToDownloadString('Blast Species',$facets->facet_fields->blast_species,$numHits);	
-		$content.=$this->facetToDownloadString('Common Name',$facets->facet_fields->com_name,$numHits);		
-		$content.=$this->facetToDownloadString('Gene Ontology',$facets->facet_fields->go_id,$numHits);		
-		$content.=$this->facetToDownloadString('Enzyme',$facets->facet_fields->ec_id,$numHits);
-		$content.=$this->facetToDownloadString('HMM',$facets->facet_fields->hmm_id,$numHits);
+		
+		foreach($facetFields as $fieldId=>$name) {
+			$content.=$this->facetToDownloadString($name,$facets->facet_fields->{$fieldId},$numHits);	
+		}
 		return $content;
 	}	
 	
@@ -213,12 +234,15 @@ class FormatComponent extends Object {
 		
 		foreach($counts as $category => $row) {	
 			if($row['sum']>0 && $category!='unclassified') {	
-
-				if($category != $row['name']) {
-					$content .="$category\t{$row['name']}";
+	
+				//strip off html content
+				$name = strip_tags($row['name']);
+				
+				if($category != $name) {
+					$content .="$category\t$name";
 				}
 				else {
-					$content .= "NA\t{$row['name']}";
+					$content .= "NA\t$name";
 				}
 				
 				foreach($selectedDatasets as $dataset) {

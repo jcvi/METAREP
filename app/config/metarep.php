@@ -24,7 +24,7 @@
  * 
  */
 
-define('METAREP_VERSION','1.2.0-beta');
+define('METAREP_VERSION','1.3.0-beta');
 
 /**
  * METAREP Running Title
@@ -114,6 +114,13 @@ define('SOLR_MASTER_HOST','localhost');
  */
 
 //define('SOLR_BIG_IP_HOST','');
+
+/**
+* Maximum number of shards to use for weighted
+* distributed searches
+*/
+
+define('SOLR_NUM_MAX_WEIGHTED_SHARDS',100);
 
 /**
  * FTP host
@@ -213,6 +220,25 @@ define('R_PATH','/usr/local/bin/R');
 define('RSCRIPT_PATH','/usr/local/bin/Rscript');
 
 /**
+ * Relative Count Precision 
+ * 
+ * The precision is used for rounding
+ * relative counts after normalization.
+ */
+
+define('RELATIVE_COUNT_PRECISION',6);
+
+/**
+ * Weighted Count Precision
+ * 
+ * The precision is used for rounding
+ * weighted counts after retrieval from 
+ * the index files.
+ */
+
+define('WEIGHTED_COUNT_PRECISION',2);
+
+/**
  * Activate/Deactivate JCVI-only features
  * 
  * Sett this variable to 1, activates JCVI-only
@@ -222,4 +248,7 @@ define('RSCRIPT_PATH','/usr/local/bin/Rscript');
  */
 
 define('JCVI_INSTALLATION',0);
+
+
+
 ?>

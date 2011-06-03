@@ -24,6 +24,11 @@ CSS Browse Page
 	position: relative;	width: 100%;
 }
 
+.comparator-heatmap-legend {  
+	font-weight: bold;
+	font-size: 0.7em;	
+}
+
 form {
 	position:relative !important;
 	float:none !important;

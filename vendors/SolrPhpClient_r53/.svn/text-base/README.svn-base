@@ -1,0 +1,30 @@
+
+Solr PHP Client using CURL
+--------------------------
+
+This is a fork from an older version of the solr php client designed
+and implemented by Donovan Jimenez. 
+
+You can find the original code on the Solr issue tracker:
+https://issues.apache.org/jira/browse/SOLR-341
+
+The project is now hosted on Google Code:
+http://code.google.com/p/solr-php-client/
+
+Why this fork?
+--------------
+
+I have changed the original code to use the phps solr output writer and
+curl for doing the requests. I don't have enough time to send a patch 
+for the latest version of solr php client. 
+
+Why use curl?
+-------------
+
+I need high performance and it seems that curl is a bit faster than 
+file_get_contents. You can see a simple benchmark bellow:
+
+http://stackoverflow.com/questions/555523/filegetcontents-vs-curl-what-has-better-performance
+
+
+

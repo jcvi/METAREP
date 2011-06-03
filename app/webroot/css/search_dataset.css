@@ -17,6 +17,16 @@ CSS for search page
 	position: relative;
 	top: 0px;
 	float:none;
+	 
+}
+
+.top-10-list ol {  
+	position: relative;
+	top: 0px;
+	float:none;
+	font-size:0.95em;
+	padding-top: 10px;	
+	color:#4A4344;
 }
 
 #search-suggestions {  

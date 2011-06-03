@@ -2,7 +2,7 @@
 
 ###############################################################################
 # File: metarep_loader.php
-# Description: Generates METAREP lucene indices from tab delimited files
+# Description: Loads annotation data into METAREP.
 
 # METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
 # Copyright(c)  J. Craig Venter Institute (http://www.jcvi.org)
@@ -12,9 +12,9 @@
 #
 # link http://www.jcvi.org/metarep METAREP Project
 # package metarep
-# version METAREP v 1.0.1
-# author Johanens Goll
-# lastmodified 2010-07-09
+# version METAREP v 1.3.0
+# author Johannes Goll
+# lastmodified 2011-06-02
 # license http://www.opensource.org/licenses/mit-license.php The MIT License
 ###############################################################################
 
@@ -27,20 +27,28 @@ use Getopt::Long qw(:config no_ignore_case no_auto_abbrev);
 use Pod::Usage;
 
 =head1 NAME
-metarep_loader.pl generates METAREP lucene indices from METAREP tab delimited files
+metarep_loader.pl generates METAREP lucene indices from various input files.
 			
 =head1 SYNOPSIS
 
+perl metarep_humann_loader.pl --project_id 1 
+ --input_dir /usr/local/scratch/input --sqlite_db metarep-hmp.sqlite3.db --solr_url http://localhost:8989 
+ --solr_max_mem 3G --solr_instance_dir /opt/software/apache-solr/solr --solr_data_dir /solr-index 
+ --mysql_host localhost --metarep_db ifx_hmp_metagenomics_reports --metarep_username usernae --metarep_password password
+ --tmp_dir /usr/local/scratch --solr_home_dir /usr/local/annotation/METAGENOMIC/METAREP/solr
 
 =head1 OPTIONS
 B<--project_id, -i>
 	METAREP project id (MySQL table projects, field project_id)			
 			
-B<--project_dir, -d>
-	METAREP project directory that contains one or more tab delimited annotation files
+B<--format, -o>
+	specified the input mode ('tab','humann','jpmap') [default:tab]
 
-B<--tmp_dir, -r>
-	directory to store temporary files (XML files gnerated before the Solr load)
+B<--input_file, -f>
+	input file. Needs to be specified for mode tab and humann
+	
+B<--project_dir, -d>
+	input directory for JPMAP files. Needs to be specified for mode JPMAP
 	
 B<--solr_url, -s>
 	METAREP solr server URL incl. port [default: http://localhost:8983]
@@ -78,8 +86,15 @@ B<--go_username, -e>
 B<--go_password, -f>
 	Gene Ontology MySQL password [default: metarep_password]	
 	
+B<--tmp_dir, -y>
+	Directory to store temporary files (XML files gnerated before the Solr load)
+
 B<--xml_only, -x>
 	Useful for debugging. Generates only XML files in the specified tmp directory without pushing the data to the Solr server. 
+
+B<--max_num_docs, -x>
+	The maximum number of docs to split XML into.
+
 
 =head1 AUTHOR
 
@@ -91,13 +106,14 @@ my $initialJavaHeapSize = '250M';
 
 my %args = ();
 
-#handle user arguments
+## handle user arguments
 GetOptions(
 	\%args,                
 	'version', 	
 	'project_id|i=s',
+	'format|f=s',
 	'project_dir|d=s',
-	'tmp_dir|t=s',
+	'sqlite_db|q=s',
 	'solr_url|s=s',
 	'solr_home_dir|h=s',
 	'solr_instance_dir|w=s',
@@ -107,9 +123,7 @@ GetOptions(
 	'metarep_db|b=s',
 	'metarep_username|u=s',
 	'metarep_password|p=s',
-	'go_db|g=s',
-	'go_username|e=s',
-	'go_password|f=s',	
+	'tmp_dir|y=s',	
 	'xml_only|x',	
 	'help|man|?',
 ) || pod2usage(2);
@@ -119,7 +133,20 @@ if($args{help}) {
 	pod2usage(-exitval => 1, -verbose => 2);
 }
 
-#check arguments || mandatory fields
+if(!defined($args{format})) {
+	pod2usage(
+		-message => "\n\nERROR: A format needs to be defined.\n",
+		-exitval => 1,
+		-verbose => 1
+	);
+}
+if(!defined($args{project_dir})) {
+	pod2usage(
+		-message => "\n\nERROR: Please specify a project directory.\n",
+		-exitval => 1,
+		-verbose => 1
+	);
+}
 if(!defined($args{project_id})) {
 	pod2usage(
 		-message => "\n\nERROR: A project id needs to be defined.\n",
@@ -127,10 +154,10 @@ if(!defined($args{project_id})) {
 		-verbose => 1
 	);
 }
-elsif(!defined($args{project_dir}) || !(-d $args{project_dir})) {
+elsif(!defined($args{project_dir}) || !-d $args{project_dir}) {
 		pod2usage(
 			-message =>
-"\n\nERROR: A valid project directory needs to be defined.\n",
+"\n\nERROR: A valid input directory needs to be defined.\n",
 			-exitval => 1,
 			-verbose => 1
 		);
@@ -138,7 +165,7 @@ elsif(!defined($args{project_dir}) || !(-d $args{project_dir})) {
 elsif(!defined($args{tmp_dir}) || !(-d $args{tmp_dir})) {
 	pod2usage(
 			-message =>
-"\n\nERROR: A valid tmp directory needs to be defined.\n",
+"\n\nERROR: A valid xml directory needs to be defined.\n",
 			-exitval => 1,
 			-verbose => 1
 	);
@@ -175,8 +202,32 @@ elsif(!defined($args{solr_instance_dir}) && !$args{xml_only}) {
 			-verbose => 1
 	);
 }
+elsif(!defined($args{sqlite_db})) {
+	pod2usage(
+			-message =>
+"\n\nERROR: A sqlite database neeeds to be defined.\n",
+			-exitval => 1,
+			-verbose => 1
+	);
+}
 
-#set default values
+if(defined($args{format})) {	
+	if($args{format} ne 'tab' && $args{format} ne 'humann'  && $args{format} ne 'jpmap') {
+	pod2usage(
+			-message =>
+"\n\nERROR: A valid input format needs to be specified [metarep or humann or jpmap].\n",
+			-exitval => 1,
+			-verbose => 1
+	);
+	}
+}
+
+## set global variables
+my $koAncestorHash = undef;
+my $goAncestorHash = undef;
+my $taxonAncestorHash = undef;
+
+## set default arguments
 if(!defined($args{solr_url})) {
 	$args{solr_url} = "http://localhost:8983";
 }
@@ -186,25 +237,22 @@ if(!defined($args{mysql_host})) {
 if(!defined($args{metarep_db})) {
 	$args{metarep_db} = "metarep";
 }
-if(!defined($args{go_db})) {
-	$args{go_db} = "gene_ontology";
-}
-if(!defined($args{go_username})) {
-	$args{go_username} = $args{metarep_username};
-}
-if(!defined($args{go_password})) {
-	$args{go_password} = $args{metarep_password};
-}
 if(!defined($args{solr_max_mem})) {
-	$args{solr_max_mem} = '1000M';
+	$args{solr_max_mem} = '1G';
 }
 if(!defined($args{solr_data_dir})) {
-	$args{solr_data_dir} = "$args{solr_instance_dir}/data/";
+	$args{solr_data_dir} = "$args{solr_instance_dir}/data";
+}
+if(!defined($args{max_num_docs})) {
+	$args{max_num_docs} = 300000;
+}
+if(!defined($args{format})) {
+	$args{format} = 'metarep';
 }
 
-#connect to metarep MySQL database
+## connect to METAREP MySQL database
 print "Trying to connect to MySQL database=".$args{metarep_db}." host=".$args{mysql_host}."\n";
-my $metarepDbConnection = DBI->connect("DBI:mysql:".$args{metarep_db}.";host=".$args{mysql_host}."",$args{metarep_username},$args{metarep_password}, { 'RaiseError' => 0 });
+my $metarepDbConnection = DBI->connect_cached("DBI:mysql:".$args{metarep_db}.";host=".$args{mysql_host}."",$args{metarep_username},$args{metarep_password}, { 'RaiseError' => 0 });
 
 if(!$metarepDbConnection) {
 		pod2usage(
@@ -215,131 +263,481 @@ if(!$metarepDbConnection) {
 	);
 }
 
-#connect to Gene Ontology database
-print "Trying to connect to MySQL database=".$args{go_db}." host=".$args{mysql_host}."\n";
-my $goDbConnection = DBI->connect("DBI:mysql:".$args{go_db}.";host=".$args{mysql_host}."",$args{go_username},$args{go_password}, { 'RaiseError' => 0 });
-
-if(!$goDbConnection) {
+## connect to sqlite database
+print "Trying to connect to Sqlite database=".$args{sqlite_db}."\n";
+my $sqliteDbConnection = DBI->connect( "dbi:SQLite:$args{sqlite_db}",
+									 "", "", {PrintError=>1,RaiseError=>1,AutoCommit=>0} );	
+if(!$sqliteDbConnection) {
 		pod2usage(
-			-message =>
-"\n\nERROR:Could not connect to $args{go_db}.\n",
+			-message =>	"\n\nERROR:Could not connect to SQLite database $args{sqlite_db}\n",
 			-exitval => 1,
 			-verbose => 1
 	);
 }
 
-#read files
-opendir(DIR, $args{project_dir});
-my @files = grep(/\.tab$/,readdir(DIR));
-
-foreach my $file(@files) {
-	print $file."\n";
-	&createIndex("$args{project_dir}/$file");
+if(defined($args{project_dir})) {
+	if($args{format} eq 'jpmap') {
+		opendir(DIR, $args{project_dir});
+		my @libraries = readdir(DIR);
+		foreach my $library (@libraries) {
+			unless (($library eq ".") || ($library eq "..") )	 {
+				 	&createIndexFromJpmapFile("$args{project_dir}/$library");
+			}
+		}		
+	}
+	else {
+		## read all files
+		opendir(DIR, $args{project_dir});
+	
+		my @files = grep(/\.$args{format}$/,readdir(DIR));
+			
+		foreach my $file(@files) {
+			print "Processing file $file \n";
+				
+			if($args{format} eq 'tab') {
+				&createIndexFromMetarepFile("$args{project_dir}/$file");
+			}
+			elsif($args{format} eq 'humann') {
+				&createIndexFromHumannFile("$args{project_dir}/$file");
+			}		
+		}
+	}
 }
 
-#creates a new Lucene index for a dataset
-sub createIndex() {
+## loop through project files
+#if($args{format} eq 'jpmap' && $args{input_dir} ) {
+#	&createIndexFromJpmapFile($args{input_dir});
+#}
+
+## index single file
+#elsif(defined($args{input_file})) {
+#	print "Processing file $args{input_file}\n";
+#	
+#	if($args{format} eq 'tab') {
+#		&createIndexFromTabFile($args{input_file});
+#	}
+#	elsif($args{format} eq 'humann') {		
+#		&createIndexFromHumannFile($args{input_file});
+#	}			
+#}
+
+########################################################
+## Parses HUMANnN gene weighted annotations.
+########################################################
+
+sub createIndexFromHumannFile() {
 	my $file = shift;
 	
-	open FILE, "$file" or die "Could not open file $file.";
+	my $gzipFlag =0;
+	my $isWeighted = 1;
 	
-	#parse dataset name
-	my $datsetName = basename($file);
-	$datsetName =~ s/.tab//;
-	
-	
-	#create index file
-	&openIndex($datsetName);
-	
-	while(<FILE>) {
-		chomp $_;
-		
-		my ($blastTree,$blastSpecies,$blastEvalueExponent);
-		
-		#read fields
-        my (
-            $peptideId, 
-            $libraryId, 
-            $comName, 
-            $comNameSrc,
-            $goId, 
-            $goSrc, 
-            $ecId,
-            $ecSrc,
-            $hmmId,
-            $blastTaxon,
-            $blastEvalue,
-            $blastPid,
-            $blastCov,
-			$filter,
-           ) = split("\t",  $_);	 
-        
-        #set GO tree
-        my @GoAncestors= &getGoAncestors($goId);
-        my $goTree 	= join('||',@GoAncestors);
-              
-        #set Blast tree and Blast species based on provided taxon
-        if($blastTaxon) {
-        	
-        	#find least common ancestor if multiple ids have been provided
-        	if($blastTaxon =~ m/\|\|/) {
-        		my @taxonIds = split(/\|\|/, $blastTaxon);
-        		
-        		#override blastTaxon with least common ancestor
-        		$blastTaxon = &mergeMultiTaxonomicLabels(@taxonIds);      		
-        	}
-        		
-        	#get all parent taxa	
-	        my @taxonAncestors = &getTaxonAncestors($blastTaxon);
-	        $blastTree 		= join('||',@taxonAncestors);
-	        
-	        #set the species if the 
-	 		$blastSpecies 	= &getSpecies(\@taxonAncestors);	
-        }	
-           
-        #set Blast Evalue exponent 
-		if($blastEvalue == 0) {
-			#set evalue to high default value
-			$blastEvalueExponent = 9999;
-		}
-		else {
-			my @tmp = split('e-',lc($blastEvalue));	
-			use POSIX qw( floor );
-			$blastEvalueExponent  = floor($tmp[1]);
-		}
-         
-        &addDocument($peptideId,$libraryId,$comName,$comNameSrc,$goId,$goSrc,$goTree,$ecId,$ecSrc,
-        $hmmId,$blastSpecies,$blastEvalue,$blastEvalueExponent,$blastPid,$blastCov,$blastTree,$filter);         
+	if($file =~ /\.gz$/) {
+		`gunzip $file`;
+		$gzipFlag =1;
+		$file =~ s/\.gz$//;
 	}
+		
+	open FILE, "$file" or die "Could not open file $file.";
+		
+		## parse dataset name		
+		my $datsetName = basename($file);
+		$datsetName =~ s/\..*//;
+		
+		## create index file
+		&openIndex($datsetName);
+		
+		## count documents and XML files
+		my $xmlSplitSet  = 2;
+		my $numDocuments = 1;	
+		
+		my ($peptideId,$geneName,$weight,$blastEvalue,$blastPid,$blastCov,$keggTaxon,$ecId,$ecSrc,
+		$blastTaxon,$comName,$comNameSrc,$koId,$goId,$goSrc,$goTree,$koTree,$blastTree,$blastSpecies,$blastEvalueExponent);
+		
+		## foreach line in file create index entry
+		while(<FILE>) {
+			chomp;
+			
+			if(m/^#/) {
+				next;
+			}
+			
+			$peptideId = $geneName = $weight= $blastEvalue = $blastPid = $blastCov = $keggTaxon = $ecId = $blastTaxon = 
+			$ecSrc = $comName = $comNameSrc= $koId = $goId = $goSrc = $goTree= $koTree = $blastTree = $blastSpecies = 
+			$blastEvalueExponent = '';
+			
+			($geneName,$weight,$blastEvalue,$blastPid,$blastCov) = split("\t",$_);
+			
+			$peptideId = $datsetName.":".$geneName;
+			
+			($keggTaxon,undef)= split(':',$geneName);
+				
+			$blastTaxon = &getNcbiTaxonId($keggTaxon);				
+			$ecId  		= &getEcId($geneName);
+			
+			if($ecId) {
+				$ecSrc = $geneName;
+			}				
+				
+			$comName 	= &getCommonName($geneName);
+			$comNameSrc = $geneName;		
+			$koId  		= &getKoId($geneName);
+
+			if($koId) {
+				my $goResults = &getGoIdsFromKO($koId);
+				$goId = uc(&clean($goResults->{go_id_string}));
+
+		       	if($goId) {     
+		        	$goTree = join('||',&getGoAncestors($goId));
+		       	}
+				
+				if($goId) {
+					$goSrc = $goResults->{go_src_string};
+				}
+				$koTree = join('||',&getKoAncestors($koId));  
+			}
+				
+	        if($blastTaxon) {
+	        	
+	        	## find least common ancestor if multiple ids have been provided
+	        	if($blastTaxon =~ m/\|\|/) {
+	        		my @taxonIds = split(/\|\|/, $blastTaxon);
+	        		
+	        		#override blastTaxon with least common ancestor
+	        		$blastTaxon = &mergeMultiTaxonomicLabels(@taxonIds);      		
+	        	}
+	        		
+	        	## get all parent taxa	
+		        my @taxonAncestors = &getTaxonAncestors($blastTaxon);
+		        $blastTree 		= join('||',@taxonAncestors);
+		        
+		        ## set the species if the 
+		 		$blastSpecies 	= &getSpecies(\@taxonAncestors);	
+	        }	
+	
+		    if($blastPid =~ m/^[1-9].*/) {
+		    	$blastPid = $blastPid/ 100;
+		    }
+	           
+	        ## set Blast Evalue exponent 
+			if($blastEvalue == 0) {
+					#set evalue to high default value
+				$blastEvalueExponent = 9999;
+			}	
+			else {
+				my @tmp = split('e-',lc($blastEvalue));	
+				use POSIX qw( floor );
+				$blastEvalueExponent  = floor($tmp[1]);
+			}
+
+			## add entry to index
+	        &addDocument($peptideId,$datsetName,$comName,$comNameSrc,$goId,$goSrc,$goTree,$ecId,$ecSrc,
+	        undef,$blastSpecies,$blastEvalue,$blastEvalueExponent,$blastPid,$blastCov,$blastTree,undef,$weight,$koId,$koTree);         
+
+			if(($numDocuments % $args{max_num_docs}) == 0) {
+					&nextIndex($datsetName,$xmlSplitSet);
+					$xmlSplitSet++;
+			} 	
+			
+			$numDocuments++;	
+
+		}
+		
 	&closeIndex();
 	
-	#push index if xml only option has not been selected
+	## push index if xml only option has not been selected
 	unless($args{xml_only}) {
-		&pushIndex($datsetName);
+		&pushIndex($datsetName,$xmlSplitSet,$isWeighted);
+	}
+	
+	if($gzipFlag) {
+		`gzip $file`;
 	}
 }
 
-#creates index file
+########################################################
+## Parses JCVI Prokaryotic Annotation Files.
+########################################################
+
+sub createIndexFromJpmapFile() {
+	my $projectDir  = shift;
+	my $dataset	 	= basename($projectDir);
+		
+	my $annotationFile 	= "$projectDir/annotation_rules.combined.out"	;
+	my $blastFile 		= "$projectDir/ncbi_blastp_btab.combined.out"	;
+	my $hmmFile 		= "$projectDir/ldhmmpfam_full.htab.combined.out"	;
+	
+	## count documents and XML files
+	my $xmlSplitSet  = 2;
+	my $numDocuments = 1;	
+	my $isGzipped	 = 1;
+	my $isWeighted   = 0;
+	my $goTree 		 = undef;
+		
+		
+	$dataset .= "-pga"; 	
+	## create index 	
+	&openIndex($dataset);
+			
+	## fetch UniRef peptide ID to subject ID mapping
+	my $peptideId2SubjectIdHashRef = &readPeptideIdToSubjectIdMapping($annotationFile);	
+				
+	## fetch blast results
+	my $blastResultHashRef 	= &readJpmapBlastEntries($blastFile,$peptideId2SubjectIdHashRef) ;
+	my %blastResultHash 	= %$blastResultHashRef;
+	
+	## fetch hmm results
+	my $hmmResultHashRef 	= &readJpmapHmmEntries($hmmFile) ;
+	my %hmmResultHash 		= %$hmmResultHashRef;
+			
+	if(-e "$annotationFile.gz") {	
+		$isGzipped = 1;
+		`gunzip $annotationFile.gz`;		
+	}
+	
+	open FILE, "$annotationFile" or die "Could not open file $annotationFile.";
+									
+	while(<FILE>) {					
+		my $defline = $_;
+			
+		my ($peptideId,undef,$comName,$comNameSrc,undef,$gene_symbol,
+		$gene_symbol_evidence,undef,$goId,$goSrc,undef,$ecId,$ecSrc,
+		undef,undef,undef) = split (/\t/, $defline);
+				
+		## adjust case of GO ID
+		$goId = uc($goId);
+			
+		## get blast entry
+		my $blastEntry = $blastResultHash{$peptideId};
+			
+		## get array ref with hmms
+		my $hmmId = undef;		
+			
+		my $hmmRef = $hmmResultHash{$peptideId};
+			
+		if($hmmRef ) {
+			my @hmms  = @$hmmRef;
+				
+			if(@hmms){
+				$hmmId = join('||',@hmms);
+			}
+		}
+				
+       	if($goId) {     
+        	$goTree = join('||',&getGoAncestors($goId));
+       	}				
+       					
+		## set index field
+	    &addDocument($peptideId,$dataset,$comName,$comNameSrc,$goId,$goSrc,$goTree,$ecId,$ecSrc,
+	    $hmmId,$blastEntry->{species},$blastEntry->{evalue},$blastEntry->{evalue_exp},$blastEntry->{pid},$blastEntry->{coverage},$blastEntry->{blast_tree},undef,undef,undef,undef);      
+	        
+		if(($numDocuments % $args{max_num_docs}) == 0) {
+			&nextIndex($dataset,$xmlSplitSet);
+			$xmlSplitSet++;
+		} 	
+		$numDocuments++;
+	}
+				
+	## close store
+	close(FILE);
+	&closeIndex();
+	
+	if($isGzipped) {
+		`gzip $annotationFile`;
+	}
+	
+	## push index if xml only option has not been selected
+	unless($args{xml_only}) {
+		&pushIndex($dataset,$xmlSplitSet,$isWeighted);
+	}
+}
+
+########################################################
+## Parses tab delimited input file.
+########################################################
+
+sub createIndexFromTabFile() {
+	my $file = shift;
+	my $isWeighted = 0;
+	my $gzipFlag =0;
+	
+	if($file =~ /\.gz$/) {
+		`gunzip $file`;
+		$gzipFlag =1;
+		$file =~ s/\.gz$//;
+	}
+		
+	open FILE, "$file" or die "Could not open file $file.";
+		
+		#parse dataset name		
+		my $datsetName = basename($file);
+		$datsetName =~ s/\.metarep_parsed\.tab/-mtr/;
+		
+		#create index file
+		&openIndex($datsetName);
+		
+		## count documents and XML files
+		my $xmlSplitSet  = 2;
+		my $numDocuments = 1;	
+		
+		while(<FILE>) {
+			chomp $_;
+			
+			my ($blastTree,$blastSpecies,$blastEvalueExponent,$goTree,$koTree);
+			
+			#read fields
+	        my (
+	            $peptideId, 
+	            $libraryId, 
+	            $comName, 
+	            $comNameSrc,
+	            $goId, 
+	            $goSrc, 
+	            $ecId,
+	            $ecSrc,
+	            $hmmId,
+	            $blastTaxon,
+	            $blastEvalue,
+	            $blastPid,
+	            $blastCov,
+				$filter,
+				$weight,
+				$koId
+	        ) = split("\t",$_);	 
+	        
+	        ## set weight
+	        if(&clean($weight)) {
+	        	$isWeighted = 1;
+	        }
+	        
+	        ## set GO tree
+	       	$goId = uc(&clean($goId));  
+	       	    
+	       	if($goId) {     
+	        	$goTree = join('||',&getGoAncestors($goId));
+	       	}
+	       	        
+	        if($koId) {
+	        	 if($koId==1) {
+	        	 	die($_);
+	        	 }   
+	        	$koTree = join('||',&getKoAncestors($koId));  
+	        }    
+	               
+	        ## set Blast tree and Blast species based on provided taxon
+	        if($blastTaxon) {
+	        	
+	        	## find least common ancestor if multiple ids have been provided
+	        	if($blastTaxon =~ m/\|\|/) {
+	        		my @taxonIds = split(/\|\|/, $blastTaxon);
+	        		
+	        		#override blastTaxon with least common ancestor
+	        		$blastTaxon = &mergeMultiTaxonomicLabels(@taxonIds);      		
+	        	}
+	        		
+	        	## get all parent taxa	
+		        my @taxonAncestors = &getTaxonAncestors($blastTaxon);
+		        $blastTree 		= join('||',@taxonAncestors);
+		        
+		        ## set the species if the 
+		 		$blastSpecies 	= &getSpecies(\@taxonAncestors);	
+	        }	
+	
+		    if($blastPid =~ m/^[1-9].*/) {
+		    	$blastPid = $blastPid/ 100;
+		    }
+	           
+	        #set Blast Evalue exponent 
+			if($blastEvalue == 0) {
+					#set evalue to high default value
+				$blastEvalueExponent = 9999;
+			}	
+			else {
+				my @tmp = split('e-',lc($blastEvalue));	
+				use POSIX qw( floor );
+				$blastEvalueExponent  = floor($tmp[1]);
+			}
+			       
+	        &addDocument($peptideId,$libraryId,$comName,$comNameSrc,$goId,$goSrc,$goTree,$ecId,$ecSrc,
+	        $hmmId,$blastSpecies,$blastEvalue,$blastEvalueExponent,$blastPid,$blastCov,$blastTree,$filter,$weight,$koId,$koTree);         
+
+			if(($numDocuments % $args{max_num_docs}) == 0) {
+					&nextIndex($datsetName,$xmlSplitSet);
+					$xmlSplitSet++;
+			} 	
+			
+			$numDocuments++;	
+
+		}
+		
+	&closeIndex();
+	
+	## push index if xml only option has not been selected
+	unless($args{xml_only}) {
+		&pushIndex($datsetName,$xmlSplitSet,$isWeighted);
+	}
+	
+	if($gzipFlag) {
+		`gzip $file`;
+	}
+}
+
+########################################################
+## Clean store
+########################################################
+
+$metarepDbConnection->disconnect;
+$sqliteDbConnection->disconnect();
+
+########################################################
+## Creates new index file
+########################################################
+
 sub openIndex {
 	my $dataset = shift;
+
+	my $outFile	= "$args{tmp_dir}/$dataset"."_1.xml";
 	#open output file
-	print "Creating index file $args{tmp_dir}/$dataset".".xml ...\n";
-	my $outFile	= "$args{tmp_dir}/$dataset".".xml";
+	print "Creating index file $outFile ...\n";
 	
 	open(INDEX, ">$outFile") || die("Could not create file $outFile.");
 
 	print INDEX "<add>\n";
 }
 
-#closes index file
+########################################################
+## Closed current index file and opens a new index file.
+########################################################
+
+sub nextIndex {
+	my ($dataset,$xmlSplitSet) = @_;
+	
+	#close exiting index
+	&closeIndex();
+	
+	#define next index file
+	my $outFile	= "$args{tmp_dir}/$dataset"."_".$xmlSplitSet.".xml";
+	
+	#save filehandle in variable	
+	open(INDEX, ">$outFile") || die("Could not create file $outFile.");	
+
+	print INDEX "<add>\n";
+}
+
+########################################################
+## Closed index file.
+########################################################
+
 sub closeIndex {
 	print INDEX "</add>";
 	close INDEX;
 }
 
-#pushes new index file to Solr server; adds MySQL dataset
+########################################################
+## pushes new index file to Solr server; adds MySQL dataset
+########################################################
+
 sub pushIndex() {
-	my $dataset = shift;
+	my ($dataset,$xmlSplitSet,$isWeighted) = @_;
 
 	print "Deleting dataset from METAREP MySQL database...\n";
 	&deleteMetarepDataset($dataset);
@@ -350,25 +748,33 @@ sub pushIndex() {
 	print "Creating Solr core...\n";
 	&createSolrCore($dataset);
 	
-	print "Loading Solr index...\n";
-	&loadSolrIndex($dataset);
-
-	print "Optimizing Solr index...\n";
-	&optimizeIndex($dataset);	
+	for(my $set = 1; $set <= $xmlSplitSet;$set++){
+		my $xmlFile = "$dataset"."_".$set.".xml";
+		
+		print "Loading Solr index...\n";
+		&loadSolrIndex($dataset,$xmlFile);
+	
+		print "Optimizing Solr index...\n";
+		&optimizeIndex($dataset);
+		
+		##gzip 
+		`gzip $args{tmp_dir}/$xmlFile`;	
+	}
 	
 	print "Adding dataset to METAREP MySQL database....\n";
-	&createMetarepDataset($dataset);	
+	&createMetarepDataset($dataset,$isWeighted);	
 }
 
+########################################################
+## adds lucene document to lucene index
+########################################################
 
-
-#adds lucene document to lucene index
 sub addDocument() {
 	my ($peptideId,$libraryId,$comName,$comNameSrc,$goId,$goSrc,$goTree,$ecId,$ecSrc,
-        $hmmId,$blastSpecies,$blastEvalue,$blastEvalueExponent,$blastPid,$blastCov,$blastTree,$filter) = @_;	 
+        $hmmId,$blastSpecies,$blastEvalue,$blastEvalueExponent,$blastPid,$blastCov,$blastTree,$filter,$weight,$koId,$koTree) = @_;	 
 	
 	print INDEX "<doc>\n";		
-	
+		
 	#write core fields
 	&printSingleValue("peptide_id",$peptideId);
 	&printSingleValue("library_id",$libraryId);
@@ -381,6 +787,9 @@ sub addDocument() {
 	&printMultiValue("ec_src",$ecSrc);		
 	&printMultiValue("hmm_id",$hmmId);		
 	&printMultiValue("filter",$filter);
+	&printMultiValue("ko_id",$koId);
+	&printMultiValue("kegg_tree",$koTree);
+	&printSingleValue("weight",$weight);
 	
 	#write best hit Blast fields
 	&printSingleValue('blast_species',$blastSpecies);
@@ -393,18 +802,25 @@ sub addDocument() {
 	print INDEX "</doc>\n";		
 }
 
-#writes a single values field to the lucene index
+########################################################
+## writes a single values field to the lucene index.
+########################################################
+
 sub printSingleValue {
 	my ($field,$value) = @_;
 	
 	$value = &clean($value);
 	
-	if($value) {
+	if($value ne '') {
+		
 		print INDEX "<field name=\"$field\">$value</field>\n";	
 	}
 }
 
-#writes multi-valuse fields
+########################################################
+## writes multi-valued fields.
+########################################################
+
 sub printMultiValue() {
 	my ($field,$value) = @_;
 	
@@ -423,78 +839,139 @@ sub printMultiValue() {
 	}
 }
 
+########################################################
+## takes a species taxon id and returns an array that contains its lineage
+########################################################
 
-#takes a species taxon id and returns an array that contains its lineage
 sub getTaxonAncestors() {
 	my $taxonId = shift;
 	my @ancestors = ();
-	
-	#add taxon id to the front of the array
-	unshift(@ancestors,$taxonId);
+
+	if(exists $taxonAncestorHash->{$taxonId}) { 
+		@ancestors = @{$taxonAncestorHash->{$taxonId}};
+	}
+	else {
+		## add taxon id to the front of the array
+		unshift(@ancestors,$taxonId);
+			
+		## loop through tree until root has been reached
+		while(1) {
+			my $parentTaxonId = &getParentTaxonId($taxonId);
+			
+			## add parent to the front of the array if is non-empty
+			if($parentTaxonId ne '') {			
+				unshift(@ancestors,$parentTaxonId);			
+			}	
+			
+			## stop if root has been reached or empty taxon ID has been returned	
+			if($parentTaxonId == 1 || $parentTaxonId eq ''){
+				last;
+			}	
+					
+			$taxonId = $parentTaxonId;
+		} 
 		
-	#loop through tree until root has been reached
-	while(1) {
-		my $parentTaxonId = &getParentTaxonId($taxonId);
-		
-		#add parent to the front of the array if is non-empty
-		if($parentTaxonId ne '') {			
-			unshift(@ancestors,$parentTaxonId);			
-		}	
-		
-		#stop if root has been reached or empty taxon ID has been returned	
-		if($parentTaxonId == 1 || $parentTaxonId eq ''){
-			last;
-		}	
-				
-		$taxonId = $parentTaxonId;
-	} 
-	
+		$taxonAncestorHash->{$taxonId} = \@ancestors;		
+	}
 	return @ancestors;
 }
 
-#returns array of GO ancestors (integer part of the ID)
+########################################################
+## Returns array of KO ancestors (integer part of the ID).
+########################################################
+sub getKoAncestors(){
+	
+	my $koTerms = shift;
+	
+	my @ancestors=();
+	
+	if(exists $koAncestorHash->{$koTerms}) { 
+		@ancestors = @{$koAncestorHash->{$koTerms}};
+	}
+	else {
+			
+		my $id = undef;	
+		
+		my @koTerms = split (/\|\|/, $koTerms);
+		
+		@koTerms = &cleanArray(@koTerms);
+		
+		my $koTermSelection = join ',',map{qq/'$_'/} @koTerms;
+		
+		$koTermSelection = "($koTermSelection)";	
+
+		my $query = "select distinct parent_id from brite where id in (select parent_id from brite where id in(select parent_id from brite where id in (select parent_id from brite where ko_id in $koTermSelection))) union select distinct parent_id from brite where id in(select parent_id from brite where id in (select parent_id from brite where ko_id in $koTermSelection)) union select distinct parent_id from brite where id in (select parent_id from brite where ko_id in $koTermSelection) union select distinct parent_id from brite where ko_id in $koTermSelection";
+		
+		my $sth = $sqliteDbConnection->prepare($query);	
+		$sth->bind_col(1, \$id);
+		$sth->execute();	
+		
+		while ($sth->fetch) {		
+			push(@ancestors,$id);
+		}
+		$koAncestorHash->{$koTerms} = \@ancestors;
+	}
+		
+	return @ancestors;
+}
+
+########################################################
+#Returns array of GO ancestors (integer part of the ID).
+########################################################
+
 sub getGoAncestors(){
 
 	my $goTerms = shift;
-	my @ancestors = ();
+	my @ancestors=();
+	
+	if(exists $goAncestorHash->{$goTerms}) { 
+		@ancestors = @{$goAncestorHash->{$goTerms}};
+	}
+	else {
 		
-	my @goTerms = split (/\|\|/, $goTerms);
-	
-	@goTerms = &cleanArray(@goTerms);
-	
-	my $goTermSelection = join 'or term.acc=',map{qq/'$_'/} @goTerms;
-	
-	$goTermSelection = "(term.acc=$goTermSelection)";
-	
-	my $ancestor;
-	
-	my $query =" SELECT DISTINCT
-        substring_index(ancestor.acc,':',-1) 
-	 FROM 
-	  term
-	  INNER JOIN graph_path ON (term.id=graph_path.term2_id)
-	  INNER JOIN term AS ancestor ON (ancestor.id=graph_path.term1_id)
-	 WHERE $goTermSelection and ancestor.acc!='all' order by distance desc;";
-	
-	#execute query
-	my $sth = $goDbConnection->prepare($query);	
+		my @goTerms = split (/\|\|/, $goTerms);
 
-
-	$sth->execute();
-	
-	$sth->bind_col(1, \$ancestor);
-	
-	while ($sth->fetch) {
+		@goTerms = &cleanArray(@goTerms);
 		
-		#remove trailing zeros
-		$ancestor =~ s/^0*//;
-		push(@ancestors,$ancestor);
-	}		
+		my $goTermSelection = join 'or term.acc=',map{qq/'$_'/} @goTerms;
+		
+		$goTermSelection = "(term.acc=$goTermSelection)";
+		
+		my $ancestor;
+
+		## SQLITE query
+		my $query = "select DISTINCT substr(ancestor.acc,4,length(ancestor.acc)) 
+		FROM term INNER JOIN graph_path ON (term.id=graph_path.term2_id) INNER JOIN term
+		 AS ancestor ON (ancestor.id=graph_path.term1_id) WHERE $goTermSelection and
+		  ancestor.acc!='all' order by distance desc;";
+
+		my $sth = $sqliteDbConnection->prepare($query);	
+		$sth->execute();
+	
+		$sth->bind_col(1, \$ancestor);
+		
+		while ($sth->fetch) {
+				
+			##check if numeric
+			if ($ancestor =~ /^[0-9]+$/ ) {
+				
+				#remove trailing zeros
+				$ancestor =~ s/^0*//;
+			
+				#print $ancestor ."\n";	
+				push(@ancestors,$ancestor);
+			}
+		}	
+		$goAncestorHash->{$goTerms} = \@ancestors;
+	}	
 	
 	return @ancestors;
 }
 
-#returns parent taxon id (NCBI taxonomy)
+########################################################
+## Returns parent taxon id (NCBI taxonomy).
+########################################################
+
 sub getParentTaxonId() {
 	my $speciesId = shift;
 	my $parentTaxonId;
@@ -502,7 +979,7 @@ sub getParentTaxonId() {
 	my $query ="select parent_tax_id from taxonomy where taxon_id=?" ;
 
 	#execute query
-	my $sth = $metarepDbConnection->prepare($query);
+	my $sth = $sqliteDbConnection->prepare($query);
 	$sth->execute($speciesId);
 
 	$sth->bind_col(1, \$parentTaxonId);
@@ -511,7 +988,10 @@ sub getParentTaxonId() {
 	return $parentTaxonId;
 }
 
-#returns species level of taxon; returns 'unresolved' string if taxon is higher than species
+########################################################
+## returns species level of taxon; returns 'unresolved' string if taxon is higher than species.
+########################################################
+
 sub getSpecies() {
 	my $ancestors = shift;
 	my $species = 'unresolved';
@@ -529,7 +1009,7 @@ sub getSpecies() {
 		return $species;	
 	}
 	 	
- 	my $sth = $metarepDbConnection->prepare($query);
+ 	my $sth = $sqliteDbConnection->prepare($query);
  	$sth->execute();	
 	$sth->bind_col(1, \$species);
 	$sth->fetch;
@@ -537,7 +1017,10 @@ sub getSpecies() {
 	return $species;
 }
 
-# takes array of NCBI taxon ids and returns least common ancestor
+########################################################
+## Takes array of NCBI taxon ids and returns least common ancestor.
+########################################################
+
 sub mergeMultiTaxonomicLabels() {
 	my @taxonIds = shift;
 	
@@ -553,16 +1036,19 @@ sub mergeMultiTaxonomicLabels() {
 	return $leastCommonAncestor;	
 }
 
-# get least common ancestor
+########################################################
+## Get least common ancestor.
+########################################################
+
 sub getLeastCommonAncestor() {
 	my ($taxonIdA,$taxonIdB) = @_;
 	
-	#if both are at the same taxon level
+	## if both are at the same taxon level
 	if($taxonIdA == $taxonIdB) {
 		return $taxonIdA;
 	}
 	else {
-		#get lineage for both taxa sorted by lowest (species) to highest taxa (root)
+		## get lineage for both taxa sorted by lowest (species) to highest taxa (root)
 		my @lineageA = reverse(&getTaxonAncestors($taxonIdA));		
 		my @lineageB = reverse(&getTaxonAncestors($taxonIdB));
 
@@ -577,76 +1063,117 @@ sub getLeastCommonAncestor() {
 	}
 }
 
-#deletes dataset from METAREP MySQL database
+########################################################
+## Deletes dataset from METAREP MySQL database.
+########################################################
+
 sub deleteMetarepDataset() {
 	my $name = shift;
 	
 	my $query ="delete from libraries where name = ?";
 
-	#prepare query
+	## reconnect to avoid mysql time-out
+	$metarepDbConnection = DBI->connect_cached("DBI:mysql:".$args{metarep_db}.";host=".$args{mysql_host}."",$args{metarep_username},$args{metarep_password}, { 'RaiseError' => 0 });
+	
+	## prepare query
 	my $sth =$metarepDbConnection->prepare($query);
 	
 	$sth->execute($name) or die "Couldn't execute: $DBI::errstr";
 }
 
-#deletes Solr core (if exists)
+########################################################
+## Deletes Solr core (if exists)
+########################################################
+
 sub deleteSolrCore() {
 	my $core = shift;
 
-	#delete all documents of existing index
-	print "Deleting index: java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_instance_dir}/delete.xml...\n";
-	`java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_instance_dir}/delete.xml `;
+	## delete all documents of existing index
+	print "Deleting index: java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_home_dir}/delete.xml...\n";
+	`java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_home_dir}/delete.xml `;
 		
-	#unload core from core registry
+	## unload core from core registry
 	print "Unloading index: curl $args{solr_url}/solr/admin/cores?action=UNLOAD&core=$core \n";
 	`curl \"$args{solr_url}/solr/admin/cores?action=UNLOAD&core=$core\"`;
 }
 
-#creates Solr core
+########################################################
+## Creates Solr core
+########################################################
+
 sub createSolrCore() {
 	my $core = shift;
 	
-	#create core
-	print "Creating new core: curl $args{solr_url}/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_home_dir}/example/solr&dataDir=$args{solr_instance_dir}/$args{project_id}/$core...\n";
-	`curl \"$args{solr_url}/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_instance_dir}&dataDir=$args{solr_data_dir}/$args{project_id}/$core\"`;	
+	## create core
+	print "Creating new core: curl $args{solr_url}/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_home_dir}/example/solr&dataDir=$args{solr_instance_dir}/$core...\n";
+	`curl \"$args{solr_url}/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_instance_dir}&dataDir=$args{solr_data_dir}/$core\"`;	
 }
 
-#creates Solr index
+########################################################
+## Creates Solr index.
+########################################################
+
 sub loadSolrIndex() {
-	my $core = shift;
+	my ($core,$xmlFile) = @_;
 	
-	my $file = "$args{tmp_dir}/$core.xml";
+	my $file = "$args{tmp_dir}/$xmlFile";
 	
 	#load index
 	print "Loading Dataset Index: java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $file ...\n";
 	`java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $file`;
 }
 
-#optimizes Solr index
+########################################################
+## Optimizes Solr index.
+########################################################
+
 sub optimizeIndex() {
 	my $core = shift;
 	
 	#optimize index
-	print "Optimize Dataset Index: java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_instance_dir}/optimize.xml \n";
-	`java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem}  -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_instance_dir}/optimize.xml `;
+	print "Optimize Dataset Index: java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_home_dir}/optimize.xml \n";
+	`java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem}  -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_home_dir}/optimize.xml `;
 
 }
 
-#creates dataset in METAREP MySQL database
+########################################################
+## Creates dataset in METAREP MySQL database
+########################################################
+
 sub createMetarepDataset() {
-	my $dataset = shift;
+	my ($dataset,$isWeighted) = @_;
+	my $srsId = $dataset;
 	
-	my $query ="insert ignore into libraries (name,project_id,created,updated) VALUES (?,?,now(),now())";
+	$srsId =~ s/-pga$//;
+	
+	my $projectId = $args{project_id};
+	
+	my $pipeline = undef;
+	
+	if($args{format} eq 'humann') {
+		$pipeline = 'HUMANN';
+	}
+	else {
+		$pipeline = 'JCVI_META_PROK';
+	}
+	
+	my $query ="insert ignore into libraries (name,project_id,created,updated,pipeline,is_weighted) VALUES (?,?,curdate(),curdate(),'$pipeline',$isWeighted)";
 	print $query."\n";
-	
-	#prepare query
+
+	## reconnect to avoid time-out
+	$metarepDbConnection = DBI->connect_cached("DBI:mysql:".$args{metarep_db}.";host=".$args{mysql_host}."",$args{metarep_username},$args{metarep_password}, { 'RaiseError' => 0 });
+		
+	## prepare query
 	my $sth =$metarepDbConnection->prepare($query);
 	
-	#execute query
-	$sth->execute($dataset,$args{project_id}) or die "Couldn't execute: $DBI::errstr";
+	## execute query
+	$sth->execute($dataset,$projectId) or die "Couldn't execute: $DBI::errstr";
 }
 
-#trims and escapes array values
+########################################################
+## Trims and escapes array values.
+########################################################
+
 sub cleanArray() {
 	my @array = shift;
 	my @cleanArray=();
@@ -656,24 +1183,406 @@ sub cleanArray() {
 	return @cleanArray;
 }
 
-#trims and escapes special xml characters
+########################################################
+## Trims and escapes special xml characters.
+########################################################
+
 sub clean {
 	my $tmp = shift;
 	
-	#escape special xml characters
+	## escape special xml characters
 	$tmp =~ s/&/&amp;/g;
 	$tmp =~ s/</&lt;/g;
 	$tmp =~ s/>/&gt;/g;
 	$tmp =~ s/\"/&quot;/g;
 	$tmp =~ s/'/&apos;/g;
 	
-	#remove white spaces
+	## remove white spaces
 	$tmp =~ s/^\s+//g;
 	$tmp =~ s/\s+$//g;
 		
-	#remove other invalid characters
+	## remove other invalid characters
 	$tmp =~ s/[^\x09\x0A\x0D\x20-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]//;	
 		
 	return $tmp;
 }
+########################################################
+## Selects NCBI taxon ID for KEGG taxon.
+########################################################
+sub getNcbiTaxonId() {
+	my $keggTaxonId = shift;
+	my @ecIdAccessions= ();
+	
+	my $sth = $sqliteDbConnection->prepare("Select ncbi_taxon_id from taxon where kegg_taxon_id='$keggTaxonId'");
+	$sth->execute();
+	
+	my $ecId = undef;
+	
+	my $ncbiTaxonId;
+	$sth->bind_col(1, \$ncbiTaxonId);
+	$sth->fetch;
+	
+	return $ncbiTaxonId;
+}
 
+########################################################
+## Get KEGG enzyme ID.
+########################################################
+
+sub getEcId() {
+	my $keggGeneId = shift;
+	my @ecIdAccessions= ();
+	
+	my $sth = $sqliteDbConnection->prepare("Select ec_id from gene2ec where gene_id='$keggGeneId'");
+	$sth->execute();
+	
+	my $ecId = undef;
+	
+	$sth->bind_col(1, \$ecId);
+	
+	while ($sth->fetch) {
+		$ecId =~ s/ec://;
+		push(@ecIdAccessions,$ecId);
+	}
+	return join('||',@ecIdAccessions);
+}
+
+########################################################
+## Get KEGG common name.
+########################################################
+
+sub getCommonName() {
+	my $keggGeneId = shift;
+	my $commonNameString = '';
+	
+	my $sth = $sqliteDbConnection->prepare("Select defline from gene2desc where gene_id='$keggGeneId'");
+	$sth->execute();
+	
+	$sth->bind_col(1, \$commonNameString);	
+	$sth->fetch;
+	
+	$commonNameString =~ s/; /||/g;
+	
+	return $commonNameString;
+}
+
+########################################################
+## Get KEGG ortholog.
+########################################################
+
+sub getKoId() {
+	my $keggGeneId = shift;
+	my @koIdAccessions= ();
+	
+	my $sth = $sqliteDbConnection->prepare("Select ko_id from gene2ko where gene_id='$keggGeneId'");
+	$sth->execute();
+	
+	my $ecId = undef;
+	
+	$sth->bind_col(1, \$ecId);
+	
+	while ($sth->fetch) {
+		$ecId =~ s/ec://;
+		push(@koIdAccessions,$ecId);
+	}
+	return join('||',@koIdAccessions);
+}
+
+########################################################
+## Get KEGG Ortholog KO IDs.
+########################################################
+
+sub getGoIdsFromKO() {
+	my $koIdString = shift;
+	my $goIdString = '';
+	my $goSrcString = '';
+	
+	my %results = ();
+	my @goIds;
+	my @goSrc;
+	
+	my @koIds = split('\|\|',$koIdString);
+	
+	foreach my $koId (@koIds) {	
+		
+		my $sth = $sqliteDbConnection->prepare("Select go_id from ko2go where ko_id ='$koId'");
+		$sth->execute();		
+		$sth->bind_col(1, \$goIdString);	
+		while ($sth->fetch) {		
+			push(@goIds,$goIdString);
+			push(@goSrc,$koId);
+		}							
+	}
+		
+	$results{'go_id_string'} = join('||',@goIds);
+	$results{'go_src_string'}=  join('||',@goSrc);
+
+	return \%results;
+}
+
+########################################################
+## Get KEGG enzyme ID.
+########################################################
+
+sub readPeptideIdToSubjectIdMapping() {
+	my $annotationFile = shift;
+
+	my %peptideId2SubjectIdHash=();
+	my $zip =0;
+		
+	if(!open FILE, $annotationFile) {
+		
+		if(-e "$annotationFile.gz") {
+			$zip =1;
+			`gunzip $annotationFile.gz`;
+			if(!open FILE, $annotationFile) {
+				die("Could not find $annotationFile");
+			}
+		}
+	}
+	
+	print "Reading Annotation File $annotationFile...\n";
+	
+	while(<FILE>) {	
+		chomp;			
+		my $defline = $_;
+		
+		#parse data
+		my @fields = split (/\t/, $defline);
+		my $peptideId = $fields[0];
+		my $subjectId   = $fields[18];
+		$peptideId2SubjectIdHash{$peptideId} = $subjectId;	
+	}
+	close FILE;
+	return \%peptideId2SubjectIdHash;
+}
+
+########################################################
+# Reads btab formatted files produced by
+# the JCVI Prokarytoic Metagneomics Annotation pipeline
+########################################################
+
+sub readJpmapBlastEntries {
+	my ($blastFile,$peptideId2SubjectIdHashRef) = @_;
+
+	my $zip =0;
+	
+	if(!open FILE, $blastFile) {
+		
+		if(-e "$blastFile.gz") {
+			$zip =1;
+			`gunzip $blastFile.gz`;
+			if(!open FILE, $blastFile) {
+				die("Could not find $blastFile");
+			}
+		}
+	}
+	
+	my %blastHash;
+	
+	## read file
+	while (<FILE>) {
+		my $defline = $_;
+		
+		## htab fields		
+        my (
+            $peptide_id, 
+            $analysis_date, 
+            $query_length, 
+            $search_method,
+            $database_name, 
+            $subject_id, 
+            $query_start,
+            $query_end,
+            $subject_start,
+            $subject_end,
+            $percent_identity,
+            $percent_similarity,
+            $score,
+            $file_offset1,
+            $file_offset2,
+            $description,
+            $frame,
+            $query_strand,
+            $subject_length,
+            $evalue,
+            $pvalue,
+           ) = split("\t",  $defline);
+           
+           my $coverage = undef;
+
+           my $qpctlen = int( 1000. * ($query_end - $query_start +1) / $query_length ) / 10.;
+          
+           my $spctlen = 0;#int( 1000. * ($subject_end - $subject_start +1) /  $subject_length) / 10.;
+
+			
+           if ( $qpctlen >= $spctlen ) {
+              $coverage = $qpctlen;
+           } else {
+              $coverage = $spctlen;
+           } 
+
+		## parse evalue exponent 		
+		my $evalueExponent = undef;
+		
+		## set to high exponent for 0 evalue
+		if($evalue == 0) {			
+			$evalueExponent=9999;
+		}
+		else {
+			my @tmp = split('e-',lc($evalue));	
+			use POSIX qw( floor );
+			$evalueExponent  = floor($tmp[1]);
+		}
+						
+		## get annotation subject ID
+		my $annotationSubjectId = $peptideId2SubjectIdHashRef->{$peptide_id};
+			
+		## if annotation subject ID and blast subject ID matches; add result
+		if($annotationSubjectId eq $subject_id) {
+			my $resultHash = undef;
+				
+			$resultHash = &parseUniRefDefline($description);  	
+				
+			$resultHash->{'evalue'} 	= $evalue;				
+			$resultHash->{'evalue_exp'} = &clean($evalueExponent);
+				
+			## adjust percent identity; range [0-1]	
+			$resultHash->{'pid'} 		= $percent_identity/100;
+			$resultHash->{'coverage'} 	= $coverage/100;
+				
+			$blastHash{$peptide_id} = $resultHash;		
+		}
+	}
+		
+	close FILE;
+
+	if($zip) {
+		`gzip $blastFile`;
+	}		
+	
+	return \%blastHash;
+}
+
+########################################################
+# Reads htab formatted files produced by
+# the JCVI Prokarytoic Metagneomics Annotation pipeline
+########################################################
+
+sub readJpmapHmmEntries {
+	my $hmmFile = shift;
+	
+	my $zip =0;
+	
+	if(-e "$hmmFile.gz") {	
+		$zip = 1;
+		`gunzip $hmmFile.gz`;		
+	}
+	
+	open FILE, "$hmmFile" or die "Could not open file $hmmFile.";
+	
+	my %hmmHash;
+	
+	## read file
+	while (<FILE>) {
+		chomp;
+		my $defline = $_;
+
+		my (@fields) =split(/\t/, $defline);
+		
+		my $hmm 	= &clean($fields[0]);
+		
+		unless($hmm eq 'No hits above thresholds') {
+			my $domainScore 		= &clean($fields[11]);
+			my $trustedCutoff 	= &clean($fields[17]);
+			
+			## only add hmm hits that have a hit above the trusted cutoff
+			if($domainScore >= $trustedCutoff) {
+				my $peptide_id 		= &clean($fields[5]);
+				## if no hit has been added, assign hit				
+				if (! exists $hmmHash{$peptide_id}) {				
+					my @hmms = ();
+					push(@hmms,$hmm);
+					
+					$hmmHash{$peptide_id} = \@hmms;
+				}	
+				else {
+					my $hmmArrayRef = $hmmHash{$peptide_id};
+					my @hmms = @$hmmArrayRef;
+					
+					## add hmm if hmm not yet part of array
+					if(! grep (/$hmm/i, @hmms)) {
+						push(@hmms,$hmm);
+					}
+					
+					$hmmHash{$peptide_id} = \@hmms;
+				}								
+			}
+		}		
+	}	
+	
+	close FILE;
+	
+	if($zip) {
+		`gzip $hmmFile`;
+	}
+	
+
+	return \%hmmHash;
+}
+
+########################################################
+# Parses UniRef100 deflines.
+########################################################
+
+sub parseUniRefDefline() {
+	my $defline = shift;
+	
+	## create hash to return results 
+	my %resultHash 	= ();	
+
+	## set default resolution 
+    $resultHash{'species'} 	  = 'unresolved';
+    $resultHash{'species_id'} = -1;   
+	
+	## parse UniRef header
+	$defline =~  /^.*\sn=\d*\sTax=(.*)\sRepID=.*/; 
+    
+    my $taxonName = &clean($1);
+      			      			      	
+    ## get NBI taxon ID for the taxon name
+    my $taxonId = &getTaxonIdByName($taxonName);	
+    
+    if($taxonId) {    	  	
+    	$resultHash{'species_id'} = $taxonId;    	
+    	 
+		my @taxonAncestors = &getTaxonAncestors($taxonId);	      	
+			      	
+	    ## assign species if the taxon could be resolved to the species level
+	    $resultHash{'species'} = &getSpecies(\@taxonAncestors);				
+		$resultHash{'blast_tree'} = join('||',@taxonAncestors);
+	
+	}
+	return \%resultHash;	   
+}
+
+########################################################
+# Returns NCBI taxon ID by name.
+########################################################
+
+sub getTaxonIdByName() {
+	my $name = shift;
+	
+	my $taxonId = '';
+	
+	my $query ="select taxon_id from taxonomy where name=? ";
+		
+	## execute query
+	my $sth = $sqliteDbConnection->prepare($query);
+	$sth->execute($name);
+
+	$sth->bind_col(1, \$taxonId);
+	$sth->fetch;
+	
+	return $taxonId;
+}

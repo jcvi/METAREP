@@ -13,7 +13,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -100,13 +100,92 @@ class Project extends AppModel {
 		return false;					
 	}
 	
+	public function isPopulation($dataset) {
+		if($this->Population->findByName($dataset)) {
+			return 1;
+		}
+		else {
+			return 0;
+		}			
+	}
+		
+	public function isWeighted($dataset) {
+		if($this->Population->findByName($dataset)) {
+			$population = $this->Population->findByName($dataset);
+			$isWeighted= $population['Population']['is_weighted'];
+		}
+		else {
+			$library	= $this->Library->findByName($dataset);
+			$isWeighted = $library['Library']['is_weighted'];
+		}		
+		return $isWeighted;					
+	}	
+	
+	public function getPipeline($dataset) {
+		if($this->Population->findByName($dataset)) {
+			$population = $this->Population->findByName($dataset);
+			$pipeline = $population['Population']['pipeline'];
+		}
+		else {
+			$library	= $this->Library->findByName($dataset);
+			$pipeline = $library['Library']['pipeline'];
+		}		
+		return $pipeline;					
+	}	
+
+	public function checkDatasetPipelines($datasets) {
+		
+		$datasetPipelines[PIPELINE_DEFAULT]			= true;
+		$datasetPipelines[PIPELINE_JCVI_META_PROK]	= true;
+		$datasetPipelines[PIPELINE_HUMANN]			= true;
+				
+		foreach($datasets as $dataset) {		
+			$result = $this->Library->findByName($dataset);
+						
+			if(!empty($result)) {	
+				if($result['Library']['pipeline'] != PIPELINE_DEFAULT){
+					$datasetPipelines[PIPELINE_DEFAULT]	= false;		
+				}	
+				if($result['Library']['pipeline'] != PIPELINE_HUMANN){
+					$datasetPipelines[PIPELINE_HUMANN] = false;		
+				}	
+				if($result['Library']['pipeline'] != PIPELINE_JCVI_META_PROK){
+					$datasetPipelines[PIPELINE_JCVI_META_PROK]	= false;
+				}			
+				if($result['Library']['pipeline'] != PIPELINE_JCVI_META_VIRAL){
+					$datasetPipelines[PIPELINE_JCVI_META_VIRAL]	= false;
+				}														
+			}
+			else {
+				$result = $this->Population->findByName($dataset);
+				
+				if($result['Population']['pipeline'] != PIPELINE_DEFAULT){
+					$datasetPipelines[PIPELINE_DEFAULT]	= false;		
+				}	
+				if($result['Population']['pipeline'] != PIPELINE_HUMANN){
+					$datasetPipelines[PIPELINE_HUMANN] = false;		
+				}	
+				if($result['Population']['pipeline'] != PIPELINE_JCVI_META_PROK){
+					$datasetPipelines[PIPELINE_JCVI_META_PROK]	= false;
+				}			
+				if($result['Population']['pipeline'] != PIPELINE_JCVI_META_VIRAL){
+					$datasetPipelines[PIPELINE_JCVI_META_VIRAL]	= false;
+				}		
+			}			
+		}
+		
+		return $datasetPipelines;
+	}	
+	
 	#checks if all datasets have a certain datatype assigned
 	public function checkOptionalDatatypes($datasets) {
 		$isPopulation	= true;
 		$allViral	 	= true;
 		$allHaveApis 	= true;
-		$allHaveClusters = true;
+		$allHaveClusters= true;
 		$allHaveFilters = true;
+		$allAreWeighted = true;
+		$allAreHumann = true;
 		
 		foreach($datasets as $dataset) {		
 			$result = $this->Library->findByName($dataset);
@@ -126,7 +205,13 @@ class Project extends AppModel {
 				}
 				if(empty($result['Library']['filter_file'])){
 					$allHaveFilters=false;					
-				}				
+				}	
+				if(empty($result['Library']['is_weighted'])){
+					$allAreWeighted=false;					
+				}								
+				if($result['Library']['pipeline'] != 'HUMANN'){
+					$allAreHumann=false;					
+				}					
 			}
 			else {
 				$result = $this->Population->findByName($dataset);
@@ -145,7 +230,13 @@ class Project extends AppModel {
 					}
 					if(!$result['Population']['has_filter']){
 						$allHaveFilters=false;
-					}					
+					}	
+					if(empty($result['Population']['is_weighted'])){
+						$allAreWeighted=false;					
+					}	
+					if($result['Population']['pipeline'] != 'HUMANN'){
+						$allAreHumann=false;					
+					}															
 				}
 			}			
 		}
@@ -155,6 +246,8 @@ class Project extends AppModel {
 		$datatypes['apis'] 		= $allHaveApis;
 		$datatypes['clusters'] 	= $allHaveClusters;
 		$datatypes['filter'] 	= $allHaveFilters;
+		$datatypes['weighted'] 	= $allAreWeighted;
+		$datatypes['humann'] 	= $allAreHumann;
 		return $datatypes;
 	}
 	
@@ -188,7 +281,7 @@ class Project extends AppModel {
 		if(($userProjects = Cache::read($currentUserId.'projects')) === false) {
 			
 			$this->contain('Population.id','Population.project_id','Population.name','Population.has_apis',
-						   'Library.id','Library.project_id','Library.name','Library.apis_database','Library.apis_dataset','Library.has_ftp');	  
+						   'Library.id','Library.project_id','Library.name','Library.apis_database','Library.apis_dataset','Library.has_ftp','Library.is_weighted');	  
 	
 			//return all project for admin and jcvi users
 			if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {
@@ -207,7 +300,7 @@ class Project extends AppModel {
 				foreach($results as $result) {	
 					
 					$this->contain('Population.id','Population.project_id','Population.name','Population.has_apis',
-						   'Library.id','Library.project_id','Library.name','Library.apis_database','Library.apis_dataset','Library.has_ftp');	  
+						   'Library.id','Library.project_id','Library.name','Library.apis_database','Library.apis_dataset','Library.has_ftp','Library.is_weighted');	  
 					
 					$projectId = $result['Project']['id'];
 					$project = $this->findById($projectId);
@@ -243,10 +336,15 @@ class Project extends AppModel {
 		//check if chached
 		if (($userDatasets = Cache::read($currentUserId.$projectId.'userDatasets')) === false) {	
 			
-			if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {
+			if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {				
 				if(is_null($projectId)) {
 					if($datasetType == POPULATION_AND_LIBRARY_DATASETS) {
-						$query = "select datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from (SELECT 'population' as type,populations.name as name, populations.description as description, projects.name as project,projects.id as project_id from populations INNER JOIN projects ON(projects.id=populations.project_id) UNION SELECT 'library' as type,libraries.name as name, libraries.description as description,projects.name as project,projects.id as project_id from libraries INNER JOIN projects ON(projects.id=libraries.project_id))  as datasets ORDER BY datasets.project ASC, datasets.name ASC";
+						$query = "select datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from
+						 (SELECT 'population' as type,populations.name as name, populations.description as description, projects.name
+						  as project,projects.id as project_id from populations INNER JOIN projects ON(projects.id=populations.project_id)
+						   UNION SELECT 'library' as type,libraries.name as name, libraries.description as description,projects.name as project,
+						   projects.id as project_id from libraries INNER JOIN projects ON(projects.id=libraries.project_id)) 
+						    as datasets ORDER BY datasets.project ASC, datasets.name ASC";
 					}
 					else if($datasetType == LIBRARY_DATASETS) {
 						$query = "select datasets.name,datasets.description,datasets.project,datasets.project_id,datasets.type from (SELECT 'library' as type,libraries.name as name, libraries.description as description,projects.name as project,projects.id as project_id from libraries INNER JOIN projects ON(projects.id=libraries.project_id))  as datasets ORDER BY datasets.project ASC, datasets.name ASC";
@@ -321,7 +419,7 @@ class Project extends AppModel {
 					}				
 				}
 			}
-			
+
 			$results = $this->query($query);
 			
 			foreach($results as $result) {	
@@ -349,19 +447,52 @@ class Project extends AppModel {
 	* @access public
 	*/			
 	public function findUserDatasetsCompareFormat($datasetType = POPULATION_AND_LIBRARY_DATASETS,$projectId=null) {
+		
 		$allDatasets = $this->findUserDatasets($datasetType,$projectId);
 		
 		foreach($allDatasets as $allDataset) {
+			
+//				if($allDataset['label']) {
+//					$displayedDatasetDescription = substr($allDataset['label'], 0, 50)."...";		
+//					
+//					if(is_null($projectId)){
+//						$displayName = "{$allDataset['project']} ({$allDataset['type']}:{$allDataset['name']} $displayedDatasetDescription)";
+//					}
+//					else{
+//						$displayName = "{$allDataset['type']}:{$allDataset['name']} $displayedDatasetDescription";
+//					}
+//				}
 				if($allDataset['description']) {
-					$displayedDatasetDescription = substr($allDataset['description'], 0, 50)."...";				
-					$displayName = "{$allDataset['project']} ({$allDataset['type']}:{$allDataset['name']} $displayedDatasetDescription)";
+					$displayedDatasetDescription = substr($allDataset['description'], 0, 50)."...";		
+					
+					if(is_null($projectId)){
+						$displayName = "{$allDataset['project']} ({$allDataset['type']}:{$allDataset['name']} $displayedDatasetDescription)";
+					}
+					else{
+						$displayName = "{$allDataset['type']}:{$allDataset['name']} $displayedDatasetDescription";
+					}
 				}
 				else {
-					$displayName = "{$allDataset['project']} ({$allDataset['type']}:{$allDataset['name']})";
+					if(is_null($projectId))	{
+						$displayName = "{$allDataset['project']} ({$allDataset['type']}:{$allDataset['name']})";
+					}
+					else {
+						$displayName = "{$allDataset['type']}:{$allDataset['name']}";
+					}
 				}
 				$allDatasets[$allDataset['name']] = $displayName;
 		}	
 		return $allDatasets;	
 	}	
+	
+	public function getDatasetLabel($dataset,$labelType) {
+		if($this->Library->findByName($dataset)) {
+			$results = $this->query("SELECT replace(if($labelType = '',name,$labelType),' ','_') AS name FROM libraries WHERE name ='$dataset'");
+			return $results[0][0]['name'];
+		}
+		else {
+			return $dataset;
+		}						
+	}
 }
 ?>

@@ -18,7 +18,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.2.0
+  @version METAREP v 1.3.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -51,12 +51,12 @@ jQuery(document).ready(function(){
 
 foreach ($projects as $project) {	
               			
-	#build population entries
+	//build population entries
 	echo("<ul id=\"tile_001\" class=\"jGlide_001_tiles\" title=\"Quick Navigation\" alt=\"Select project from list of ".count($projects)." projects \">");	                
 	echo("<li rel=\"project_id_{$project['Project']['id']}\">".$project['Project']['name']." (". count($project['Library'])." Datasets)</li>");				               	
 	echo('</ul>');	
 	
-	#build population entries
+	//build population entries
 	foreach ($project['Population'] as $population) {	
 		echo("<ul id=\"project_id_{$project['Project']['id']}\" class=\"jGlide_001_tiles\" title=\" {$project['Project']['name']} \" alt=\"Select dataset from list of ".(count($project['Population']) + count($project['Library']))." datatsets \">");                			
 		echo("<li rel=\"population_id_{$population['id']}\">{$population['name']} (Population)</li>"); 
@@ -67,7 +67,8 @@ foreach ($projects as $project) {
 		echo("<li>".$html->link(__('Compare', true), array('controller'=> 'compare',$population['name']))."</li>"); 
 		echo("<li>".$html->link(__('Browse Blast Taxonomy', true), array('controller'=> 'browse', 'action'=>'blastTaxonomy',$population['name']))."</li>"); 			      
 		if($population['has_apis']) {echo("<li>".$html->link(__('Browse Apis Taxonomy', true), array('controller'=> 'browse', 'action'=>'apisTaxonomy',$population['name']))."</li>"); }				               			
-		echo("<li>".$html->link(__('Browse Pathways', true), array('controller'=> 'browse', 'action'=>'pathways',$population['name']))."</li>");		      
+		echo("<li>".$html->link(__('Browse Kegg Pathways', true), array('controller'=> 'browse', 'action'=>'keggPathwaysEc',$population['name']))."</li>");		      
+		echo("<li>".$html->link(__('Browse Metacyc Pathways', true), array('controller'=> 'browse', 'action'=>'metacycPathways',$population['name']))."</li>");		      
 		echo("<li>".$html->link(__('Browse Enzymes', true), array('controller'=> 'browse', 'action'=>'enzymes',$population['name']))."</li>");
 		echo("<li>".$html->link(__('Browse Gene Ontology', true), array('controller'=> 'browse', 'action'=>'geneOntology',$population['name']))."</li>");  		               			
 		echo('</ul>');             			
@@ -83,7 +84,12 @@ foreach ($projects as $project) {
 		echo("<li>".$html->link(__('Compare', true), array('controller'=> 'compare',$library['name']))."</li>");  			               			
 		echo("<li>".$html->link(__('Browse Blast Taxonomy', true), array('controller'=> 'browse', 'action'=>'blastTaxonomy',$library['name']))."</li>");
 		if($library['apis_database'] !='') {echo("<li>".$html->link(__('Browse Apis Taxonomy', true), array('controller'=> 'browse', 'action'=>'apisTaxonomy',$library['name']))."</li>"); }				
-		echo("<li>".$html->link(__('Browse Pathways', true), array('controller'=> 'browse', 'action'=>'pathways',$library['name']))."</li>");		      
+		
+		if($library['is_weighted']) {
+			echo("<li>".$html->link(__('Browse Kegg Pathways (KO)', true), array('controller'=> 'browse', 'action'=>'keggPathwaysKo',$library['name']))."</li>");		
+		}					
+		echo("<li>".$html->link(__('Browse Kegg Pathways (EC)', true), array('controller'=> 'browse', 'action'=>'keggPathwaysEc',$library['name']))."</li>");		
+		echo("<li>".$html->link(__('Browse Metacyc Pathways (EC)', true), array('controller'=> 'browse', 'action'=>'metacycPathways',$library['name']))."</li>");		            
 		echo("<li>".$html->link(__('Browse Enzymes', true), array('controller'=> 'browse', 'action'=>'enzymes',$library['name']))."</li>");
 		echo("<li>".$html->link(__('Browse Gene Ontology', true), array('controller'=> 'browse', 'action'=>'geneOntology',$library['name']))."</li>");  	               			
 		if($library['apis_dataset'] && JCVI_INSTALLATION) {	

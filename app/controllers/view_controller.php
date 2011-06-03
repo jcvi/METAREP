@@ -22,7 +22,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -30,12 +30,38 @@
 class ViewController extends AppController {
 	
 	var $name 		= 'View';
-	var $helpers 	= array('LuceneResultPaginator','Facet');
+	var $helpers 	= array('LuceneResultPaginator','Facet','Html');
 	var $uses 		= array();
 	var $components = array('Solr','Format');
 	
+	var $resultFields = array(
+								'peptide_id'=>'Peptide ID',
+								'com_name'=>'Common Name',
+								'com_name_src'=>'Common Name Source',
+								'blast_species'=>'Blast Species',
+								'blast_evalue'=>'Blast E-Value',
+								'go_id'=>'GO ID',
+								'go_src'=>'GO Source',
+								'ec_id'=>'EC ID',
+								'ec_src'=>'EC Source',
+								'hmm_id'=>'HMM',
+								);	
+							
+								
+	var $tabs 	= array(
+						'summary'=>array('name'=>'Summary','facetField'=>'summary','action'=>'summary','isActive'=>1),					
+						'blast_species'=>array('name'=>'Species (Blast)','facetField'=>'blast_species','action'=>'facet','isActive'=>1),
+						'com_name'=>array('name'=>'Common Name','facetField'=>'com_name','action'=>'facet','isActive'=>1),
+						'go_id'=>array('name'=>'Gene Ontology','facetField'=>'go_id','action'=>'facet','isActive'=>1),
+						'ec_id'=>array('name'=>'Enzyme','action'=>'facet','facetField'=>'ec_id','isActive'=>1),
+						'hmm_id'=>array('name'=>'HMM','action'=>'facet','facetField'=>'hmm_id','isActive'=>1),
+						 KEGG_PATHWAYS =>array('name'=>'Kegg Pathway (EC)','facetField'=>'ec_id','action'=>'pathway','isActive'=>1),
+						 METACYC_PATHWAYS =>array('name'=>'Metacyc Pathway (EC)','facetField'=>'ec_id','action'=>'pathway','isActive'=>1),
+						// 'ko_id'=>array('name'=>'Kegg Ortholog','action'=>'pathway','isActive'=>0),
+						  );															
+						  
 	//this function lets us view all detail of the lucene index
-	function index($dataset='CBAYVIR',$page=1) {	
+	function index($dataset,$page=1) {	
 		
 		//create unique session id
 		$viewSessionId = 'view.'.time();
@@ -43,16 +69,73 @@ class ViewController extends AppController {
 		$this->loadModel('Project');
 						
 		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
+
+		if(JCVI_INSTALLATION) {	
+			if($optionalDatatypes['clusters']) {
+				$this->tabs[CORE_CLUSTERS] = array('name'=>'Core Cluster','action'=>'facet','facetField'=>'cluster_id','facetPrefix'=>CORE_CLUSTERS,'isActive'=>1);
+				$this->tabs[FINAL_CLUSTERS] = array('name'=>'Final Cluster','action'=>'facet','facetField'=>'cluster_id','facetPrefix'=>FINAL_CLUSTERS,'isActive'=>1);
+			}		
+			if($optionalDatatypes['viral']) {
+				$this->tabs['env_lib'] = array('name'=>'Environmental Library','action'=>'facet','facetField'=>'env_lib','isActive'=>1);
+			}		
+			if($optionalDatatypes['population']) {
+				$this->tabs['library_id'] = array('name'=>'Library','action'=>'facet','facetField'=>'library_id','isActive'=>1);
+			}
+			if($optionalDatatypes['filter']) {			
+				$this->tabs['filter'] = array('name'=>'Filter','action'=>'facet','facetField'=>'filter','isActive'=>1);
+			}
+		}			
 		
-		$displayLimit 	= 20;
+		$pipeline	=  $this->Project->getPipeline($dataset);
+		
+		if($pipeline === 'HUMANN') {  
+			$this->resultFields = array(
+								'peptide_id'=>'Peptide ID',
+								'com_name'=>'Common Name',
+								'com_name_src'=>'Common Name Source',
+								'blast_species'=>'Blast Species',
+								'ko_id'=>'KO ID',
+								'go_id'=>'GO ID',
+								'go_src'=>'GO Source',
+								'ec_id'=>'EC ID',
+								'ec_src'=>'EC Source',
+								);
+								
+			$this->tabs  = array(
+						'summary'=>array('name'=>'Summary','facetField'=>'summary','action'=>'summary','isActive'=>1),				
+						'blast_species'=>array('name'=>'Species (Blast)','facetField'=>'blast_species','action'=>'facet','isActive'=>1),
+						'ko_id'=>array('name'=>'Kegg Ortholog','action'=>'facet','facetField'=>'ko_id','isActive'=>1),						
+						'go_id'=>array('name'=>'Gene Ontology','action'=>'facet','facetField'=>'go_id','isActive'=>1),
+						'ec_id'=>array('name'=>'Enzyme','action'=>'facet','facetField'=>'ec_id','isActive'=>1),						
+						 KEGG_PATHWAYS =>array('name'=>'Kegg Pathway (EC)','action'=>'pathway','facetField'=>'ec_id','isActive'=>1),
+						 METACYC_PATHWAYS =>array('name'=>'Metacyc Pathway (EC)','action'=>'pathway','facetField'=>'ec_id','isActive'=>1),
+						// 'com_name'=>array('name'=>'Common Name','action'=>'facet','isActive'=>0),
+						// 'hmm_id'=>array('name'=>'HMM','action'=>'facet','isActive'=>0),
+						  );						
+		}				
 				
 		//Solr query to fetch data rows (data tab)
-		$solrArguments = array(	'fl' => 'peptide_id com_name com_name_src blast_species blast_evalue go_id go_src ec_id ec_src hmm_id');		
-		$result = $this->Solr->search($dataset,"*:*", ($page-1)*$displayLimit,$displayLimit,$solrArguments);			
-		$numHits = (int) $result->response->numFound;
-		$documents = $result->response->docs;
+		$solrArguments = array(	'fl' => join(' ',array_keys($this->resultFields)),
+								'facet'	=> 'true',
+								'facet.field' 	=> 'filter',
+								'facet.mincount'=> 1,
+								'facet.limit' 	=> -1
+								);
+		try{		
+			$result  = $this->Solr->search($dataset,"*:*", ($page-1)*NUM_VIEW_RESULTS,NUM_VIEW_RESULTS,$solrArguments);	
+			$numDocs = $this->Solr->documentCount($dataset);	
+		}
+		catch (Exception $e) {
+			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
+			$this->redirect('/projects/index',null,true);
+		}
 		
-		$filters = $this->Solr->facet($dataset,'filter');
+		$numHits = (double) $result->response->numFound;
+		
+		$documents = $result->response->docs;
+		$filters = (array) $result->facet_counts->facet_fields->filter;
+		
+		#$filters = $this->Solr->facet($dataset,'filter');
 		
 		if(count($filters) > 1) {
 			foreach($filters as $filter=>$numPeptides) {
@@ -69,13 +152,16 @@ class ViewController extends AppController {
 		
 		//write session variables
 		$viewResults['optionalDatatypes'] = $optionalDatatypes;
-		$viewResults['projectId'] = $this->Project->getProjectId($dataset);
+		$viewResults['projectId'] 	= $this->Project->getProjectId($dataset);
 		$viewResults['projectName'] = $this->Project->getProjectName($dataset);
-		$viewResults['numHits'] = $numHits;
-		$viewResults['documents'] = $documents;
+		$viewResults['numHits'] 	= $numHits;
+		$viewResults['numDocs'] 	= $numDocs;
+		$viewResults['documents'] 	= $documents;
 		
 		//store session object
 		$this->Session->write($viewSessionId,$viewResults);	
+		$this->Session->write($viewSessionId.'tabs',$this->tabs);	
+		$this->Session->write($viewSessionId.'resultFields',$this->resultFields);	
 
 		//set view variables
 		$this->set('sessionId',$viewSessionId);
@@ -83,8 +169,13 @@ class ViewController extends AppController {
 		$this->set('page',$page);
 	}
 	
-	function facet($dataset='CBAYVIR',$sessionId,$facetField,$prefix ='',$limit=20) {		
-	
+	function facet($dataset='CBAYVIR',$sessionId,$tabId,$limit=20) {	
+		$tabs = $this->Session->read($sessionId.'tabs');
+
+		$facetField  = $tabs[$tabId]['facetField'];
+			
+		$time_start = getmicrotime();
+			
 		$viewResults = $this->Session->read($sessionId);
 			
 		if(empty($this->data['Post'])) {
@@ -126,12 +217,12 @@ class ViewController extends AppController {
 						'facet.mincount' => 1,
 						"facet.limit" => $limit);
 			
-		if(isset($prefix)) {
-			$solrArguments['facet.prefix'] =$prefix;
+		if(isset($tabs[$tabId]['facetPrefix'])) {
+			$solrArguments['facet.prefix'] = $tabs[$tabId]['facetPrefix'];
 		}
 		
 		try {
-			$result= $this->Solr->search($dataset,$query, 0,0,$solrArguments,true);			
+			$result= $this->Solr->search($dataset,$query,0,0,$solrArguments,true);			
 		}
 		catch(Exception $e) {
 			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
@@ -145,16 +236,139 @@ class ViewController extends AppController {
 		$viewResults['limit']  = $limit;
 		$viewResults['numHits']= $numHits;
 
-		$this->Session->write($sessionId,$viewResults);			
+		$this->Session->write($sessionId,$viewResults);	
+
+		$time_end = getmicrotime();
+		#debug('Execution time: ' . round($time_end - $time_start,2) .' seconds.');
 		
 		$this->set('sessionId',$sessionId);			
 		$this->set('dataset',$dataset);
-		$this->set('facetField',$facetField);
+		$this->set('tabId',$tabId);
+		
+		
 		$this->render('result_panel','ajax');
 	}
+		
+	function summary($dataset,$sessionId,$tabId) {
+		
+		$this->loadModel('Project');
+		$this->loadModel('Taxonomy');
+		
+		$summaryCounts = array();
+		
+		$viewResults = $this->Session->read($sessionId);		
+
+		$pipeline	=  $this->Project->getPipeline($dataset);
+		
+		if(empty($this->data['Post'])) {
+			if(isset($viewResults['filter']))	{ 			
+				$filter = $viewResults['filter'];
+			}			
+		}
+		else {
+			//reset filter variables if no option '-select filter--' has been selected
+			if(empty($this->data['Post']['filter'])) {	
+				if(isset($viewResults['filter'])) {
+					unset($viewResults['filter']);
+				}
+			}
+			elseif(!empty($this->data['Post']['filter'])) {
+				$filter = $this->data['Post']['filter'];
+				$viewResults['filter'] = $filter;
+			}
+		}
+		
+		if(isset($filter)) {
+			$filterQuery = "filter:$filter";	
+		}
+		else {
+			$filterQuery = '*:*';
+		}		
+		
+		$totalCount  = $this->Solr->count($dataset,'*:*',array('fq'=>$filterQuery));	
+		
+		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
+			
+		// evidence summary queries
+		$evidenceQueries['Species (Blast)'] = 'NOT blast_species:unassigned AND NOT blast_species:unresolved';
+		$evidenceQueries['Gene Ontology'] 	= 'NOT go_id:unassigned';
+		$evidenceQueries['Enzyme'] 			= 'NOT ec_id:unassigned';
+			
+		if($pipeline === 'HUMANN') {  		
+			$evidenceQueries['Kegg Ortholog'] 		= 'NOT ko_id:unassigned';	
+		}
+		else {
+			$evidenceQueries['HMM'] 		= 'NOT hmm_id:unassigned';
+		}	
+
+		if($optionalDatatypes['clusters']) {
+			$evidenceQueries['Core Clusters'] = "cluster_id:".CORE_CLUSTERS."*";
+			$evidenceQueries['Final Clusters']= "cluster_id:".FINAL_CLUSTERS."*";
+		}			
+		if($optionalDatatypes['viral']) {
+			$evidenceQueries['Environmental Libraries'] = 'NOT env_lib:unassigned';
+		}		
+		if($optionalDatatypes['filter']) {			
+			$evidenceQueries['Filter'] = 'NOT filter:unassigned';
+		}
+		$this->addSummaryCounts($dataset,$totalCount,'Evidence Summary',$filterQuery,$evidenceQueries,$summaryCounts);
 	
-	function pathways($dataset,$sessionId,$facetField) {	
+		// common name summaries
+		$comNameQueries['unknown protein'] 		= 'com_name:"unknown protein"';
+		$comNameQueries['hypothetical protein'] = 'com_name:"hypothetical protein"';
+		$comNameQueries['other'] 				= 'NOT com_name:"hypothetical protein" AND  NOT com_name:"unknown protein"';
+		
+		$this->addSummaryCounts($dataset,$totalCount,'Common Name Summary',$filterQuery,$comNameQueries,$summaryCounts);
+		
+		if($optionalDatatypes['viral']) {
+			
+			$viralQueries['PEPSTATS']   		= $filterQuery;
+			$viralQueries['ALLGROUP_PEP'] 		= 'com_name_src:ALLGROUP*';
+			$viralQueries['PRIAM']	 			= 'ec_src:PRIAM*';
+			$viralQueries['NV_NT'] 				= 'NOT env_lib:unassigned';
+			$viralQueries['FRAG_HMM'] 			= 'com_name_src:FRAG_HMM*';
+			$viralQueries['ACLAME_HMM']  		= 'hmm_id:ACLAME_*';
+			$viralQueries['PFAM/TIGRFAM_HMM'] 	= 'hmm_id:(PF* OR TIGR*)';
+			$viralQueries['COM2GO'] 			= 'go_src:com2go';
+		
+			$this->addSummaryCounts($dataset,$totalCount,'Viral Evidence Summary',$filterQuery,$viralQueries,$summaryCounts);
+		}
+					
+		$taxonResults = $this->Taxonomy->findTopLevelTaxons();
+
+		// taxonomy (Blast) summary
+		foreach($taxonResults as $taxon) {			
+			$taxonQueries[$taxon['Taxonomy']['name']] = "blast_tree:{$taxon['Taxonomy']['taxon_id']}";
+		}
+		$this->addSummaryCounts($dataset,$totalCount,'Taxonomy Summary (Blast)',$filterQuery,$taxonQueries,$summaryCounts);
+
+		// taxonomy (Apis) Summary
+		if($optionalDatatypes['apis']) {
+			
+			foreach($taxonResults as $taxon) {			
+				$taxonQueries[$taxon['Taxonomy']['name']] = "apis_tree:{$taxon['Taxonomy']['taxon_id']}";
+			}
+			$this->addSummaryCounts($dataset,$totalCount,'Taxonomy Summary (Apis)',$filterQuery,$taxonQueries,$summaryCounts);
+		}	
+		
+		$viewResults['facetCounts'] = $summaryCounts;
+		$viewResults['numHits']		= $totalCount;
+		$viewResults['limit'] = null;
+		
+		$this->Session->write($sessionId,$viewResults);	
+		
+		$this->set('sessionId',$sessionId);			
+		$this->set('dataset',$dataset);
+		$this->set('tabId',$tabId);
+		$this->render('result_panel','ajax');			
+	}
+	
+	function pathway($dataset,$sessionId,$tabId) {	
+		$pathwayModel = $tabId;
+		
 		$this->loadModel('Pathway');
+		
+		$time_start = getmicrotime();
 		
 		$viewResults = $this->Session->read($sessionId);
 		
@@ -184,124 +398,37 @@ class ViewController extends AppController {
 		else {
 			$query = '*:*';
 		}
-				
-		//specify facet default behaviour
-		$solrArguments = array(	"facet" => "true",
-						'facet.field' => 'ec_id',
-						'facet.mincount' => 1,
-						"facet.limit" => -1);		
-		try {
-			$result= $this->Solr->search($dataset,$query,0,0,$solrArguments,false);
-		}
-		catch(Exception $e) {
-			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-			$this->redirect('/projects/index',null,true);
-		}
 			
-		$numHits= (int) $result->response->numFound;
-		
-		$solrEcIdHash = (array) $result->facet_counts->facet_fields->ec_id;
-		
-		$pathways 	  = array();
-	
-		$solrEcIds 	  = array_keys($solrEcIdHash);
-				
-		$level2Results= $this->Pathway->find('all', array('fields'=> array('id','name'),'conditions' => array('level' => 'level 2')));
-		
-		foreach($level2Results as $level2Result) {
-			$level2Results 	= array();
-			
-			$level2Id 		= $level2Result['Pathway']['id'];
-			$level2Name		= $level2Result['Pathway']['name'];
-				
-			$level3Results= $this->Pathway->find('all', array('fields'=> array('id','name','kegg_id','child_count','level'),'conditions' => array('parent_id' =>$level2Id,'child_count >'=>'0')));
-			
-			foreach($level3Results as $level3Result) {
+		$twoLevelSummary = $this->Pathway->getTwoLevelSumary($numHits,$this->Solr,$dataset,$query,$pathwayModel);
 
-				#for each pathway in level 2 determine the number of enzymes in the dataset
-				$numFoundEnzymes 	= 0;
-				$numPeptides 		= 0;
-				
-				$pathwayId 			= 	$level3Result['Pathway']['id'];
-				$pathwayKeggId 		=   str_pad($level3Result['Pathway']['kegg_id'],5,0,STR_PAD_LEFT);			
-				
-				
-				$pathwayName		= $level3Result['Pathway']['name'];
-				$pathwayEnzymeCount	= $level3Result['Pathway']['child_count'];
-				$pathwayLevel		= $level3Result['Pathway']['level'];
-
-				$results= $this->Solr->getPathwayCount($query,$dataset,$pathwayLevel,$pathwayId,$pathwayEnzymeCount,null);
-
-				$percentEnzymes = round($numFoundEnzymes/$pathwayEnzymeCount,4)*100;
-				
-				$percentPeptides = round($results['count']/$numHits,4)*100;	
-				
-				array_push($level2Results,array('id'=>$pathwayKeggId,
-												'pathway'=>$pathwayName,
-												'link'=>$results['pathwayLink'],
-												'numPathwayEnzymes'=>$pathwayEnzymeCount,
-												'numFoundEnzymes'=>$results['numFoundEnzymes'],
-												'percFoundEnzymes'=>$results['percFoundEnzymes'],
-												'numPeptides'=>$results['count'],
-												'percPeptides'=>$percentPeptides,
-				));
-			}
-			
-			#usort($level2Results, array('ViewController','comparePercentEnzymes'));
-			#usort($level2Results, array('ViewController','comparePeptideCount'));
-			
-			$pathways[$level2Name]=$level2Results;		
-		}
-		$viewResults['facetCounts'] = $pathways;
+		$viewResults['facetCounts'] = $twoLevelSummary;
+		$viewResults['numHits']		= $numHits;		
+		$viewResults['limit'] = null;
 		
 		$this->Session->write($sessionId,$viewResults);						
 		
+		$time_end = getmicrotime();
+		#debug('Execution time: ' . round($time_end - $time_start,2) .' seconds.');
+		
 		$this->set('sessionId',$sessionId);			
 		$this->set('dataset',$dataset);
-		$this->set('facetField',$facetField);
+		$this->set('tabId',$tabId);
 		$this->render('result_panel','ajax');
 	}
 	
 	#function comparePercentEnzymes($a, $b) { return strnatcmp($b['percFoundEnzymes'], $a['percFoundEnzymes']); } 
 	private function comparePeptideCount($a, $b) { return strnatcmp($b['numPeptides'], $a['numPeptides']); } 
 	
-	function download($dataset,$sessionId,$facetField) {
-		$this->autoRender=false; 
+	function download($dataset,$sessionId,$tabId) {
+		$this->autoRender = false; 
 		
 		$viewResults = $this->Session->read($sessionId);	
-		$facetCounts = $viewResults['facetCounts'];
-		
-		$numHits = $viewResults['numHits'];
-		$limit 	 = $viewResults['limit'];
-		
-		$facetName = '';
-		
-		switch ($facetField) {
-			case 'blast_species':
-				$facetName='Blast Species';
-				break;
-			case 'com_name':
-				$facetName="Common Name";
-				break;
-			case 'go_id':
-				$facetName="Gene Ontology";
-				break;
-			case 'ec_id':
-				$facetName="Enzyme";
-				break;	
-			case 'hmm_id':
-				$facetName="HMM";
-				break;		
-			case 'cluster_id':
-				$facetName="Cluster";
-				break;	
-			case 'pathway_id':
-				$facetName="Pathway";
-				break;	
-			case 'filter_id':
-				$facetName="Filter";
-				break;				
-		}	
+		$tabs  = $this->Session->read($sessionId.'tabs');
+				
+		$facetName	 = $tabs[$tabId]['name'];
+		$facetField  = $tabs[$tabId]['facetField'];
+		$facetCounts = $viewResults['facetCounts'];		
+		$numHits 	 = $viewResults['numHits'];
 		
 		if(isset($viewResults['filter'])) {
 			$filter = $viewResults['filter'];
@@ -311,13 +438,18 @@ class ViewController extends AppController {
 			$query = '*:*';
 		}		
 		
-		//pathway data has to handled differently since it is not a lucene facet data type
-		if($facetField === 'pathway_id') {				
+		//pathway data has to handled differently 
+		if($tabId === 'summary') {	
+			$content = $this->Format->infoString("View Summary",$dataset,$query,0,$numHits);
+			$content.= $this->Format->summaryToDownloadString($facetCounts,$numHits);					
+		}			
+		else if($tabId === KEGG_PATHWAYS || $tabId === METACYC_PATHWAYS) {				
 			#$pathways = $this->Session->read('view.pathway.counts');
 			$content = $this->Format->infoString("$facetName Categories ",$dataset,$query,0,$numHits);	
-			$content.= $this->Format->pathwayToDownloadString($facetCounts,$numHits);
+			$content.= $this->Format->pathwayToDownloadString($facetName,$facetCounts,$numHits);
 		}
-		else {			
+		else {		
+			$limit 	 = $viewResults['limit'];	
 			#$facets = $this->Session->read('view.facet.counts');		
 			$content = $this->Format->infoString("Top $limit $facetName Categories ",$dataset,$query,0,$numHits);		
 			$content.= $this->Format->facetToDownloadString($facetName,$facetCounts->facet_fields->{$facetField},$numHits);	
@@ -331,6 +463,20 @@ class ViewController extends AppController {
         header("Content-Disposition: attachment;filename=$fileName");
        
         echo $content;
+	}
+	private function addSummaryCounts($dataset,$totalCount,$summaryTitle,$filterQuery,$queries,&$summaryCounts) {
+		
+		foreach($queries as $name => $query) {
+			$assignedCount = $this->Solr->count($dataset,'*:*',array('fq'=>"$query AND ($filterQuery)"));
+			$unassignedCount= 	$totalCount-$assignedCount;
+			
+			$summaryCounts[$summaryTitle][$name]['totalUnassigned']	= $unassignedCount;			
+			$summaryCounts[$summaryTitle][$name]['totalAssigned']  	= $assignedCount;
+			$summaryCounts[$summaryTitle][$name]['percAssigned'] 	= round($assignedCount/$totalCount,4)*100;
+			$summaryCounts[$summaryTitle][$name]['percUnassigned'] 	= round($unassignedCount/$totalCount,4)*100;
+			$summaryCounts[$summaryTitle][$name]['total'] 		  	= $totalCount;
+			$summaryCounts[$summaryTitle][$name]['name'] 			= $name;	
+		}		
 	}
 }
 ?>

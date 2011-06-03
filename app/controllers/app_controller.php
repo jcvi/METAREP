@@ -16,11 +16,14 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
+
+require_once('../config/constants.php');
+
 class AppController extends Controller {
 	
 	//$persistModel = true speeds up site by caching model classes. However it has to be 
@@ -42,6 +45,7 @@ class AppController extends Controller {
 							'users/activatePassword',
 							'users/changePassword',
 							'users/guestLogin',
+							'users/stats',
 	);
 	
 	var $loginUrls = array(
@@ -72,9 +76,12 @@ class AppController extends Controller {
 							'browse/apisTaxonomy',
 							'browse/enzymes',
 							'browse/geneOntology',
-							'browse/pathways',
+							'browse/keggPathwaysEc',
+							'browse/keggPathwaysKo',
+							'browse/metacycPathways',
 							'browse/downloadChildCounts',
 							'browse/dowloadFacets',
+							'itol/index',
 							'compare/index',
 							'populations/view',	
 							'libraries/view',											
@@ -192,21 +199,25 @@ class AppController extends Controller {
 			}
 			else if(in_array($url,$this->projectAdminUrls))  {
 				$this->loadModel('Project');
-				
-				
+
 				if($controller === 'libraries') {
 					$this->loadModel('Library');
 					$projectId = $this->Library->getProjectIdById($parameters[0]);			
 				}
 				elseif($controller === 'populations') {
-					$this->loadModel('Population');
-					$projectId = $this->Population->getProjectIdById($parameters[0]);					
+					if($action === 'add') {
+						$projectId  = $parameters[0];	
+					}
+					else {
+						$this->loadModel('Population');
+						$projectId = $this->Population->getProjectIdById($parameters[0]);			
+					}		
 				}
 				else {
 					$projectId  = $parameters[0];	
 				}
-						
-				if($this->Project->isProjectAdmin($projectId,$currentUserId)) {
+				
+				if($this->Project->isProjectAdmin($projectId,$currentUserId)) {						
 						return;
 				}
 			}
@@ -237,5 +248,36 @@ class AppController extends Controller {
 	    $ajax = ($this->RequestHandler->isAjax()) ? ($temp{0} != '/') ? '/ajax/' : '/ajax' : null;
 	    parent::redirect($ajax.$temp, $status, $exit);
 	} 	
+	
+  /**
+   * Translates a camel case string into a string with underscores (e.g. firstName -&gt; first_name)
+   * @param    string   $str    String in camel case format
+   * @return   string            $str Translated into underscore format
+   */
+  function camelCaseToUnderscore($str) {
+    $str[0] = strtolower($str[0]);
+    $func = create_function('$c', 'return "_" . strtolower($c[1]);');
+    return preg_replace_callback('/([A-Z])/', $func, $str);
+  }
+ 
+  /**
+   * Translates a string with underscores into camel case (e.g. first_name -&gt; firstName)
+   * @param    string   $str                     String in underscore format
+   * @param    bool     $capitalise_first_char   If true, capitalise the first char in $str
+   * @return   string   $str translated into camel caps
+   */
+  function underscoreToCamelCase($str, $capitalise_first_char = false) {
+    if($capitalise_first_char) {
+      $str[0] = strtoupper($str[0]);
+    }
+    $func = create_function('$c', 'return strtoupper($c[1]);');
+    return preg_replace_callback('/_([a-z])/', $func, $str);
+  }	
+  
+  
+  function getmicrotime(){
+	list($usec, $sec) = explode(" ",microtime());
+	return ((float)$usec + (float)$sec);
+  }
 }
 ?>

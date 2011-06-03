@@ -16,7 +16,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -47,6 +47,12 @@ class UsersController extends AppController {
     	$currentUser		= $this->Authsome->get();
 		$currentUsername 	= $currentUser['User']['username'];	    	
     	
+		//not a valid option for the guest user
+    	if($currentUsername === 'guest') {
+			$this->Session->setFlash("You don't have permissions to view this page.");
+			$this->redirect('/users/logout',null,true);
+		}
+		
         if (!empty($this->data)) {      
             if ($this->User->save($this->data)) {
             	
@@ -87,6 +93,14 @@ class UsersController extends AppController {
     
     function delete($id) {
     	$this->loadModel('User');
+    	
+    	//not a valid option for the guest user
+    	$user =  $this->User->findById($id);    	
+        if($user['User']['username'] === 'guest') {
+			$this->Session->setFlash("You don't have permissions to view this page.");
+			$this->redirect('/users/logout',null,true);
+		}
+		
         $this->User->delete($id);
         $this->Session->setFlash('User was deleted.');
         $this->redirect('/users/index',null,true);
@@ -150,8 +164,16 @@ class UsersController extends AppController {
 	
 	function changePassword() { 
 		$this->loadModel('User');
+	
+		$currentUser	= $this->Authsome->get();
 		
-		if ($this->data) {			
+		//prevent users from changing the admin or guest password
+	   	if($currentUser['User']['username'] === 'guest' || $currentUser['User']['username'] === 'admin' ) {
+			$this->Session->setFlash("You don't have permissions to view this page.");
+			$this->redirect('/users/logout',null,true);
+		}		
+		
+		if ($this->data) {				
 			if ($this->User->changePassword($this->data)) {
 				$this->Session->setFlash("Your password has been changed.");
 				$this->redirect("/dashboard",null,true);	
@@ -223,7 +245,7 @@ class UsersController extends AppController {
     					   'remember' => 0);
     	
     	$user = Authsome::login($guestUser);
-
+		
     	if (!$user) {				
 				$this->Session->setFlash('Unknown user or wrong password');
 				$this->redirect('/dashboard',null,true);
@@ -268,26 +290,46 @@ class UsersController extends AppController {
 				$this->Session->setFlash('Unknown user or wrong password');
 				$this->redirect('/dashboard',null,true);
 			}
-
+			
 			$remember = (!empty($this->data['User']['remember']));
 			
 			if($remember) {
 				Authsome::persist('2 weeks');
 			}
 		
+			//track user stats	
+        	$this->loadModel('UserStats');
+        	$this->data = array('UserStats'=>array('category'=>__FUNCTION__,'user_id'=>$user["User"]["id"]));
+        	$this->UserStats->save($this->data);
+			
+			
 			$this->Session->write("User",$user);
 			$this->Session->write("User.id",$user["User"]["id"]);
 			$this->Session->write("UserGroup.id",$user["UserGroup"]["id"]);
 			$this->Session->write("UserGroup.name",$user["UserGroup"]["name"]);
 
-			$this->redirect('/dashboard',null,true);
+			
+			if($user['User']['username'] === 'jamboree') {
+				$this->redirect('/projects/view/1',null,true);
+			}
+			else {
+				$this->redirect('/dashboard',null,true);
+			}
 		}
     }
 
 	function forgotPassword() {	
 		$this->loadModel('User');	
-		if ($this->data) {
+		if ($this->data) {	
+
+			//not a valid option for the admin and guest user
+			if($this->data['User']['username'] === 'admin' || $this->data['User']['username'] === 'guest') {
+				$this->Session->setFlash("You don't have permissions to view this page.");
+				$this->redirect('/users/logout',null,true);
+			}		
+			
 			$email = $this->data["User"]["email"];
+			
 			if ($this->User->forgotPassword($email)) {
 				$this->Session->setFlash('Please check your email.');
 				$this->redirect('/dashboard',null,true);				
@@ -296,6 +338,20 @@ class UsersController extends AppController {
 				$this->redirect('/dashboard',null,true);					
 			}
 		}
+	}
+	
+	//track click user statistics
+	function stats() {
+		Configure::write('debug', 0);
+        
+		$this->autoRender = false;
+ 
+        if($this->RequestHandler->isAjax()) {	
+        	$category = $this->params['form']['id'];
+        	$this->loadModel('UserStats');
+        	$this->data = array('UserStats'=>array('category'=>$category,'user_id'=>4));
+        	$this->UserStats->save($this->data);				
+        }	       
 	}
 }
 ?>

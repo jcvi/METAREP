@@ -13,11 +13,15 @@ $projectId			= $viewResults['projectId'];
 $projectName		= $viewResults['projectName'];
 $optionalDatatypes	= $viewResults['optionalDatatypes'];
 $numHits			= $viewResults['numHits']; 
+$numDocs			= $viewResults['numDocs']; 
 $documents			= $viewResults['documents']; 
 
 if(isset($viewResults['filters'])) {
-	$filters		= $viewResults['filters']; 
+$filters		= $viewResults['filters']; 
 }
+
+$tabs   = $session->read($sessionId.'tabs');
+$resultFields = $session->read($sessionId.'resultFields');
 
 ?>
 <div class="view-panel">
@@ -30,91 +34,72 @@ if(isset($viewResults['filters'])) {
 </ul>
 
 <h2><?php __("View"); ?><span class="selected_library"><?php echo "$dataset ($projectName)"; ?></span>
-<span id="spinner" style="display: none;">
- 	
-</span></h2>
+	<span id="spinner" style="display: none;"><?php echo $html->image('ajax-loader.gif', array('width'=>'25px')); ?></span>
+</h2>
 <div id="view-tabs">
 
 <?php
 
 echo("
 	<ul>
-		<li><a href=\"#view-data-tab\">Data</a></li>
-		<li>".$ajax->link('<span>Species (Blast)</span>',array('action'=>'facet',$dataset,$sessionId,'blast_species'), array('update' => 'view-facet-panel', 'title' => 'view-facet-panel','tooltip'=>'View Blast Species Summary','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'view-facet-panel\',{ duration: 1.2 })', 'before' => 'Element.hide(\'view-facet-panel\')'), null, null, false)."</li>
-		<li>".$ajax->link('<span>Gene Ontology</span>',array('action'=>'facet',$dataset,$sessionId,'go_id'), array('update' => 'view-facet-panel', 'title' => 'view-facet-panel','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'view-facet-panel\',{ duration: 1.2 })', 'before' => 'Element.hide(\'view-facet-panel\')'), null, null, false)."</li>
-		<li>".$ajax->link('<span>Enzymes</span>',array('action'=>'facet',$dataset,$sessionId,'ec_id'), array('update' => 'view-facet-panel', 'title' => 'view-facet-panel','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'view-facet-panel\',{ duration: 1.2 })', 'before' => 'Element.hide(\'view-facet-panel\')'), null, null, false)."</li>
-		<li>".$ajax->link('<span>HMMs</span>',array('action'=>'facet',$dataset,$sessionId,'hmm_id'), array('update' => 'view-facet-panel', 'title' => 'view-facet-panel','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'view-facet-panel\',{ duration: 1.2 })', 'before' => 'Element.hide(\'view-facet-panel\')'), null, null, false)."</li>
-		<li>".$ajax->link('<span>Pathways</span>',array('action'=>'pathways',$dataset,$sessionId,'pathway_id'), array('update' => 'view-facet-panel', 'title' => 'view-facet-panel','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'view-facet-panel\',{ duration: 1.2 })', 'before' => 'Element.hide(\'view-facet-panel\')'), null, null, false)."</li>
-		<li>".$ajax->link('<span>Common Names</span>',array('action'=>'facet',$dataset,$sessionId,'com_name'), array('update' => 'view-facet-panel', 'title' => 'view-facet-panel','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'view-facet-panel\',{ duration: 1.2 })', 'before' => 'Element.hide(\'view-facet-panel\')'),null, null, false)."</li>");
-		
-		//set optional data types for JCVI-only installation					  
-		if(JCVI_INSTALLATION) {	
-			if($optionalDatatypes['clusters']) {
-				echo("<li>".$ajax->link('<span>Core Clusters</span>',array('action'=>'facet',$dataset,$sessionId,'cluster_id','CAM_CR'), array('update' => 'view-facet-panel', 'title' => 'view-facet-panel','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'view-facet-panel\',{ duration: 1.2 })', 'before' => 'Element.hide(\'view-facet-panel\')'), null, null, false)."</li>");
-				echo("<li>".$ajax->link('<span>Final Clusters</span>',array('action'=>'facet',$dataset,$sessionId,'cluster_id','CAM_CL'), array('update' => 'view-facet-panel', 'title' => 'view-facet-panel','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'view-facet-panel\',{ duration: 1.2 })', 'before' => 'Element.hide(\'view-facet-panel\')'), null, null, false)."</li>");			
-			}		
-			if($optionalDatatypes['viral']) {
-				echo("<li>".$ajax->link('<span>Environmental Libraries</span>',array('action'=>'facet',$dataset,$sessionId,'env_lib'), array('update' => 'view-facet-panel', 'title' => 'view-facet-panel','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'view-facet-panel\',{ duration: 1.2 })', 'before' => 'Element.hide(\'view-facet-panel\')'), null, null, false)."</li>");
-			}		
-			if($optionalDatatypes['population']) {
-				echo("<li>".$ajax->link('<span>Libraries</span>',array('action'=>'facet',$dataset,$sessionId,'library_id'), array('update' => 'view-facet-panel', 'title' => 'view-facet-panel','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'view-facet-panel\',{ duration: 1.2 })', 'before' => 'Element.hide(\'view-facet-panel\')'),null, null, false)."</li>");
+		<li><a href=\"#view-data-tab\">Data</a></li>");
+
+		$inactiveTabs = array();
+		$tabPosition = 1;
+		$facetPrefix ='';
+		//generate tabs
+		foreach($tabs as $tabId => $tab) {
+			echo("<li >");
+				//print ajax link
+				echo $ajax->link("<span>{$tab['name']}</span>",array('action'=>$tab['action'],$dataset,$sessionId,$tabId),
+				 array('update' => 'view-facet-panel', 'indicator' => 'spinner','title' => 'view-facet-panel','loading' => 
+				 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'view-facet-panel\',{ duration: 1.2 })',
+				  'before' => 'Element.hide(\'view-facet-panel\')'), null, null, false); 
+			echo("</li>");	
+			
+			if(!$tab['isActive']) {
+				array_push($inactiveTabs,$tabPosition);
 			}
-			if($optionalDatatypes['filter']) {			
-				echo("<li>".$ajax->link(__('Filter', true),array('action'=>'facet',$dataset,$sessionId,'filter'), array('update' => 'view-facet-panel', 'title' => 'view-facet-panel','loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Effect.Appear(\'view-facet-panel\',{ duration: 1.2 })', 'before' => 'Element.hide(\'view-facet-panel\')'))."</li>");
-			}
-		}	
+			$tabPosition ++;
+		}
+
 		echo("</ul><div id=\"view-data-tab\">");?>
 		
-		<?php echo($luceneResultPaginator->addPageInformation($page,$numHits,""));?>
+		<?php 
+		echo($luceneResultPaginator->addPageInformation($page,$numDocs,NUM_VIEW_RESULTS));
 		
-		<table cellpadding="0" cellspacing="0">
+		$table= "<table cellpadding=\"0\" cellspacing=\"0\" ><tr>";
 		
-		<tr>	
-			<th>Peptide Id</th>
-			<th>Common Name</th>
-			<th>Common Name Source</th>
-			<th>Blast Species</th>
-			<th>Blast E-Value</th>
-			<th>Go Id</th>
-			<th>Go Source</th>
-			<th>Ec Id</th>
-			<th>Ec Source</th>
-			<th>HMM</th>
-		</tr>
-			
-		<?php		
-		function printMultiValue($value){
-			if(is_array($value)) {
-				return implode('<BR>',$value);
-			}
-			else {
-				return $value;
-			}
+		//add field header
+		foreach($resultFields as $fieldId => $fieldName) {
+			$table.= "<th>$fieldName</th>";
 		}
-		
+		$table.= "</tr>";
+					
 		$i = 0;
-		
-		foreach ( $documents as $document ) {	
+			
+		foreach ($documents as $document ) {	
 			$class = null;
 			if ($i++ % 2 == 0) {
 				$class = ' class="altrow"';
 			}
+			$table .= "<tr  $class>";
 			
-			echo "<tr  $class>";
-			echo "<td>".$document->peptide_id."</td>";
-			echo "<td>".printMultiValue($document->com_name)."</td>";
-			echo "<td>".printMultiValue($document->com_name_src)."</td>";
-			echo "<td>".printMultiValue($document->blast_species)."</td>";
-			echo "<td>".$document->blast_evalue."</td>";	
-			echo "<td>".printMultiValue($document->go_id)."</td>";
-			echo "<td>".printMultiValue($document->go_src)."</td>";
-			echo "<td>".printMultiValue($document->ec_id)."</td>";
-			echo "<td>".printMultiValue($document->ec_src)."</td>";
-			echo "<td>".printMultiValue($document->hmm_id)."</td>";
-			echo '</tr>';
+			//print field values
+			foreach($resultFields as $fieldId => $fieldName) {
+				$value = $document->{$fieldId};
+				if(is_array($value)) {
+					$value = implode('<BR>',$value);
+				}
+				
+				$table .= "<td>".$value."</td>";
+			}
+			$table .= '</tr>';
 		}
-		echo '</table>';
-		echo $luceneResultPaginator->addPagination($page,$numHits,$dataset,"view","");	
+		$table .= '</table>';
+			
+		echo $table;
+		echo $luceneResultPaginator->addPagination($page,$numDocs,$dataset,"view",NUM_VIEW_RESULTS,null);	
 		echo '</div>';	
 	echo '</div>';	
 echo '</div>';	
@@ -123,5 +108,6 @@ echo '</div>';
 <script type="text/javascript">
 jQuery(function() {
 	jQuery("#view-tabs").tabs({ spinner: '<img src="/metarep/img/ajax.gif"/>' });
+	jQuery("#view-tabs").tabs( "option", "disabled", <?php echo('['.implode(',',$inactiveTabs).']');?>);
 });
 </script>	

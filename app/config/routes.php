@@ -30,6 +30,7 @@
 #Router::parseExtensions('xml');
 #Router::mapResources('rest');
 
+
 //redirect all root level pages
 Router::connect('/', array('controller' => 'dashboard', 'action' => 'index'));
 

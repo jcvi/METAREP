@@ -20,7 +20,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -30,14 +30,23 @@ define('BLAST_TAXONOMY', 'Blast Taxonomy');
 define('APIS_TAXONOMY', 'Apis Taxonomy');
 define('ENZYMES', 'Enzymes');
 define('GENE_ONTOLOGY', 'Gene Ontology');
-define('PATHWAY', 'Pathway');
+
+App::import('Sanitize');
 
 class BrowseController extends AppController {
 	
 	var $name 		= 'Browse';
 	var $helpers 	= array('Facet','Tree','Dialog');
 	var $uses 		= array();	
-	var $components = array('Session','RequestHandler','Solr','Format');
+	var $components = array('Session','RequestHandler','Solr','Format','Color');
+
+	var $facetFields = array(
+								'blast_species'=>'Species (Blast)',
+								'com_name'=>'Common Name',
+								'go_id'=>'Gene Ontology',
+								'ec_id'=>'Enzyme',
+								'hmm_id'=>'HMM',
+							);	
 	
 	function filter($dataset,$action) {
 		$query = $this->data['Filter']['filter'];
@@ -50,18 +59,30 @@ class BrowseController extends AppController {
 		$this->setAction($action,$dataset);
 	}
 	
-	function blastTaxonomy($dataset='CBAYVIR',$expandTaxon=1,$query='*:*') {	
+	function blastTaxonomy($dataset,$expandTaxon=1,$query='*:*') {	
 		$function = __FUNCTION__;		
+		
 		$this->loadModel('Project');
 		$this->loadModel('Taxonomy');
 		$this->pageTitle = 'Browse Taxonomy (Blast)';
 			
+		$pipeline	=  $this->Project->getPipeline($dataset);
+		
+		if($pipeline === 'HUMANN') { 
+ 			$this->facetFields = array(
+								'blast_species'=>'Species (Blast)',
+								'ko_id'=>'Kegg Ortholog',
+								'go_id'=>'Gene Ontology',
+								'ec_id'=>'Enzyme',
+							);			
+		}
+		
 		if($this->Session->check($function.'.browse.query')){
 			$query = $this->Session->read($function.'.browse.query');
 		}
 
 		//get session based taxonomic tree
-		$displayedTree = $this->Session->read(BLAST_TAXONOMY.'.tree');
+		$displayedTree = $this->Session->read(BLAST_TAXONOMY.'.browse.tree');
 		
 		if(!isset($displayedTree)) {
 			$expandTaxon=1;
@@ -75,16 +96,18 @@ class BrowseController extends AppController {
 
 		$childArray = array();
 		$childCounts = array();
-		$numChildHits =0;
+		$numChildHits =0;	
 		
 		//for each child get solr count
 		foreach($taxaChildren as $taxon) {
-				
+
+			$solrAguments = array('fq'=>"blast_tree:{$taxon['Taxonomy']['taxon_id']}");		
+			
 			try{
-				$count=  $this->Solr->count($dataset,"($query) AND (blast_tree:{$taxon['Taxonomy']['taxon_id']})");
+				$count=  $this->Solr->count($dataset,$query,$solrAguments);
 			}
 			catch(Exception $e) {
-				debug("$query AND blast_tree:{$taxon['Taxonomy']['taxon_id']}");
+				//debug("$query AND blast_tree:{$taxon['Taxonomy']['taxon_id']}");
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
 				$this->redirect('/projects/index',null,true);
 			}
@@ -95,7 +118,7 @@ class BrowseController extends AppController {
 			$taxonId = $taxon['Taxonomy']['taxon_id'];
 				
 			//filter for children
-			if($count>0 && $taxonId!=1) {
+			if($count > 0 && $taxonId != 1) {
 				$taxon['Taxonomy']['count'] = $count;
 				$taxon['Taxonomy']['children'] = NULL;
 				
@@ -106,22 +129,23 @@ class BrowseController extends AppController {
 			}
 		}
 				
-		$solrArguments = array(	"facet" => "true",
-						'facet.field' => array('blast_species','com_name','go_id','ec_id','com_name_src','hmm_id'),
+		$solrArguments = array(	
+						'fq'=> "blast_tree:$expandTaxon",
+						'facet' => 'true',
+						'facet.field' => array_keys($this->facetFields),
 						'facet.mincount' => 1,
-						"facet.limit" => NUM_TOP_FACET_COUNTS);
+						'facet.limit' => NUM_TOP_FACET_COUNTS);
 		
 		try{		
-			$result = $this->Solr->search($dataset,"($query) AND (blast_tree:$expandTaxon)", 0,0,$solrArguments,true);
+			$result = $this->Solr->search($dataset,$query, 0,0,$solrArguments,true);
 		}
 		catch(Exception $e) {
 			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
 			$this->redirect('/projects/index',null,true);
 		}
-		$numHits = (int) $result->response->numFound;
+		$numHits= $result->response->numFound;
 		$facets = $result->facet_counts;
-
-		
+	
 		//show root level for 1
 		if($expandTaxon==1) {
 			$displayedTree = $childArray;			
@@ -131,9 +155,12 @@ class BrowseController extends AppController {
 			$this->traverseArray($displayedTree,$childArray,$expandTaxon);
 		}
 
-		$this->Session->write(BLAST_TAXONOMY.'.tree', $displayedTree);
-		$this->Session->write(BLAST_TAXONOMY.'.childCounts', $childCounts);
-		$this->Session->write(BLAST_TAXONOMY.'.facets', $facets);		
+		
+		
+		$this->Session->write(BLAST_TAXONOMY.'.browse.tree', $displayedTree);
+		$this->Session->write(BLAST_TAXONOMY.'.browse.childCounts', $childCounts);
+		$this->Session->write(BLAST_TAXONOMY.'.browse.facets', $facets);				
+		$this->Session->write(BLAST_TAXONOMY.'.browse.facetFields',$this->facetFields);	
 		
 		$this->set('projectName', $this->Project->getProjectName($dataset));
 		$this->set('projectId', $this->Project->getProjectId($dataset));
@@ -143,7 +170,9 @@ class BrowseController extends AppController {
 		$this->set('numHits',$numHits);
 		$this->set('numChildHits',$numChildHits);
 		$this->set('facets',$facets);	
-		$this->set('mode',BLAST_TAXONOMY);			
+		$this->set('pipeline',$pipeline);		
+		$this->set('mode',BLAST_TAXONOMY);	
+			
 	}
 
 	/**
@@ -151,26 +180,33 @@ class BrowseController extends AppController {
 	 * @param unknown_type $expandTaxon
 	 */
 	
-	function apisTaxonomy($dataset='CBAYVIR',$expandTaxon=1,$query='*:*') {
+	function apisTaxonomy($dataset,$expandTaxon=1,$query='*:*') {
 		$function = __FUNCTION__;
 		$this->loadModel('Project');
 		$this->loadModel('Taxonomy');		
 		$this->pageTitle = 'Browse Taxonomy (Apis)';
-				
+
+		$pipeline	=  $this->Project->getPipeline($dataset);
+		
+		if($pipeline === 'HUMANN') { 	
+ 			$this->facetFields = array(
+								'blast_species'=>'Species (Blast)',
+								'ko_id'=>'Kegg Ortholog',
+								'go_id'=>'Gene Ontology',
+								'ec_id'=>'Enzyme',
+							);			
+		}		
+		
 		if($this->Session->check($function.'.browse.query')){
 			$query = $this->Session->read($function.'.browse.query');
 		}
 		
 		//get session based taxonomic tree
-		$displayedTree = $this->Session->read(APIS_TAXONOMY.'.tree');
+		$displayedTree = $this->Session->read(APIS_TAXONOMY.'.browse.tree');
 		
 		if(!isset($displayedTree)) {
 			$expandTaxon=1;
 		}
-
-		if($this->Session->check($function.'.blast.query')){
-			$query = $this->Session->read($function.'.blast.query');
-		}	
 		
 		//get taxonomy information from database
 		$taxaChildren = $this->Taxonomy->find('all', array('conditions' => array('Taxonomy.parent_tax_id' => $expandTaxon)));
@@ -185,9 +221,10 @@ class BrowseController extends AppController {
 		//for each child get solr count
 		foreach($taxaChildren as $taxon) {
 				
+			$solrAguments = array('fq'=>"apis_tree:{$taxon['Taxonomy']['taxon_id']}");		
 			//get solr count
 			try {
-				$count=  $this->Solr->count($dataset,"($query) AND (apis_tree:{$taxon['Taxonomy']['taxon_id']})");
+				$count=  $this->Solr->count($dataset,$query,$solrAguments);
 			}	
 			catch(Exception $e) {
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
@@ -209,12 +246,13 @@ class BrowseController extends AppController {
 				$numChildHits +=$count;
 			}
 		}
-		
-		
-		$solrArguments = array(	"facet" => "true",
-						'facet.field' => array('blast_species','com_name','go_id','ec_id','com_name_src','hmm_id'),
+			
+		$solrArguments = array(	
+						'fq'=> "apis_tree:$expandTaxon",
+						'facet' => 'true',
+						'facet.field' => array_keys($this->facetFields),
 						'facet.mincount' => 1,
-						"facet.limit" => NUM_TOP_FACET_COUNTS);
+						'facet.limit' => NUM_TOP_FACET_COUNTS);
 		
 		try{		
 			$result = $this->Solr->search($dataset,"($query) AND (apis_tree:$expandTaxon)", 0,0,$solrArguments,true);
@@ -223,7 +261,7 @@ class BrowseController extends AppController {
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
 				$this->redirect('/projects/index',null,true);
 		}
-		$numHits = (int) $result->response->numFound;
+		$numHits = (double) $result->response->numFound;
 		$facets = $result->facet_counts;
 
 		//handle unresolved child nodes
@@ -245,10 +283,10 @@ class BrowseController extends AppController {
 			$this->traverseArray($displayedTree,$childArray,$expandTaxon);
 		}
 		
-		$this->Session->write(APIS_TAXONOMY.'.tree', $displayedTree);
-		$this->Session->write(APIS_TAXONOMY.'.childCounts', $childCounts);
-		$this->Session->write(APIS_TAXONOMY.'.facets', $facets);		
-		
+		$this->Session->write(APIS_TAXONOMY.'.browse.tree', $displayedTree);
+		$this->Session->write(APIS_TAXONOMY.'.browse.childCounts', $childCounts);
+		$this->Session->write(APIS_TAXONOMY.'.browse.facets', $facets);		
+		$this->Session->write(APIS_TAXONOMY.'.browse.facetFields',$this->facetFields);	
 		
 		$this->set('projectName', $this->Project->getProjectName($dataset));
 		$this->set('projectId', $this->Project->getProjectId($dataset));
@@ -262,21 +300,32 @@ class BrowseController extends AppController {
 		
 	}
 		
-	function enzymes($dataset='CBAYVIR',$expandTaxon='root',$query = '*:*') {
+	function enzymes($dataset,$expandTaxon='root',$query = '*:*') {		
 		$function = __FUNCTION__;
 		$this->loadModel('Project');
 		$this->loadModel('Enzymes');			
 		$this->pageTitle = 'Browse Enzymes';
+				
+		$pipeline	=  $this->Project->getPipeline($dataset);
+		
+		if($pipeline === 'HUMANN') { 
+ 			$this->facetFields = array(
+								'blast_species'=>'Species (Blast)',
+								'ko_id'=>'Kegg Ortholog',
+								'go_id'=>'Gene Ontology',
+								'ec_id'=>'Enzyme',
+							);			
+		}		
 		
 		if($this->Session->check($function.'.browse.query')){
 			$query = $this->Session->read($function.'.browse.query');
 		}		
 		
 		//get session based taxonomic tree
-		$displayedTree = $this->Session->read(ENZYMES.'.tree');
+		$displayedTree = $this->Session->read(ENZYMES.'.browse.tree');
 				
 		if(!isset($displayedTree)) {
-			$expandTaxon='root';
+			$expandTaxon = 'root';
 		}
 		
 		if($expandTaxon === 'root'){
@@ -297,13 +346,14 @@ class BrowseController extends AppController {
 		$childCounts = array();
 		$numChildHits =0;
 			
+		
 		//for each child get solr count
 		foreach($taxaChildren as $taxon) {
 			$ec = split("\\.-",$taxon['Enzymes']['ec_id']);
 			
 			try{
 				//get solr count
-				$count=  $this->Solr->count($dataset,"($query) AND (ec_id:{$ec[0]}*)");				
+				$count=  $this->Solr->count($dataset,$query,array('fq'=>"ec_id:{$ec[0]}*"));					
 			}
 			catch (Exception $e) {
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
@@ -316,7 +366,7 @@ class BrowseController extends AppController {
 			$taxonId = $taxon['Enzymes']['ec_id'];
 				
 			//filter for children
-			if($count>0 && $taxonId!=1) {
+			if($count > 0 && $taxonId != 0) {
 				$taxon['Enzymes']['count'] = $count;
 				$taxon['Enzymes']['children'] = NULL;
 				
@@ -327,9 +377,9 @@ class BrowseController extends AppController {
 			}
 		}
 			
-		//get the facets
+		//get the facets for the selected node
 		$solrArguments = array(	"facet" => "true",
-						'facet.field' => array('blast_species','com_name','go_id','ec_id','com_name_src','hmm_id'),
+						'facet.field' => array_keys($this->facetFields),
 						'facet.mincount' => 1,						
 						"facet.limit" => NUM_TOP_FACET_COUNTS);
 
@@ -341,11 +391,11 @@ class BrowseController extends AppController {
 			$this->redirect('/projects/index',null,true);
 		}
 			
-		$numHits = (int) $result->response->numFound;
+		$numHits = (double) $result->response->numFound;
 		$facets = $result->facet_counts;
 		
 		//show root level for 1
-		if($expandTaxon==1) {
+		if($expandTaxon === 1) {			
 			$displayedTree = $childArray;		
 		}
 		//build tree
@@ -353,9 +403,10 @@ class BrowseController extends AppController {
 			$this->traverseArray($displayedTree,$childArray,$expandTaxon);
 		}
 		
-		$this->Session->write(ENZYMES.'.tree', $displayedTree);
-		$this->Session->write(ENZYMES.'.childCounts', $childCounts);
-		$this->Session->write(ENZYMES.'.facets', $facets);		
+		$this->Session->write(ENZYMES.'.browse.tree', $displayedTree);
+		$this->Session->write(ENZYMES.'.browse.childCounts', $childCounts);
+		$this->Session->write(ENZYMES.'.browse.facets', $facets);		
+		$this->Session->write(ENZYMES.'.browse.facetFields',$this->facetFields);	
 		
 		$this->set('projectName', $this->Project->getProjectName($dataset));
 		$this->set('projectId', $this->Project->getProjectId($dataset));
@@ -368,19 +419,30 @@ class BrowseController extends AppController {
 		$this->set('mode',ENZYMES);
 	}	
 
-	function geneOntology($dataset='CBAYVIR',$expandTaxon='root',$query='*:*') {
+	function geneOntology($dataset,$expandTaxon='root',$query='*:*') {
 		$function = __FUNCTION__;
 		$this->loadModel('Project');
 		$this->loadModel('GoTerm');
 		$this->loadModel('GoGraph');	
 		$this->pageTitle = 'Browse Gene Ontology';
+
+		$pipeline	=  $this->Project->getPipeline($dataset);
+		
+		if($pipeline === 'HUMANN') { 	
+ 			$this->facetFields = array(
+								'blast_species'=>'Species (Blast)',
+								'ko_id'=>'Kegg Ortholog',
+								'go_id'=>'Gene Ontology',
+								'ec_id'=>'Enzyme',
+							);			
+		}		
 		
 		if($this->Session->check($function.'.browse.query')){
 			$query = $this->Session->read($function.'.browse.query');
 		}			
 		
 		//get session based taxonomic tree
-		$displayedTree = $this->Session->read(GENE_ONTOLOGY.'.tree');
+		$displayedTree = $this->Session->read(GENE_ONTOLOGY.'.browse.tree');
 		
 		if(!isset($displayedTree)) {
 			$expandTaxon='root';
@@ -407,7 +469,8 @@ class BrowseController extends AppController {
 			
 			//set selected node attributes
 			$selectedNode['acc'] = $expandTaxon;
-			$selectedNode['name'] = $goTerm[0]['GoTerm']['name'];				
+			
+			$selectedNode['name'] = $goTerm[0]['GoTerm']['name']." ($goAcc)";				
 		}	
 		
 		//get children from go database
@@ -479,7 +542,7 @@ class BrowseController extends AppController {
 		}
 		
 		$solrArguments = array(	"facet" => "true",
-						'facet.field' => array('blast_species','com_name','go_id','ec_id','com_name_src','hmm_id'),
+						'facet.field' => array_keys($this->facetFields),
 						'facet.mincount' => 1,
 						"facet.limit" => NUM_TOP_FACET_COUNTS);
 		try{
@@ -520,9 +583,10 @@ class BrowseController extends AppController {
 			$this->traverseArray($displayedTree,$childArray,$expandTaxon);				
 		}
 		
-		$this->Session->write(GENE_ONTOLOGY.'.tree', $displayedTree);
-		$this->Session->write(GENE_ONTOLOGY.'.childCounts', $childCounts);
-		$this->Session->write(GENE_ONTOLOGY.'.facets', $facets);		
+		$this->Session->write(GENE_ONTOLOGY.'.browse.tree', $displayedTree);
+		$this->Session->write(GENE_ONTOLOGY.'.browse.childCounts', $childCounts);
+		$this->Session->write(GENE_ONTOLOGY.'.browse.facets', $facets);	
+		$this->Session->write(GENE_ONTOLOGY.'.browse.facetFields',$this->facetFields);		
 		
 		$this->set('dataset',$dataset);
 		
@@ -541,109 +605,252 @@ class BrowseController extends AppController {
 		$this->set('facets',$facets);
 		$this->set('mode',GENE_ONTOLOGY);
 	}
-	
+
 	/**
-	 * Browse Pathways
+	 * Browse MetaCyc Pathways
 	 * 
 	 * @param String $dataset dataset 
 	 * @param String $expandNode selected node; default is the root node, here 16905 (Metabolism)
 	 * @return void
 	 * @access public
 	 */	
-	function pathways($dataset='CBAYVIR',$expandNode = 16905,$query='*:*') {
-		$function = __FUNCTION__;
-		$this->loadModel('Project');
-		$this->loadModel('Pathway');		
-		$this->pageTitle = 'Browse Pathways';
+	public function metacycPathways($dataset,$expandNode = 1,$query='*:*') {	
+		$this->pathways($dataset,$expandNode,$query='*:*','metacyc_pathways');
+	}
 
-		if($this->Session->check($function.'.browse.query')){
-			$query = $this->Session->read($function.'.browse.query');
-		}			
+	/**
+	 * Browse Kegg Pathways (EC)
+	 * 
+	 * @param String $dataset dataset 
+	 * @param String $expandNode selected node; default is the root node, here 16905 (Metabolism)
+	 * @return void
+	 * @access public
+	 */	
+	public function keggPathwaysEc($dataset,$expandNode = 1,$query='*:*') {	
+		$this->pathways($dataset,$expandNode,$query='*:*',KEGG_PATHWAYS);
+	}	
+	
+	/**
+	 * Browse Kegg Pathways (KO)
+	 * 
+	 * @param String $dataset dataset 
+	 * @param String $expandNode selected node; default is the root node, here 16905 (Metabolism)
+	 * @return void
+	 * @access public
+	 */	
+	public function keggPathwaysKo($dataset,$expandNode = 1,$query='*:*') {	
+		$this->pathways($dataset,$expandNode,$query='*:*',KEGG_PATHWAYS_KO);
+	}		
+	
+	/**
+	 * Browse Pathways
+	 *
+	 * @param String $dataset dataset
+	 * @param String $parentId selected node; default is the root node, here 16905 (Metabolism)
+	 * @return void
+	 * @access public
+	 */
+	private function pathways($dataset,$parentId,$query,$pathwayModel) {
+		$this->loadModel('Project');
 		
-		//get session based taxonomic tree
-		$displayedTree = $this->Session->read(PATHWAY.'.tree');
+		$function = $this->underscoreToCamelCase($pathwayModel);	
+
+		$pipeline	=  $this->Project->getPipeline($dataset);
 		
-		if(!isset($displayedTree)) {
-			$expandTaxon=16905;
-		}
+		if($pipeline === 'HUMANN') { 		
+ 			$this->facetFields = array(
+								'blast_species'=>'Species (Blast)',
+								'ko_id'=>'Kegg Ortholog',
+								'go_id'=>'Gene Ontology',
+								'ec_id'=>'Enzyme',
+							);			
+		}		
 		
-		//get pathway information for parent and children from database		
-		$parent   = $this->Pathway->find('first', array('conditions' => array('Pathway.id' => $expandNode)));
-		$children = $this->Pathway->find('all', array('conditions' => array('Pathway.parent_id' => $expandNode)));
-		
-		$parentName  = $parent['Pathway']['name'];	
-		$parentLevel = $parent['Pathway']['level'];	
-		$pathwayUrl  = "http://www.genome.jp/kegg-bin/show_pathway?ec".str_pad($parent['Pathway']['kegg_id'],5,0,STR_PAD_LEFT);		
-		
-		//get pathway facets and overall counts
-		try { 
-			if($parentLevel === 'enzyme') {
-				$parentSolrResults = $this->Solr->getPathwayFacets($query,$dataset,$parentLevel,$expandNode,$children,$parent['Pathway']['ec_id']);
-				$parentName = $parent['Pathway']['name']." (".$parent['Pathway']['ec_id'].")";	
-			}
-			else {		
-				$parentSolrResults = $this->Solr->getPathwayFacets($query,$dataset,$parentLevel,$expandNode,$children);
-			}			
-		}
-		catch(Exception $e){
-			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-			if($this->Session->check($function.'.browse.query')) {
-				$this->Session->delete($function.'.browse.query');
-			}	
-			$this->redirect('/projects/index',null,true);
-			//$this->redirect('/browse/pathways',$dataset,false);
-		}
-				
+		//initialize variables
 		$childArray 	= array();
 		$childCounts 	= array();
+		$facets 		= array();
 		$numChildHits 	= 0;
-					
-		//for each child get solr count
-		foreach($children as $node) {	
-			$name 	= $node['Pathway']['name'];		
-			$level 	= $node['Pathway']['level'];
-			$nodeId = $node['Pathway']['id'];
-			$ecId 	= $node['Pathway']['ec_id'];
-					
-			$childCount = $this->Solr->getPathwayCount($query,$dataset,$level,$nodeId,0,$ecId);
+		
+		$this->loadModel('Pathway');
+		$this->loadModel('Project');
+
+		//set title
+		if($pathwayModel == KEGG_PATHWAYS) {
+			$title = 'Browse Kegg Pathways (EC)';			
+		}
+		else if($pathwayModel == KEGG_PATHWAYS_KO) {
+			$title = 'Browse Kegg Pathways (KO)';			
+		}		
+		else if($pathwayModel == METACYC_PATHWAYS) {
+			$title = 'Browse Metacyc Pathways (EC)';
+		}
+		
+		$this->pageTitle = $title;
+		
+		if($this->RequestHandler->isAjax()) {
+			$this->ajax= true;
+		}
+
+		if($parentId == 1) {
+			#$this->Session->delete("$function.browse.query");
+			$this->Session->delete("$function.browse.tree");
+			$this->Session->delete("$function.browse.facets");			
+		}
+		
+		if($this->Session->check("$function.browse.query")){
+			$query = $this->Session->read("$function.browse.query");
+		}
+
+
+		//read tree from session
+		if($this->Session->check("$function.browse.tree")){
+			$displayedTree = $this->Session->read("$function.browse.tree");
+		}
+		else {
+			$expandTaxon=1;
+		}
+		
+	
+
+		//get pathway information for parent and children from database
+		$parent 	= $this->Pathway->getById($parentId,$pathwayModel);
+
+		$children 	= $this->Pathway->getChildrenByParentId($parentId,$pathwayModel);
+		
+		$parentName  		= $parent['name'];
+		$parentExternalId 	= $parent['external_id'];
+		$parentLevel 		= $parent['level'];
+		
+		if($pathwayModel === KEGG_PATHWAYS || $pathwayModel === METACYC_PATHWAYS) {
+			$parentEcId 	= $parent['ec_id'];
+		}
+		else if($pathwayModel === KEGG_PATHWAYS_KO) {
+			$parentkoId 	= $parent['ko_id'];
+		}
+		
+		$pathwayUrl = $this->Pathway->getUrl($parentExternalId,$pathwayModel);
+		$pathwayUrl .='/default%3white';
+		//try	{
+		
+		$parentCount = $this->Pathway->getCount($parentId,$this->Solr,$dataset,$query,$pathwayModel);
+		
+		
+		
+		
+//		}
+//		catch(Exception $e){
+//			$projectId = $this->Project->getProjectId($dataset);
+//			$this->Session->delete("$function.browse.query");
+//			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION,true);
+//			$query="*:*";
+			//$this->set('exception',SOLR_CONNECT_EXCEPTION);
+			//$this->redirect("/projects/view/$projectId",'ajax');			
+			
+			
+//			$this->set('projectName', $this->Project->getProjectName($dataset));
+//			$this->set('projectId', $this->Project->getProjectId($dataset));
+//			$this->set('dataset',$dataset);
+//			$this->render('pathways','ajax');
+//			exit();
+//		}
+		if($parentLevel === 'enzyme') {
+			$parentName = "$parentName ($parentEcId)";
+		}
+		else if($parentLevel === 'kegg-ortholog') {
+			$parentName = "$parentName ($parentkoId)";
+		}	
+		else if($parentLevel === 'pathway') {
+			$colorGradient =  $this->Color->gradient(HEATMAP_COLOR_YELLOW_RED);	
+			$this->set('colorGradient',$colorGradient);
+		}	
+		
+		$facets = $this->Pathway->getFacets($parentId,$this->Solr,$dataset,$query,$this->facetFields,$pathwayModel);
 				
+		
+		//for each child get solr count
+		foreach($children as $node) {
+			$name 	= strip_tags($node[$pathwayModel]['name']);
+			$level 	= $node[$pathwayModel]['level'];
+			$nodeId = $node[$pathwayModel]['id'];
+			
+			if($pathwayModel === KEGG_PATHWAYS || $pathwayModel === METACYC_PATHWAYS) {
+				$ecId 	= $node[$pathwayModel]['ec_id'];
+			}
+			else if($pathwayModel === KEGG_PATHWAYS_KO) {
+				$koId 	= $node[$pathwayModel]['ko_id'];
+			}			
+								
+			$childCount = $this->Pathway->getCount($nodeId,$this->Solr,$dataset,$query,$pathwayModel);
+			
 			//filter for children
 			if($childCount >= 0 ) {
-				
-				$node['Pathway']['count'] = $childCount;
-				$node['Pathway']['children'] = NULL;
-				
-				if($level === 'enzyme') {
-					$childCounts["$name ($ecId)"] = $childCount;
-					$node['Pathway']['name'] = "$name ($ecId)";
-					if($childCount > 0) {
-						$pathwayUrl.="+$ecId";
+
+				$node[$pathwayModel]['count'] = $childCount;
+				$node[$pathwayModel]['children'] = NULL;
+
+				if($pathwayModel === KEGG_PATHWAYS || $pathwayModel === METACYC_PATHWAYS) {
+					if($level === 'enzyme') {
+						$relCount = round($childCount/$parentCount,12);
+						$color = $colorGradient[floor($relCount*19)];
+						
+						$childCounts["$name ($ecId)"] = $childCount;
+						$node[$pathwayModel]['name'] = "$name ($ecId)";
+						if($childCount > 0) {
+							//$pathwayUrl.="+$ecId";
+							$pathwayUrl.="/$ecId%09%23$color";
+						}
+						else {
+							$pathwayUrl.="/$ecId%09%23FFFFFF";
+						}
+					}
+					else {
+						$childCounts[$name] = $childCount;
 					}
 				}
-				else {
-					$childCounts[$name] = $childCount;
+				else if($pathwayModel === KEGG_PATHWAYS_KO) {
+					if($level === 'kegg-ortholog') {
+						$relCount = round($childCount/$parentCount,12);
+						$color = $colorGradient[floor($relCount*19)];
+						
+						$childCounts["$name ($koId)"] = $childCount;
+						$node[$pathwayModel]['name'] = "$name ($koId)";
+						if($childCount > 0) {
+							//$pathwayUrl.="+$ecId";
+							$pathwayUrl.="/$koId%09%23$color";
+						}
+						else {
+							$pathwayUrl.="/$koId%09%23FFFFFF";
+						}
+					}
+					else {
+						$childCounts[$name] = $childCount;
+					}
+					
 				}
 				
-				$childArray[$nodeId] = $node['Pathway'];
-				$numChildHits += $childCount;				
-			}	
+				$childArray[$nodeId] = $node[$pathwayModel];
+				$numChildHits += $childCount;
+			}		
 			
 		}
 		
-		//show root level for 1
-		if($expandNode == 16905) {
-			$displayedTree = $childArray;			
+		
+		
+		if($parentId == 1) {
+			$displayedTree = $childArray;
 		}
 		//build tree
 		else {
-			$this->traverseArray($displayedTree,$childArray,$expandNode);
+			$this->traverseArray($displayedTree,$childArray,$parentId);
 		}
 		
-			
-		$this->Session->write(PATHWAY.'.tree', $displayedTree);
-		$this->Session->write(PATHWAY.'.childCounts', $childCounts);
-		$this->Session->write(PATHWAY.'.facets', $parentSolrResults['facets']);		
-			
+		
+		$this->Session->write("$function.browse.tree", $displayedTree);
+		$this->Session->write("$function.browse.childCounts", $childCounts);
+		$this->Session->write("$function.browse.facets", $facets);
+		$this->Session->write("$function.browse.facetFields",$this->facetFields);		
+		
 		$this->set('projectName', $this->Project->getProjectName($dataset));
 		$this->set('projectId', $this->Project->getProjectId($dataset));
 		$this->set('dataset',$dataset);
@@ -651,24 +858,43 @@ class BrowseController extends AppController {
 		$this->set('node',base64_encode($parentName));
 		$this->set('level',$parentLevel);
 		$this->set('url',$pathwayUrl);
-		$this->set('numHits',$parentSolrResults['numHits']);
+		
+		$this->set('numHits',$parentCount);
 		$this->set('numChildHits',$numChildHits);
-		$this->set('facets',$parentSolrResults['facets']);	
-		$this->set('mode',PATHWAY);	
+		
+		$this->set('mode',$pathwayModel);
+		
+		$this->set('header',$title);
+		
+		$this->render('pathways');
 	}
-			
+	
 	public function downloadChildCounts($dataset,$node,$mode,$numHits,$query = "*:*") {
 		$this->autoRender=false; 
 
 		$query = urldecode($query);
 		
-		if($mode === PATHWAY) {
-			$node = base64_decode($node);
+		if($mode === KEGG_PATHWAYS || $mode === METACYC_PATHWAYS || $mode === KEGG_PATHWAYS_KO) {		
+			$node = strip_tags(base64_decode($node));
+			$function = $this->underscoreToCamelCase($mode);	
+			$childCounts = $this->Session->read("$function.browse.childCounts");
+			
+			if($mode === KEGG_PATHWAYS) {
+				$mode = 'Kegg Pathways (EC)';
+			}
+			else if ($mode === KEGG_PATHWAYS_KO) {
+				$mode = 'Kegg Pathways (KO)';
+			}				
+			else if ($mode === METACYC_PATHWAYS) {
+				$mode = 'Metacyc Pathways';
+			}
+		
+		}
+		else {
+			$childCounts = $this->Session->read($mode.".browse.childCounts");
 		}
 		
-		#get childCounts
-		$childCounts = $this->Session->read($mode.".childCounts");
-		$content = $this->Format->infoString("Browse $mode Results",$dataset,$query,0,$numHits,$node);
+		$content = $this->Format->infoString("Browse $mode Results",$dataset,$query,0,$numHits,$node);		
 		$content.=$this->Format->facetToDownloadString($node,$childCounts,$numHits);
 		
 		$fileName = "jcvi_metagenomics_report_".time().'.txt';
@@ -683,15 +909,34 @@ class BrowseController extends AppController {
 		$this->autoRender=false; 
 
 		$query = urldecode($query);
-
-		if($mode === PATHWAY) {
-			$node = base64_decode($node);
-		}		
 		
-		#get facet data from session
-		$facets = $this->Session->read($mode.'.facets');
+		if($mode === KEGG_PATHWAYS || $mode === METACYC_PATHWAYS || $mode === KEGG_PATHWAYS_KO) {		
+			$node = strip_tags(base64_decode($node));
+			$function = $this->underscoreToCamelCase($mode);	
+			
+			#$function = $this->underscoreToCamelCase($mode);	
+			$facets = $this->Session->read("$function.browse.facets");
+			$facetFields = $this->Session->read($function.'.browse.facetFields');
+			
+			if($mode === KEGG_PATHWAYS) {
+				$mode = 'Kegg Pathways (EC)';
+			}
+			else if ($mode === KEGG_PATHWAYS_KO) {
+				$mode = 'Kegg Pathways (KO)';
+			}				
+			else if ($mode === METACYC_PATHWAYS) {
+				$mode = 'Metacyc Pathways';
+			}
+		}	
+		else{			
+			$facets = $this->Session->read($mode.'.browse.facets');
+			$facetFields = $this->Session->read($mode.'.browse.facetFields');
+		}
 		
-		$content=$this->Format->facetListToDownloadString("Browse $mode Results - Top 10 Functional Categories",$dataset,$facets,$query,$numHits,$node);
+		
+		
+		#die("Browse $mode Results - Top 10 Functional Categories,$dataset,$facets,$query,$numHits,$node");
+		$content=$this->Format->facetListToDownloadString("Browse $mode Results - Top 10 Functional Categories",$dataset,$facets,$facetFields,$query,$numHits,$node);
 		
 		$fileName = "jcvi_metagenomics_report_".time().'.txt';
 		
@@ -702,17 +947,20 @@ class BrowseController extends AppController {
 	}	
 	
 	// Recursively traverses a multi-dimensional array.
-	private function traverseArray(&$array,&$childArray,$taxon)	{ 		
-		// Loops through each element. If element again is array, function is recalled. If not, result is echoed.
-		foreach($array as $key=>&$value) { 
+	// Loops through each element. If element again is array, 
+	// function is recalled. If not, result is echoed.
+	private function traverseArray(&$array,&$childArray,$taxon,$count=0)	{ 				
+		$keys = array_keys($array);
+		$count++;
+		foreach($keys as $key) { 
 			if($key == $taxon) {
-					$value['children'] =  $childArray;
+				$array[$key]['children'] =  $childArray;
 			} 
 			else {
-				if(is_array($value)){ 
-					$this->traverseArray($value,$childArray,$taxon); 
+				if(is_array($array[$key]['children'])){ 
+					$this->traverseArray($array[$key]['children'],$childArray,$taxon,$count); 
 				}
-			}	
+			}				
 		}
 	}
 }

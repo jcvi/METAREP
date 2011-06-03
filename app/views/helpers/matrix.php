@@ -14,35 +14,20 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
 
-define('HEATMAP_YELLOW_RED_START', 'F03B20');
-define('HEATMAP_YELLOW_RED_END', 'FFEDA0');
-
-define('HEATMAP_YELLOW_BLUE_START', '2C7FB8');
-define('HEATMAP_YELLOW_BLUE_END', 'EDF8B1');
-
-define('HEATMAP_BLUE_START', '3182BD');
-define('HEATMAP_BLUE_END', 'DEEBF7');
-
-define('HEATMAP_GREEN_START', '31A354');
-define('HEATMAP_GREEN_END', 'E5F5E0');
-
-
 class MatrixHelper extends AppHelper {
  	var $helpers = array('Session');
 	var $uses = array('Library');
 		
-	function printTable($datasets,$counts,$option,$mode) {
+	function printTable($datasets,$counts,$option,$mode,$maxPvalue) {
 			
 		$html='';
-			
-		
-		
+				
 		#debug($datasets);
 		if($option == METASTATS || $option == WILCOXON) {	
 			
@@ -52,10 +37,10 @@ class MatrixHelper extends AppHelper {
 				if($option == METASTATS) {		
 					$html .= "<table style=\"border:1px; padding-bottom:5px; border-bottom-style:solid;border-width:1px;\">
 						<tr>"	;
-					$html .= "<th style=\"padding-right:5px; width:30%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\"></th>";			
+					$html .= "<th style=\"padding-right:5px; width:30%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">METASTATS Test</th>";			
 					$html .= "<th style=\"padding-center:5px; width:21%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[0]} (n=$libraryCountPopulationA)</th>";
 					$html .= "<th style=\"padding-center:5px; width:21%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[1]} (n=$libraryCountPopulationB)</th>";
-					$html .= "<th style=\"padding-center:5px; width:27%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">Significance</th>";
+					$html .= "<th style=\"padding-center:5px; width:27%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">Significance (permutations=".NUM_METASTATS_BOOTSTRAP_PERMUTATIONS.")</th>";
 					$html .= "</tr></table>";
 					
 					$html .= "<table cellpadding=\"0px\" cellspacing=\"0\", id=\"myTable\" class=\"tablesorter comparison-results-table\"><thead> 	
@@ -76,7 +61,7 @@ class MatrixHelper extends AppHelper {
 				elseif($option == WILCOXON) {
 					$html .= "<table style=\"border:1px; padding-bottom:5px; border-bottom-style:solid;border-width:1px;\">
 						<tr>"	;
-					$html .= "<th style=\"padding-right:5px; width:35%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\"></th>";			
+					$html .= "<th style=\"padding-right:5px; width:35%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">Wilcoxon Rank Sum Test</th>";			
 					$html .= "<th style=\"padding-center:5px; width:20%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[0]} (n=$libraryCountPopulationA)</th>";
 					$html .= "<th style=\"padding-center:5px; width:20%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[1]} (n=$libraryCountPopulationB)</th>";
 					$html .= "<th style=\"padding-center:5px; width:25%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">Significance</th>";
@@ -116,11 +101,58 @@ class MatrixHelper extends AppHelper {
 			}			
 		}
 		
-		$html .= '</tr></thead><tbody> ';
+		$html .= '</tr></thead><tbody>';
 		
 		$i = 0;
 		#debug($counts);
-		foreach($counts as $category => $row) {				
+		foreach($counts as $category => $row) {	
+			
+				if($maxPvalue != PVALUE_ALL) {	
+					## handle p-value filtering (non bonferoni corrected)
+					if($maxPvalue < 4 ) {
+						switch ($maxPvalue) {
+							case PVALUE_HIGH_SIGNIFICANCE;
+							$pvalueCutoff = 0.01;
+							break;
+							case PVALUE_MEDIUM_SIGNIFICANCE;
+							$pvalueCutoff = 0.05;
+							break;
+							case PVALUE_LOW_SIGNIFICANCE;
+							$pvalueCutoff = 0.1;
+							break;												
+						}
+						if( $row['pvalue'] >= $pvalueCutoff)	{
+								continue;
+						}									
+					}
+	
+					## handle p-value filtering (bonferoni corrected)
+					else if($maxPvalue > 3 ) {
+						switch ($maxPvalue) {
+							case PVALUE_BONFERONI_HIGH_SIGNIFICANCE;
+							$pvalueCutoff = 0.01;
+							break;
+							case PVALUE_BONFERONI_MEDIUM_SIGNIFICANCE;
+							$pvalueCutoff = 0.05;
+							break;
+							case PVALUE_BONFERONI_LOW_SIGNIFICANCE;
+							$pvalueCutoff = 0.1;
+							break;												
+						}	
+						if( $option == METASTATS) {
+							if( $row['qvalue'] >= $pvalueCutoff)	{
+								continue;
+							}	
+						}
+						if( $option == WILCOXON) {
+							if( $row['bonf-pvalue'] >= $pvalueCutoff)	{
+								continue;
+							}	
+						}								
+					}
+				}				
+		
+				
 				if($row['sum'] > 0 || $option == METASTATS || $option == WILCOXON) {					
 									
 					if ($i++ % 2 == 0) {
@@ -245,7 +277,13 @@ class MatrixHelper extends AppHelper {
 				}		
 		}
 			
-		$html .= '</table>';
+		
+//		die($html);
+		if(preg_match('/.*<tbody>$/',$html)) {
+			return 'No hits found for the selected pvalue cut off. Adjust filter settings and try again.';
+		}
+
+		$html .= '</tbody></table>';
 		
 		return $html;
 	}
@@ -351,22 +389,7 @@ class MatrixHelper extends AppHelper {
 	}	
 	
 	
-	function printHeatMap($datasets,$counts,$option,$mode,$heatmapColor) {
-		
-		switch($heatmapColor) {
-			case HEATMAP_COLOR_YELLOW_RED:
-				$colorGradient =  $this->gradient(HEATMAP_YELLOW_RED_START,HEATMAP_YELLOW_RED_END,20);	
-				break;
-			case HEATMAP_COLOR_YELLOW_BLUE:
-				$colorGradient =  $this->gradient(HEATMAP_YELLOW_BLUE_START,HEATMAP_YELLOW_BLUE_END,20);
-				break;
-			case HEATMAP_COLOR_BLUE:
-				$colorGradient =  $this->gradient(HEATMAP_BLUE_START,HEATMAP_BLUE_END,20);		
-				break;
-			case HEATMAP_COLOR_GREEN:
-				$colorGradient =  $this->gradient(HEATMAP_GREEN_START,HEATMAP_GREEN_END,20);
-				break;						
-		}
+	function printHeatMap($datasets,$counts,$option,$mode,$colorGradient) {
 		
 		$html = $this->printHeatmapColorLegend($colorGradient);	
 		
@@ -437,12 +460,11 @@ class MatrixHelper extends AppHelper {
 		return $html;	
 	}
 
-	function printFlippedHeat2Map($datasets,$counts,$mode,$heatmapColor) {
+	function printFlippedHeat2Map($datasets,$counts,$mode,$colorGradient) {
 			
 		#print heatmap color legend
 		$html = "<table cellpadding=\"0\" cellspacing=\"0\"><tr>";
-		$colorGradient =  $this->gradient(HEATMAP_START_COLOR,HEATMAP_END_COLOR,20);	
-
+		
 		$offset= 0;
 		$step  = 0.05;
 		foreach($colorGradient as $color) {
@@ -510,23 +532,7 @@ class MatrixHelper extends AppHelper {
 
 	}	
 	
-	function printFlippedHeatmap($datasets,$counts,$option,$mode,$heatmapColor) {
-		
-		switch($heatmapColor) {
-			case HEATMAP_COLOR_YELLOW_RED:
-				$colorGradient =  $this->gradient(HEATMAP_YELLOW_RED_START,HEATMAP_YELLOW_RED_END,20);	
-				break;
-			case HEATMAP_COLOR_YELLOW_BLUE:
-				$colorGradient =  $this->gradient(HEATMAP_YELLOW_BLUE_START,HEATMAP_YELLOW_BLUE_END,20);
-				break;
-			case HEATMAP_COLOR_BLUE:
-				$colorGradient =  $this->gradient(HEATMAP_BLUE_START,HEATMAP_BLUE_END,20);		
-				break;
-			case HEATMAP_COLOR_GREEN:
-				$colorGradient =  $this->gradient(HEATMAP_GREEN_START,HEATMAP_GREEN_END,20);
-				break;						
-		}		
-		
+	function printFlippedHeatmap($datasets,$counts,$option,$mode,$colorGradient) {
 
 		$html = $this->printHeatmapColorLegend($colorGradient);
 		
@@ -547,10 +553,6 @@ class MatrixHelper extends AppHelper {
 			
 		#llop through datasets
 		foreach($datasets as $dataset) {
-					
-			#filter rows for those with entries
-			
-				#$html .= "<tr>";
 				
 				$rowValue = '';
 								
@@ -600,48 +602,7 @@ class MatrixHelper extends AppHelper {
 		
 		return $html;
 	}		
-	
-	
-	
-	function gradient($hexstart, $hexend, $steps) {
-	
-	    $start['r'] = hexdec(substr($hexstart, 0, 2));
-	    $start['g'] = hexdec(substr($hexstart, 2, 2));
-	    $start['b'] = hexdec(substr($hexstart, 4, 2));
-	
-	    $end['r'] = hexdec(substr($hexend, 0, 2));
-	    $end['g'] = hexdec(substr($hexend, 2, 2));
-	    $end['b'] = hexdec(substr($hexend, 4, 2));
-	    
-	    $step['r'] = ($start['r'] - $end['r']) / ($steps - 1);
-	    $step['g'] = ($start['g'] - $end['g']) / ($steps - 1);
-	    $step['b'] = ($start['b'] - $end['b']) / ($steps - 1);
-	    
-	    $gradient = array();
-	    
-	    for($i = 0; $i <= $steps; $i++) {
-	        
-	        $rgb['r'] = floor($start['r'] - ($step['r'] * $i));
-	        $rgb['g'] = floor($start['g'] - ($step['g'] * $i));
-	        $rgb['b'] = floor($start['b'] - ($step['b'] * $i));
-	        
-	        $hex['r'] = sprintf('%02x', ($rgb['r']));
-	        $hex['g'] = sprintf('%02x', ($rgb['g']));
-	        $hex['b'] = sprintf('%02x', ($rgb['b']));
-	        
-	        $gradient[] = implode(NULL, $hex);
-	                
-	    }
-		#reverse array
-		$gradient = array_reverse($gradient);	    
-		
-		#remove empty white cell
-		array_pop($gradient);			
-	    
-		return $gradient;
-	
-	}  
-	
+			
 	private function printHeatmapColorLegend(&$colorGradient) {
 		#print heatmap color legend
 		$html = "<table cellpadding=\"0\" cellspacing=\"0\"><tr>";

@@ -36,11 +36,13 @@
 <?php
 	echo $html->css('jquery-ui-1.7.2.custom.css');
 	echo $html->css('cake.generic');		
-	echo $scripts_for_layout;			
+	echo $scripts_for_layout;		
+
 	echo $javascript->link(array('prototype'));
 	echo $javascript->link(array('scriptaculous'));
 	echo $javascript->link(array('jquery/js/jquery-1.3.2.min.js'));		
 	echo $javascript->link(array('jquery/js/jquery-ui-1.7.2.custom.min.js'));
+	echo $javascript->link(array('jquery.qtip-1.0.0-rc3.min.js'));	
 ?>
 	
 <script type="text/javascript">
@@ -114,6 +116,28 @@
 	      pageTracker._trackPageview();
 	    } catch(err) {}
 	  } // end if(is_production)
+	  
+	  jQuery.fn.qtip.styles.mystyle = { // Last part is the name of the style
+			   width: 250,
+			   background: '#A2D959',
+			   color: 'black',
+			   textAlign: 'center',
+			   border: {
+			      width: 1,
+			      radius: 4,
+			      color: '#6DB33F'
+			   },
+			   tip: { // Now an object instead of a string
+			         corner: 'topLeft', // We declare our corner within the object using the corner sub-option
+			         color: '#F99D31',
+			         size: {
+			            x: 20, // Be careful that the x and y values refer to coordinates on screen, not height or width.
+			            y : 8 // Depending on which corner your tooltip is at, x and y could mean either height or width!
+			         }
+				},
+			   name: 'dark' // Inherit the rest of the attributes from the preset dark style
+			}
+	  
 </script>       	
       
 <style type="text/css">
@@ -144,7 +168,8 @@
 		if (Authsome::get()):?>
 			<?php 
 				$currentUser 	= Authsome::get();
-				$currentUserId 	= $currentUser['User']['id'];	    	        	
+				$currentUserId 	= $currentUser['User']['id'];	  
+				$username	 	= $currentUser['User']['username'];	    	        	
 	       		$userGroup  	= $currentUser['UserGroup']['name'];
 	       	?>	       					
 		<ul id="menu">			
@@ -158,7 +183,7 @@
 			<li><?php echo $html->link(__('List Populations', true), array('controller'=> 'populations', 'action'=>'index')); ?> </li>
 				<li><?php if(JCVI_INSTALLATION) {echo $html->link(__('Pipeline Log', true), array('controller'=> 'logs', 'action'=>'index'));} ?> </li>
 			<?endif;?>		
-			<li><?php if($userGroup != GUEST_USER_GROUP) {echo $html->link(__('Dashboard', true), array('controller'=> 'dashboard'));} ?></li>
+			<li><?php if($userGroup != GUEST_USER_GROUP && $username != 'jamboree') {echo $html->link(__('Dashboard', true), array('controller'=> 'dashboard'));} ?></li>
 			<li><?php echo $html->link(__('Log Out', true), array('controller'=> 'users', 'action'=>'logout')); ?> </li>
 		</ul>	
 		<?endif;?>		

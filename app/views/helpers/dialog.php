@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -238,15 +238,35 @@ download both sets of euclidean distances</li>
 			</p>			
 			</div>");
 	}
-	function browsePathways($divId) {
-			echo("<div id=\"$divId\" title=\"Browse Pathways Help Dialog\">
+	function browseKeggPathways($divId) {
+			echo("<div id=\"$divId\" title=\"Browse Kegg Pathways Help Dialog\">
 			<b>Filter</b>{$this->searchParagraph}
 			<BR>				
-			<p><B>Browse Pathways</B>
+			<p><B>Browse Kegg Pathways</B>
 			Expand a pathway class, pathway or an enzyme in the tree on the left hand side by clicking it. 
 			For each pathway level the pathway name, its level and the number of hits are shown. <BR><BR>
-			<B>Pathway Summaries:</B> For each selected pathway, or enzyme various functional and taxonomic assignments
+			<B>Kegg Pathway Summaries:</B> For each selected pathway, or enzyme various functional and taxonomic assignments
 			are summarized on the right hand side. Pathway maps highlight enzymes that have been found in the respective dastaset. A distribution 
+			of individual enzymes is shown below the maps. 
+			Counts reflect the number of peptides that have an EC number assignment
+			that belongs to the selected pathway or pathway group. Percentages reflect the proportion of peptides in the selected class that
+			fall into a certain category.</p>
+			<BR>	
+			<b>Download</b>	
+			<p>
+			Browse results can be downloaded by clicking on the disk with the green arrow at the left upper corner of the panels on the right hand side.".$this->Html->image("download-small.png")."
+			</p>			
+			</div>");
+	}	
+	function browseMetacycPathways($divId) {
+			echo("<div id=\"$divId\" title=\"Browse Metacyc Pathways Help Dialog\">
+			<b>Filter</b>{$this->searchParagraph}
+			<BR>				
+			<p><B>Browse Metacyc Pathways</B>
+			Expand a pathway class, pathway or an enzyme in the tree on the left hand side by clicking it. 
+			For each pathway level the pathway name, its level and the number of hits are shown. <BR><BR>
+			<B>Metacyc Pathway Summaries:</B> For each selected pathway, or enzyme various functional and taxonomic assignments
+			are summarized on the right hand side. Metacyc pathway maps are shown on the pathway level. A distribution 
 			of individual enzymes is shown below the maps. 
 			Counts reflect the number of peptides that have an EC number assignment
 			that belongs to the selected pathway or pathway group. Percentages reflect the proportion of peptides in the selected class that

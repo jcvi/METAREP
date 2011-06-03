@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -25,6 +25,7 @@ class ProjectsController extends AppController {
 	var $name 		= 'Projects';
 	var $uses 		= array();
 	var $components = array('Solr','Format');
+	
 	
 	/**
 	 * List all projects
@@ -75,17 +76,18 @@ class ProjectsController extends AppController {
 				
 				if($project['Library']) {					
 					foreach($project['Library'] as &$library) {
-						$library['count'] = number_format($this->Solr->count($library['name']));				
+						$library['count'] = number_format($this->Solr->documentCount($library['name']));				
 					}
 				}
 				if($project['Population']) {
 					foreach($project['Population'] as &$population) {
-						$population['count'] = number_format($this->Solr->count($population['name']));				
+						$population['count'] = number_format($this->Solr->documentCount($population['name']));				
 					}			
 				}						
 				Cache::write($id.'project', $project);
 			}
 		}		
+		
 		$this->set('project',$project);
 	}
 	
@@ -142,6 +144,10 @@ class ProjectsController extends AppController {
 		if (!empty($this->data)) {
 			
 			if ($this->Project->save($this->data)) {
+				
+				//delete project view cache
+				Cache::delete($id.'project');
+				
 				$this->Session->setFlash(__('The Project has been saved',true));
 				$this->redirect("/dashboard",null,true);	
 			} else {
@@ -167,6 +173,12 @@ class ProjectsController extends AppController {
 			
 			$this->set(compact('userSelectArray','projectUserId'));		
 		}
+	}
+	
+	function refresh($id) {
+		//delete project view cache
+		Cache::delete($id.'project');
+		$this->redirect("/projects/view/$id",null,true);
 	}
 	
 	/**

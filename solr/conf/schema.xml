@@ -1,13 +1,15 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--METAREP Solr Schema 1.4 version-->
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--METAREP Solr Schema 1.2.1 version-->
+
 <schema name="example" version="1.2">
 
   <types>
-    <fieldType name="string" class="solr.StrField" sortMissingLast="true" omitNorms="true"/>
-    <fieldType name="tint" class="solr.TrieIntField" precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
-    <fieldType name="tfloat" class="solr.TrieFloatField" precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
-    <fieldType name="pint" class="solr.IntField" omitNorms="true"/>
-    <fieldType name="random" class="solr.RandomSortField" indexed="true"/>
+    <fieldType name="string" 	class="solr.StrField" 			sortMissingLast="true" omitNorms="true" />
+    <fieldType name="tint" 		class="solr.TrieIntField" 		precisionStep="8" omitNorms="true" positionIncrementGap="0" />
+    <fieldType name="tfloat" 	class="solr.TrieFloatField" 	precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
+    <fieldType name="pint" 		class="solr.IntField" 			omitNorms="true" />
+    <fieldType name="pfloat" 	class="solr.FloatField" 		omitNorms="true" />
+    <fieldType name="random" 	class="solr.RandomSortField" 	indexed="true" />
     
     <!-- A general unstemmed text field that indexes tokens normally and also
          reversed (via ReversedWildcardFilterFactory), to enable more efficient 
@@ -15,14 +17,15 @@
     <fieldType name="text_rev" class="solr.TextField" positionIncrementGap="100">
       <analyzer type="index">
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-         <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="0" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="0"/>
+         <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" splitOnNumerics="0" generateNumberParts="0" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="0"/>
         <filter class="solr.LowerCaseFilterFactory"/>
-        <filter class="solr.ReversedWildcardFilterFactory" withOriginal="true" maxPosAsterisk="3" maxPosQuestion="2" maxFractionAsterisk="0.33"/>
+        <filter class="solr.ReversedWildcardFilterFactory" withOriginal="true"
+           maxPosAsterisk="3" maxPosQuestion="2" maxFractionAsterisk="0.33"/>
       </analyzer>
       <analyzer type="query">     	
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-         <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="0" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="0"/>
-        <filter class="solr.LowerCaseFilterFactory"/>
+         <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" splitOnNumerics="0" generateNumberParts="0" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="0"/>
+        <filter class="solr.LowerCaseFilterFactory"/>	
       </analyzer>      
     </fieldType>    
     
@@ -30,38 +33,45 @@
   
  <fields>
  	<!--  METAREP Core Fields Prokaryotic/Viral  -->	
-   <field name="peptide_id" type="string" indexed="true" stored="true" required="true" multiValued="false" default="unassigned"/> 
-   <field name="library_id" type="string" indexed="true" stored="false" required="true" multiValued="false" default="unassigned"/> 
-   <field name="com_name" type="string" indexed="true" stored="true" required="true" multiValued="true" default="unassigned"/> 
-   <field name="com_name_txt" type="text_rev" indexed="true" stored="false" required="false" multiValued="true" default="unassigned" omitNorms="true"/>/&gt; 
-   <field name="com_name_src" type="string" indexed="true" stored="true" required="true" multiValued="true" default="unassigned"/> 
-   <field name="go_id" type="string" indexed="true" stored="true" required="true" multiValued="true" default="unassigned"/> 
-   <field name="go_src" type="string" indexed="true" stored="true" required="true" multiValued="true" default="unassigned"/> 
-   <field name="go_tree" type="pint" indexed="true" stored="false" required="true" multiValued="true" default="0"/> 
-   <field name="ec_id" type="string" indexed="true" stored="true" required="true" multiValued="true" default="unassigned"/> 
-   <field name="ec_src" type="string" indexed="true" stored="true" required="true" multiValued="true" default="unassigned"/> 
-   <field name="hmm_id" type="string" indexed="true" stored="true" required="true" multiValued="true" default="unassigned"/> 
-   <field name="blast_species" type="string" indexed="true" stored="true" required="true" multiValued="true" default="unassigned"/> 
-   <field name="blast_evalue_exp" type="tint" indexed="true" stored="false" required="true" multiValued="false" default="0"/>
-   <field name="blast_pid" type="tfloat" indexed="true" stored="false" required="true" multiValued="false" default="0"/>
-   <field name="blast_cov" type="tfloat" indexed="true" stored="false" required="true" multiValued="false" default="0"/>
-   <field name="blast_evalue" type="string" indexed="false" stored="true" required="true" multiValued="false" default="unassigned"/> 
-   <field name="blast_tree" type="pint" indexed="true" stored="false" required="true" multiValued="true" default="0"/> 
-	 
-   <!--  METAREP Optional Fields Prokaryotic/Viral	-->	    
-   <field name="filter" type="string" indexed="true" stored="false" required="true" multiValued="true" default="unassigned"/> 
-   <field name="apis_tree" type="pint" indexed="true" stored="false" required="true" multiValued="true" default="0"/>  	
-   <field name="scaf_id" type="string" indexed="true" stored="true" required="true" multiValued="false" default="unassigned"/> 
-   <field name="scaf_tree" type="pint" indexed="true" stored="false" required="true" multiValued="true" default="0"/>  	
-   <field name="cluster_id" type="string" indexed="true" stored="true" required="true" multiValued="true" default="unassigned"/>  	 	
+   <field name="peptide_id" 		type="string"	indexed="true"	stored="true"	required="true"		multiValued="false"		default="unassigned"/> 
+   <field name="library_id" 		type="string"	indexed="true"	stored="false"	required="true"		multiValued="false"		default="unassigned"/> 
+   <field name="com_name" 	 		type="string"	indexed="true"	stored="true"	required="true"		multiValued="true"		default="unassigned"/> 
+   <field name="com_name_txt" 	 	type="text_rev"	indexed="true"	stored="false"	required="false"	multiValued="true"		default="unassigned"	omitNorms="true"/>/> 
+   <field name="com_name_src" 		type="string"	indexed="true"	stored="true"	required="true"		multiValued="true"		default="unassigned"/> 
+   <field name="go_id" 				type="string"	indexed="true"	stored="true"	required="true"		multiValued="true"		default="unassigned"/> 
+   <field name="go_src"				type="string"	indexed="true"	stored="true"	required="true"		multiValued="true"		default="unassigned"/> 
+   <field name="go_tree"			type="pint"		indexed="true"	stored="false"	required="true"		multiValued="true"		default="0"/> 
+   <field name="ec_id"				type="string"	indexed="true"	stored="true"	required="true" 	multiValued="true"		default="unassigned"/> 
+   <field name="ec_src" 			type="string"	indexed="true"	stored="true"	required="true"		multiValued="true"		default="unassigned"/> 
+   <field name="hmm_id" 			type="string"	indexed="true"	stored="true"	required="true"		multiValued="true"		default="unassigned"/> 
+   <field name="ko_id" 				type="string"	indexed="true"	stored="true"	required="true"		multiValued="true"		default="unassigned"/> 
+   <field name="blast_species"		type="string" 	indexed="true"	stored="true"	required="true" 	multiValued="true"		default="unassigned"/> 
+   <field name="blast_evalue_exp" 	type="tint" 	indexed="true" 	stored="false" 	required="true"		multiValued="false" 	default="0"/>
+   <field name="blast_pid" 			type="tfloat" 	indexed="true" 	stored="false" 	required="true"		multiValued="false"		default="0"/>
+   <field name="blast_cov" 			type="tfloat" 	indexed="true" 	stored="false" 	required="true"		multiValued="false"		default="0"/>
+   <field name="blast_evalue" 		type="string" 	indexed="false" stored="true" 	required="true" 	multiValued="false"		default="unassigned"/> 
+   <field name="blast_tree" 		type="pint" 	indexed="true" 	stored="false" 	required="true" 	multiValued="true" 		default="0"/> 
+   <field name="filter"				type="string"	indexed="true" 	stored="false" 	required="true" 	multiValued="true"		default="unassigned"/> 
+   <field name="weight"				type="pfloat"	indexed="true" 	stored="false" 	required="true" 	multiValued="false"		default="1"/> 
+ 	 
+   <!--  METAREP Optional Fields Prokaryotic/Viral	-->	
+      
+   <field name="apis_tree" 			type="pint" 	indexed="true" 	stored="false" 	required="true" 	multiValued="true"		default="0"/>  
+   <field name="kegg_tree" 			type="pint" 	indexed="true" 	stored="false" 	required="true" 	multiValued="true"		default="0"/>  	
+   <field name="scaf_id"			type="string" 	indexed="true"	stored="true"	required="true" 	multiValued="false"		default="unassigned"/> 
+   <field name="scaf_tree" 			type="pint" 	indexed="true" 	stored="false" 	required="true" 	multiValued="true"		default="0"/>  	
+   <field name="cluster_id"			type="string" 	indexed="true" 	stored="true" 	required="true" 	multiValued="true"		default="unassigned"/>  	 	
     
-   <!--  METAREP Viral Fields   -->	 
-   <field name="env_lib" type="string" indexed="true" stored="false" required="true" multiValued="true" default="unassigned"/> 	     
+   <!--  METAREP Viral Fields   -->	   
+   
+   <field name="env_lib"			type="string" 	indexed="true" 	stored="false" 	required="true" 	multiValued="true"		default="unassigned"/> 	     
 
-   <!--  METAREP Create Random Field   -->	  
-   <dynamicField name="random_*" type="random"/>
+   <!--  METAREP Create Random Field   -->	
+   
+   <dynamicField name="random_*" type="random" />
    
    <!--  METAREP Copy | copy field com_name to text analysis field com_name_text -->	
+   
    <copyField source="com_name" dest="com_name_txt"/>
    
  </fields>
