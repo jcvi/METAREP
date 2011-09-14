@@ -13,9 +13,9 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.2.0
+* @version METAREP v 1.3.0
 * @author Johannes Goll
-* @lastmodified 2010-09-16
+* @lastmodified 2011-09-14
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
 
@@ -171,6 +171,16 @@ define('METAREP_SUPPORT_EMAIL','metarep-support@jcvi.org');
 //define('INTERNAL_EMAIL_EXTENSION','');
 
 /**
+ * PHP HTTP transport implementation for retrieving Solr responses. 
+ * Two cCURL implementations (CURL_REUSE,CURL_NO_REUSE) and one implementation based on
+ * file_get_contents (FILE_GET_CONTENTS) can be specified. For the curl implemention
+ * the PHP cCURL module has to be installed.
+ */
+
+define('PHP_HTTP_TRANSPORT','FILE_GET_CONTENTS');
+
+
+/**
  * Number of Top Facet Counts
  * 
  * The METAREP search and browse pages summarize annotation data
@@ -248,7 +258,4 @@ define('WEIGHTED_COUNT_PRECISION',2);
  */
 
 define('JCVI_INSTALLATION',0);
-
-
-
 ?>
