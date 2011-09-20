@@ -66,7 +66,7 @@ class Pathway extends AppModel {
 			}
 			
 			if(count($pathwayEnzymeIds) == 0) {
-				return 0;
+				return null;
 			}
 			else {
 				return $filterQuery = "ec_id:(".implode(' OR ',array_unique($pathwayEnzymeIds)).")";
@@ -200,13 +200,13 @@ class Pathway extends AppModel {
 	public function getCount($parentId,&$solr,$dataset,$query,$pathwayModel) {		
 		
 		$filterQuery = $this->getQuery($parentId,$pathwayModel);
-		
-		if($filterQuery == 0) {
+		if(is_null($filterQuery)) {
 			return 0;
 		}
 		else {
 			$solrArguments = array('fq' => $filterQuery);	
 		}
+		
 		try	{			
 			$counts = $solr->count($dataset,$query,$solrArguments);	
 		}

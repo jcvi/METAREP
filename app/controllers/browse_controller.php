@@ -255,13 +255,14 @@ class BrowseController extends AppController {
 						'facet.limit' => NUM_TOP_FACET_COUNTS);
 		
 		try{		
-			$result = $this->Solr->search($dataset,"($query) AND (apis_tree:$expandTaxon)", 0,0,$solrArguments,true);
+			$result = $this->Solr->search($dataset,$query, 0,0,$solrArguments,true);
 		}
 		catch(Exception $e) {
-				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
-				$this->redirect('/projects/index',null,true);
+			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
+			$this->redirect('/projects/index',null,true);
 		}
-		$numHits = (double) $result->response->numFound;
+		
+		$numHits= $result->response->numFound;
 		$facets = $result->facet_counts;
 
 		//handle unresolved child nodes
@@ -652,42 +653,42 @@ class BrowseController extends AppController {
 	 */
 	private function pathways($dataset,$parentId,$query,$pathwayModel) {
 		$this->loadModel('Project');
-		
-		$function = $this->underscoreToCamelCase($pathwayModel);	
+
+		$function = $this->underscoreToCamelCase($pathwayModel);
 
 		$pipeline	=  $this->Project->getPipeline($dataset);
-		
-		if($pipeline === 'HUMANN') { 		
- 			$this->facetFields = array(
-								'blast_species'=>'Species (Blast)',
-								'ko_id'=>'Kegg Ortholog',
-								'go_id'=>'Gene Ontology',
-								'ec_id'=>'Enzyme',
-							);			
-		}		
-		
+
+		if($pipeline === PIPELINE_HUMANN) {
+			$this->facetFields = array(
+						'blast_species'=>'Species (Blast)',
+						'ko_id'=>'Kegg Ortholog',
+						'go_id'=>'Gene Ontology',
+						'ec_id'=>'Enzyme',
+			);
+		}
+
 		//initialize variables
 		$childArray 	= array();
 		$childCounts 	= array();
 		$facets 		= array();
 		$numChildHits 	= 0;
-		
+
 		$this->loadModel('Pathway');
 		$this->loadModel('Project');
 
 		//set title
-		if($pathwayModel == KEGG_PATHWAYS) {
-			$title = 'Browse Kegg Pathways (EC)';			
+		if($pathwayModel === KEGG_PATHWAYS) {
+			$title = 'Browse Kegg Pathways (EC)';
 		}
-		else if($pathwayModel == KEGG_PATHWAYS_KO) {
-			$title = 'Browse Kegg Pathways (KO)';			
-		}		
-		else if($pathwayModel == METACYC_PATHWAYS) {
+		else if($pathwayModel === KEGG_PATHWAYS_KO) {
+			$title = 'Browse Kegg Pathways (KO)';
+		}
+		else if($pathwayModel === METACYC_PATHWAYS) {
 			$title = 'Browse Metacyc Pathways (EC)';
 		}
-		
+
 		$this->pageTitle = $title;
-		
+
 		if($this->RequestHandler->isAjax()) {
 			$this->ajax= true;
 		}
@@ -695,9 +696,9 @@ class BrowseController extends AppController {
 		if($parentId == 1) {
 			#$this->Session->delete("$function.browse.query");
 			$this->Session->delete("$function.browse.tree");
-			$this->Session->delete("$function.browse.facets");			
+			$this->Session->delete("$function.browse.facets");
 		}
-		
+
 		if($this->Session->check("$function.browse.query")){
 			$query = $this->Session->read("$function.browse.query");
 		}
@@ -710,8 +711,6 @@ class BrowseController extends AppController {
 		else {
 			$expandTaxon=1;
 		}
-		
-	
 
 		//get pathway information for parent and children from database
 		$parent 	= $this->Pathway->getById($parentId,$pathwayModel);
@@ -721,66 +720,45 @@ class BrowseController extends AppController {
 		$parentName  		= $parent['name'];
 		$parentExternalId 	= $parent['external_id'];
 		$parentLevel 		= $parent['level'];
-		
+
 		if($pathwayModel === KEGG_PATHWAYS || $pathwayModel === METACYC_PATHWAYS) {
 			$parentEcId 	= $parent['ec_id'];
 		}
 		else if($pathwayModel === KEGG_PATHWAYS_KO) {
 			$parentkoId 	= $parent['ko_id'];
 		}
-		
+
 		$pathwayUrl = $this->Pathway->getUrl($parentExternalId,$pathwayModel);
 		$pathwayUrl .='/default%3white';
-		//try	{
-		
 		$parentCount = $this->Pathway->getCount($parentId,$this->Solr,$dataset,$query,$pathwayModel);
-		
-		
-		
-		
-//		}
-//		catch(Exception $e){
-//			$projectId = $this->Project->getProjectId($dataset);
-//			$this->Session->delete("$function.browse.query");
-//			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION,true);
-//			$query="*:*";
-			//$this->set('exception',SOLR_CONNECT_EXCEPTION);
-			//$this->redirect("/projects/view/$projectId",'ajax');			
-			
-			
-//			$this->set('projectName', $this->Project->getProjectName($dataset));
-//			$this->set('projectId', $this->Project->getProjectId($dataset));
-//			$this->set('dataset',$dataset);
-//			$this->render('pathways','ajax');
-//			exit();
-//		}
+
 		if($parentLevel === 'enzyme') {
 			$parentName = "$parentName ($parentEcId)";
 		}
 		else if($parentLevel === 'kegg-ortholog') {
 			$parentName = "$parentName ($parentkoId)";
-		}	
+		}
 		else if($parentLevel === 'pathway') {
-			$colorGradient =  $this->Color->gradient(HEATMAP_COLOR_YELLOW_RED);	
+			$colorGradient =  $this->Color->gradient(HEATMAP_COLOR_YELLOW_RED);
 			$this->set('colorGradient',$colorGradient);
-		}	
-		
+		}
+
 		$facets = $this->Pathway->getFacets($parentId,$this->Solr,$dataset,$query,$this->facetFields,$pathwayModel);
-				
-		
+
+
 		//for each child get solr count
 		foreach($children as $node) {
 			$name 	= strip_tags($node[$pathwayModel]['name']);
 			$level 	= $node[$pathwayModel]['level'];
 			$nodeId = $node[$pathwayModel]['id'];
-			
+				
 			if($pathwayModel === KEGG_PATHWAYS || $pathwayModel === METACYC_PATHWAYS) {
 				$ecId 	= $node[$pathwayModel]['ec_id'];
 			}
 			else if($pathwayModel === KEGG_PATHWAYS_KO) {
 				$koId 	= $node[$pathwayModel]['ko_id'];
-			}			
-								
+			}
+
 			$childCount = $this->Pathway->getCount($nodeId,$this->Solr,$dataset,$query,$pathwayModel);
 			
 			//filter for children
@@ -793,7 +771,7 @@ class BrowseController extends AppController {
 					if($level === 'enzyme') {
 						$relCount = round($childCount/$parentCount,12);
 						$color = $colorGradient[floor($relCount*19)];
-						
+
 						$childCounts["$name ($ecId)"] = $childCount;
 						$node[$pathwayModel]['name'] = "$name ($ecId)";
 						if($childCount > 0) {
@@ -812,7 +790,7 @@ class BrowseController extends AppController {
 					if($level === 'kegg-ortholog') {
 						$relCount = round($childCount/$parentCount,12);
 						$color = $colorGradient[floor($relCount*19)];
-						
+
 						$childCounts["$name ($koId)"] = $childCount;
 						$node[$pathwayModel]['name'] = "$name ($koId)";
 						if($childCount > 0) {
@@ -826,17 +804,17 @@ class BrowseController extends AppController {
 					else {
 						$childCounts[$name] = $childCount;
 					}
-					
+						
 				}
-				
+
 				$childArray[$nodeId] = $node[$pathwayModel];
 				$numChildHits += $childCount;
-			}		
-			
+			}
+				
 		}
-		
-		
-		
+
+
+
 		if($parentId == 1) {
 			$displayedTree = $childArray;
 		}
@@ -844,13 +822,13 @@ class BrowseController extends AppController {
 		else {
 			$this->traverseArray($displayedTree,$childArray,$parentId);
 		}
-		
-		
+
+
 		$this->Session->write("$function.browse.tree", $displayedTree);
 		$this->Session->write("$function.browse.childCounts", $childCounts);
 		$this->Session->write("$function.browse.facets", $facets);
-		$this->Session->write("$function.browse.facetFields",$this->facetFields);		
-		
+		$this->Session->write("$function.browse.facetFields",$this->facetFields);
+
 		$this->set('projectName', $this->Project->getProjectName($dataset));
 		$this->set('projectId', $this->Project->getProjectId($dataset));
 		$this->set('dataset',$dataset);
@@ -858,17 +836,17 @@ class BrowseController extends AppController {
 		$this->set('node',base64_encode($parentName));
 		$this->set('level',$parentLevel);
 		$this->set('url',$pathwayUrl);
-		
+
 		$this->set('numHits',$parentCount);
 		$this->set('numChildHits',$numChildHits);
-		
+
 		$this->set('mode',$pathwayModel);
-		
+
 		$this->set('header',$title);
-		
+
 		$this->render('pathways');
 	}
-	
+
 	public function downloadChildCounts($dataset,$node,$mode,$numHits,$query = "*:*") {
 		$this->autoRender=false; 
 
