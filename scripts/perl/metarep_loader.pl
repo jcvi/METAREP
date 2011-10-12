@@ -12,7 +12,7 @@
 #
 # link http://www.jcvi.org/metarep METAREP Project
 # package metarep
-# version METAREP v 1.3.0
+# version METAREP v 1.3.1
 # author Johannes Goll
 # lastmodified 2011-06-02
 # license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -31,60 +31,62 @@ metarep_loader.pl generates METAREP lucene indices from various input files.
 			
 =head1 SYNOPSIS
 
-perl metarep_humann_loader.pl --project_id 1 
- --input_dir /usr/local/scratch/input --sqlite_db metarep-hmp.sqlite3.db --solr_url http://localhost:8989 
- --solr_max_mem 3G --solr_instance_dir /opt/software/apache-solr/solr --solr_data_dir /solr-index 
- --mysql_host localhost --metarep_db ifx_hmp_metagenomics_reports --metarep_username usernae --metarep_password password
- --tmp_dir /usr/local/scratch --solr_home_dir /usr/local/annotation/METAGENOMIC/METAREP/solr
+perl scripts/perl/metarep_loader.pl --project_id 1 --input_dir data/tab --format=tab --sqlite_db db/metarep.sqlite3.db 
+--solr_url http://localhost:1234 --solr_home_dir <SOLR_HOME> --solr_instance_dir <SOLR_HOME>/metarep-solr 
+--mysql_host localhost --mysql_db ifx_hmp_metagenomics_reports --mysql_username metarep --mysql_password metarep
+--tmp_dir /usr/local/scratch 
 
 =head1 OPTIONS
 B<--project_id, -i>
 	METAREP project id (MySQL table projects, field project_id)			
 			
 B<--format, -o>
-	specified the input mode ('tab','humann','jpmap') [default:tab]
+	specified the input mode ('tab','humann','jpmap')
 
 B<--input_file, -f>
 	input file. Needs to be specified for mode tab and humann
 	
 B<--project_dir, -d>
 	input directory for JPMAP files. Needs to be specified for mode JPMAP
+
+B<--sqlite_db, -q>
+	METAREP SQLite database
 	
 B<--solr_url, -s>
 	METAREP solr server URL incl. port [default: http://localhost:8983]
 	
 B<--solr_home_dir, -h>
-	Solr server home directory
+	Solr server home directory (<SOLR_HOME>)
 
 B<--solr_instance_dir, -w>
-	Solr instance (configuration) directory [default: solr_dir/example/solr]
+	Solr instance (configuration) directory (<SOLR_HOME>/metarep-solr)
 
 B<--solr_data_dir, -y>
-	Solr index directory [default: solr_dir/example/solr/data/]
+	Solr index directory [default: <solr-instance-dir>/data]
 	
 B<--solr_max_mem, -z>
-	Solr maximum memory allocation [default: 1000M]
+	Solr maximum memory allocation [default: 1G]
 	
 B<--mysql_host, -s>
-	MySQL host incl. port [default: localhost:3306]
+	METAREP MySQL host incl. port [default: localhost:3306]
 
-B<--metarep_db, -b>
+B<--mysql_db, -b>
 	METAREP MySQL database name [default: metarep]
 	
-B<--metarep_username, -u>
+B<--mysql_username, -u>
 	METAREP MySQL username
 	
-B<--metarep_password, -p>
+B<--mysql_password, -p>
 	METAREP MySQL password
 
 B<--go_db, -g>
 	Gene Ontology database name [default: gene_ontology]	
 
 B<--go_username, -e>
-	Gene Ontology MySQL username [default: metarep_username]
+	Gene Ontology MySQL username [default: mysql_username]
 	
 B<--go_password, -f>
-	Gene Ontology MySQL password [default: metarep_password]	
+	Gene Ontology MySQL password [default: mysql_password]	
 	
 B<--tmp_dir, -y>
 	Directory to store temporary files (XML files gnerated before the Solr load)
@@ -93,7 +95,7 @@ B<--xml_only, -x>
 	Useful for debugging. Generates only XML files in the specified tmp directory without pushing the data to the Solr server. 
 
 B<--max_num_docs, -x>
-	The maximum number of docs to split XML into.
+	The maximum number of docs to split XML files into.
 
 
 =head1 AUTHOR
@@ -120,9 +122,9 @@ GetOptions(
 	'solr_data_dir|h=s',
 	'solr_max_mem|z=s',
 	'mysql_host|m=s',
-	'metarep_db|b=s',
-	'metarep_username|u=s',
-	'metarep_password|p=s',
+	'mysql_db|b=s',
+	'mysql_username|u=s',
+	'mysql_password|p=s',
 	'tmp_dir|y=s',	
 	'xml_only|x',	
 	'help|man|?',
@@ -170,7 +172,7 @@ elsif(!defined($args{tmp_dir}) || !(-d $args{tmp_dir})) {
 			-verbose => 1
 	);
 }	
-elsif(!defined($args{metarep_username})) {
+elsif(!defined($args{mysql_username})) {
 	pod2usage(
 			-message =>
 "\n\nERROR: A METAREP MySQL username needs to be defined.\n",
@@ -178,7 +180,7 @@ elsif(!defined($args{metarep_username})) {
 			-verbose => 1
 	);
 }
-elsif(!defined($args{metarep_password})) {
+elsif(!defined($args{mysql_password})) {
 	pod2usage(
 			-message =>
 "\n\nERROR: A METAREP MySQL password needs to be defined.\n",
@@ -234,8 +236,8 @@ if(!defined($args{solr_url})) {
 if(!defined($args{mysql_host})) {
 	$args{mysql_host} = "localhost:3306";
 }
-if(!defined($args{metarep_db})) {
-	$args{metarep_db} = "metarep";
+if(!defined($args{mysql_db})) {
+	$args{mysql_db} = "metarep";
 }
 if(!defined($args{solr_max_mem})) {
 	$args{solr_max_mem} = '1G';
@@ -251,13 +253,13 @@ if(!defined($args{format})) {
 }
 
 ## connect to METAREP MySQL database
-print "Trying to connect to MySQL database=".$args{metarep_db}." host=".$args{mysql_host}."\n";
-my $metarepDbConnection = DBI->connect_cached("DBI:mysql:".$args{metarep_db}.";host=".$args{mysql_host}."",$args{metarep_username},$args{metarep_password}, { 'RaiseError' => 0 });
+print "Trying to connect to MySQL database=".$args{mysql_db}." host=".$args{mysql_host}."\n";
+my $metarepDbConnection = DBI->connect_cached("DBI:mysql:".$args{mysql_db}.";host=".$args{mysql_host}."",$args{mysql_username},$args{mysql_password}, { 'RaiseError' => 0 });
 
 if(!$metarepDbConnection) {
 		pod2usage(
 			-message =>
-"\n\nERROR:Could not connect to $args{metarep_db}.\n",
+"\n\nERROR:Could not connect to $args{mysql_db} MySQL database\n",
 			-exitval => 1,
 			-verbose => 1
 	);
@@ -286,7 +288,7 @@ if(defined($args{project_dir})) {
 		}		
 	}
 	else {
-		## read all files
+		## read all files in project dir
 		opendir(DIR, $args{project_dir});
 	
 		my @files = grep(/\.$args{format}$/,readdir(DIR));
@@ -295,7 +297,7 @@ if(defined($args{project_dir})) {
 			print "Processing file $file \n";
 				
 			if($args{format} eq 'tab') {
-				&createIndexFromMetarepFile("$args{project_dir}/$file");
+				&createIndexFromTabFile("$args{project_dir}/$file");
 			}
 			elsif($args{format} eq 'humann') {
 				&createIndexFromHumannFile("$args{project_dir}/$file");
@@ -303,23 +305,6 @@ if(defined($args{project_dir})) {
 		}
 	}
 }
-
-## loop through project files
-#if($args{format} eq 'jpmap' && $args{input_dir} ) {
-#	&createIndexFromJpmapFile($args{input_dir});
-#}
-
-## index single file
-#elsif(defined($args{input_file})) {
-#	print "Processing file $args{input_file}\n";
-#	
-#	if($args{format} eq 'tab') {
-#		&createIndexFromTabFile($args{input_file});
-#	}
-#	elsif($args{format} eq 'humann') {		
-#		&createIndexFromHumannFile($args{input_file});
-#	}			
-#}
 
 ########################################################
 ## Parses HUMANnN gene weighted annotations.
@@ -329,6 +314,7 @@ sub createIndexFromHumannFile() {
 	my $file = shift;
 	
 	my $gzipFlag =0;
+	my $hasKo = 0;
 	my $isWeighted = 1;
 	
 	if($file =~ /\.gz$/) {
@@ -420,7 +406,7 @@ sub createIndexFromHumannFile() {
 	           
 	        ## set Blast Evalue exponent 
 			if($blastEvalue == 0) {
-					#set evalue to high default value
+				#set evalue to high default value
 				$blastEvalueExponent = 9999;
 			}	
 			else {
@@ -446,7 +432,7 @@ sub createIndexFromHumannFile() {
 	
 	## push index if xml only option has not been selected
 	unless($args{xml_only}) {
-		&pushIndex($datsetName,$xmlSplitSet,$isWeighted);
+		&pushIndex($datsetName,$xmlSplitSet,$isWeighted,$hasKo);
 	}
 	
 	if($gzipFlag) {
@@ -470,11 +456,10 @@ sub createIndexFromJpmapFile() {
 	my $xmlSplitSet  = 2;
 	my $numDocuments = 1;	
 	my $isGzipped	 = 1;
+	my $hasKo = 0;
 	my $isWeighted   = 0;
 	my $goTree 		 = undef;
-		
-		
-	$dataset .= "-pga"; 	
+			
 	## create index 	
 	&openIndex($dataset);
 			
@@ -547,7 +532,7 @@ sub createIndexFromJpmapFile() {
 	
 	## push index if xml only option has not been selected
 	unless($args{xml_only}) {
-		&pushIndex($dataset,$xmlSplitSet,$isWeighted);
+		&pushIndex($dataset,$xmlSplitSet,$isWeighted,$hasKo);
 	}
 }
 
@@ -557,6 +542,7 @@ sub createIndexFromJpmapFile() {
 
 sub createIndexFromTabFile() {
 	my $file = shift;
+	my $hasKo = 0;
 	my $isWeighted = 0;
 	my $gzipFlag =0;
 	
@@ -570,7 +556,7 @@ sub createIndexFromTabFile() {
 		
 		#parse dataset name		
 		my $datsetName = basename($file);
-		$datsetName =~ s/\.metarep_parsed\.tab/-mtr/;
+		$datsetName =~ s/\.tab//;
 		
 		#create index file
 		&openIndex($datsetName);
@@ -600,9 +586,14 @@ sub createIndexFromTabFile() {
 	            $blastPid,
 	            $blastCov,
 				$filter,
-				$weight,
-				$koId
+				$koId,
+				$weight
 	        ) = split("\t",$_);	 
+
+	        ## handle KO
+	        if(&clean($koId)) {
+	        	$hasKo = 1;
+	        }
 	        
 	        ## set weight
 	        if(&clean($weight)) {
@@ -673,7 +664,7 @@ sub createIndexFromTabFile() {
 	
 	## push index if xml only option has not been selected
 	unless($args{xml_only}) {
-		&pushIndex($datsetName,$xmlSplitSet,$isWeighted);
+		&pushIndex($datsetName,$xmlSplitSet,$isWeighted,$hasKo);
 	}
 	
 	if($gzipFlag) {
@@ -737,7 +728,7 @@ sub closeIndex {
 ########################################################
 
 sub pushIndex() {
-	my ($dataset,$xmlSplitSet,$isWeighted) = @_;
+	my ($dataset,$xmlSplitSet,$isWeighted,$hasKo) = @_;
 
 	print "Deleting dataset from METAREP MySQL database...\n";
 	&deleteMetarepDataset($dataset);
@@ -756,13 +747,10 @@ sub pushIndex() {
 	
 		print "Optimizing Solr index...\n";
 		&optimizeIndex($dataset);
-		
-		##gzip 
-		`gzip $args{tmp_dir}/$xmlFile`;	
 	}
 	
 	print "Adding dataset to METAREP MySQL database....\n";
-	&createMetarepDataset($dataset,$isWeighted);	
+	&createMetarepDataset($dataset,$isWeighted,$hasKo);	
 }
 
 ########################################################
@@ -900,8 +888,11 @@ sub getKoAncestors(){
 		
 		$koTermSelection = "($koTermSelection)";	
 
-		my $query = "select distinct parent_id from brite where id in (select parent_id from brite where id in(select parent_id from brite where id in (select parent_id from brite where ko_id in $koTermSelection))) union select distinct parent_id from brite where id in(select parent_id from brite where id in (select parent_id from brite where ko_id in $koTermSelection)) union select distinct parent_id from brite where id in (select parent_id from brite where ko_id in $koTermSelection) union select distinct parent_id from brite where ko_id in $koTermSelection";
-		
+		my $query = "select distinct parent_pathway_id from pathway_ko where pathway_id in (select parent_pathway_id from pathway_ko where pathway_id in(select parent_pathway_id from pathway_ko where pathway_id in (select parent_pathway_id from pathway_ko where ko_id in $koTermSelection))) union
+					select distinct parent_pathway_id from pathway_ko where pathway_id in(select parent_pathway_id from pathway_ko where pathway_id in (select parent_pathway_id from pathway_ko where ko_id in $koTermSelection)) union
+					select distinct parent_pathway_id from pathway_ko where pathway_id in (select parent_pathway_id from pathway_ko where ko_id in $koTermSelection) union 
+					select distinct parent_pathway_id from pathway_ko where ko_id in $koTermSelection";
+							
 		my $sth = $sqliteDbConnection->prepare($query);	
 		$sth->bind_col(1, \$id);
 		$sth->execute();	
@@ -935,14 +926,14 @@ sub getGoAncestors(){
 		
 		my $goTermSelection = join 'or term.acc=',map{qq/'$_'/} @goTerms;
 		
-		$goTermSelection = "(term.acc=$goTermSelection)";
+		$goTermSelection = "(go_term.acc=$goTermSelection)";
 		
 		my $ancestor;
 
 		## SQLITE query
 		my $query = "select DISTINCT substr(ancestor.acc,4,length(ancestor.acc)) 
-		FROM term INNER JOIN graph_path ON (term.id=graph_path.term2_id) INNER JOIN term
-		 AS ancestor ON (ancestor.id=graph_path.term1_id) WHERE $goTermSelection and
+		FROM go_term INNER JOIN go_graph_path ON (go_term.go_term_id=go_graph_path.go_term2_id) INNER JOIN go_term
+		 AS ancestor ON (ancestor.go_term_id=go_graph_path.go_term1_id) WHERE $goTermSelection and
 		  ancestor.acc!='all' order by distance desc;";
 
 		my $sth = $sqliteDbConnection->prepare($query);	
@@ -976,7 +967,7 @@ sub getParentTaxonId() {
 	my $speciesId = shift;
 	my $parentTaxonId;
  	
-	my $query ="select parent_tax_id from taxonomy where taxon_id=?" ;
+	my $query ="select parent_ncbi_taxon_id from ncbi_taxon where ncbi_taxon_id=?" ;
 
 	#execute query
 	my $sth = $sqliteDbConnection->prepare($query);
@@ -1000,10 +991,10 @@ sub getSpecies() {
 	my @ancestors = reverse(@$ancestors);
 	
 	if(@ancestors == 1) {
-		$query ="SELECT name FROM taxonomy WHERE rank = 'species' AND taxon_id = $ancestors[0]" ;
+		$query ="SELECT name FROM ncbi_taxon WHERE rank = 'species' AND ncbi_taxon_id = $ancestors[0]" ;
 	}
 	elsif(@ancestors > 1) {
-	 	$query ="SELECT name FROM taxonomy WHERE rank = 'species' AND taxon_id IN(".join(',',@ancestors).")" ;
+	 	$query ="SELECT name FROM ncbi_taxon WHERE rank = 'species' AND ncbi_taxon_id IN(".join(',',@ancestors).")" ;
 	}
 	else{
 		return $species;	
@@ -1073,7 +1064,7 @@ sub deleteMetarepDataset() {
 	my $query ="delete from libraries where name = ?";
 
 	## reconnect to avoid mysql time-out
-	$metarepDbConnection = DBI->connect_cached("DBI:mysql:".$args{metarep_db}.";host=".$args{mysql_host}."",$args{metarep_username},$args{metarep_password}, { 'RaiseError' => 0 });
+	$metarepDbConnection = DBI->connect_cached("DBI:mysql:".$args{mysql_db}.";host=".$args{mysql_host}."",$args{mysql_username},$args{mysql_password}, { 'RaiseError' => 0 });
 	
 	## prepare query
 	my $sth =$metarepDbConnection->prepare($query);
@@ -1141,7 +1132,7 @@ sub optimizeIndex() {
 ########################################################
 
 sub createMetarepDataset() {
-	my ($dataset,$isWeighted) = @_;
+	my ($dataset,$isWeighted,$hasKo) = @_;
 	my $srsId = $dataset;
 	
 	$srsId =~ s/-pga$//;
@@ -1153,15 +1144,18 @@ sub createMetarepDataset() {
 	if($args{format} eq 'humann') {
 		$pipeline = 'HUMANN';
 	}
-	else {
+	elsif($args{format} eq 'jpmap') {
 		$pipeline = 'JCVI_META_PROK';
 	}
+	elsif($args{format} eq 'tab') {
+		$pipeline = 'DEFAULT';
+	}
 	
-	my $query ="insert ignore into libraries (name,project_id,created,updated,pipeline,is_weighted) VALUES (?,?,curdate(),curdate(),'$pipeline',$isWeighted)";
+	my $query ="insert ignore into libraries (name,project_id,created,updated,pipeline,is_weighted,has_ko) VALUES (?,?,curdate(),curdate(),'$pipeline',$isWeighted,$hasKo)";
 	print $query."\n";
 
 	## reconnect to avoid time-out
-	$metarepDbConnection = DBI->connect_cached("DBI:mysql:".$args{metarep_db}.";host=".$args{mysql_host}."",$args{metarep_username},$args{metarep_password}, { 'RaiseError' => 0 });
+	$metarepDbConnection = DBI->connect_cached("DBI:mysql:".$args{mysql_db}.";host=".$args{mysql_host}."",$args{mysql_username},$args{mysql_password}, { 'RaiseError' => 0 });
 		
 	## prepare query
 	my $sth =$metarepDbConnection->prepare($query);
@@ -1213,7 +1207,7 @@ sub getNcbiTaxonId() {
 	my $keggTaxonId = shift;
 	my @ecIdAccessions= ();
 	
-	my $sth = $sqliteDbConnection->prepare("Select ncbi_taxon_id from taxon where kegg_taxon_id='$keggTaxonId'");
+	my $sth = $sqliteDbConnection->prepare("Select ncbi_ncbi_taxon_id from taxon where kegg_ncbi_taxon_id='$keggTaxonId'");
 	$sth->execute();
 	
 	my $ecId = undef;
@@ -1575,7 +1569,7 @@ sub getTaxonIdByName() {
 	
 	my $taxonId = '';
 	
-	my $query ="select taxon_id from taxonomy where name=? ";
+	my $query ="select ncbi_taxon_id from ncbi_taxon where name=? ";
 		
 	## execute query
 	my $sth = $sqliteDbConnection->prepare($query);

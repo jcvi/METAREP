@@ -137,7 +137,7 @@ or has been configured not to display inline frames.]</iframe></p>");
 			<?php echo $population['description']; ?>
 		</td>
 		<td style="width:4%;text-align:center">
-			<?php if($population['is_viral']){echo ('viral');} else{echo('prokaryotic');} ?>
+			<?php echo $population['pipeline'] ?>
 		</td>			
 		
 		<?php if($currentUserId == $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP):?>
@@ -161,7 +161,10 @@ or has been configured not to display inline frames.]</iframe></p>");
 					<option value=\"/metarep/browse/blastTaxonomy/{$population['name']}\">Browse Taxonomy (Blast)</option>");
 					if($population['has_apis']) {
 						echo("<option value=\"/metarep/browse/apisTaxonomy/{$population['name']}\">Browse Taxonomy (Apis)</option>");
-					}					
+					}	
+					if($population['pipeline'] === PIPELINE_HUMANN || $population['has_ko'] ) {
+						echo("<option value=\"/metarep/browse/keggPathwaysKo/{$library['name']}\">Browse Kegg Pathways (KO)</option>");
+					}									
 					echo("	
 					<option value=\"/metarep/browse/keggPathwaysEc/{$population['name']}\">Browse Kegg Pathways</option>
 					<option value=\"/metarep/browse/metacycPathways/{$population['name']}\">Browse Metacyc Pathways</option>
@@ -247,7 +250,7 @@ or has been configured not to display inline frames.]</iframe></p>");
 			<?php echo $library['sample_filter']?>
 		</td>					
 		<td style="width:4%;text-align:center">
-			<?php if($library['is_viral']){echo ('viral');} else{echo('prokaryotic');} ?>
+			<?php echo $library['pipeline'] ?>
 		</td>		
 		<?php if($currentUserId == $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP):?>
 		<td class="actions" style="width:4%;text-align:right">
@@ -265,7 +268,7 @@ or has been configured not to display inline frames.]</iframe></p>");
 					if($library['apis_database']) {
 						echo("<option value=\"/metarep/browse/apisTaxonomy/{$library['name']}\">Browse Taxonomy (Apis)</option>");
 					}	
-					if($library['is_weighted']) {
+					if($library['pipeline'] === PIPELINE_HUMANN || $library['has_ko'] ) {
 						echo("<option value=\"/metarep/browse/keggPathwaysKo/{$library['name']}\">Browse Kegg Pathways (KO)</option>");
 					}	
 					

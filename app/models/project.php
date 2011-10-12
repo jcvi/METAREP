@@ -179,17 +179,19 @@ class Project extends AppModel {
 	
 	#checks if all datasets have a certain datatype assigned
 	public function checkOptionalDatatypes($datasets) {
-		$isPopulation	= true;
-		$allViral	 	= true;
-		$allHaveApis 	= true;
-		$allHaveClusters= true;
-		$allHaveFilters = true;
-		$allAreWeighted = true;
-		$allAreHumann = true;
+		$isPopulation	 = true;
+		$allViral	 	 = true;
+		$allHaveApis 	 = true;
+		$allHaveClusters = true;
+		$allHaveFilters  = true;
+		$allAreWeighted  = true;
+		$allAreHumann 	 = true;
+		$allHaveSequence = true;
+		$allHaveKo = true;
 		
 		foreach($datasets as $dataset) {		
 			$result = $this->Library->findByName($dataset);
-						
+			
 			if(!empty($result)) {
 
 				$isPopulation = false;
@@ -205,12 +207,18 @@ class Project extends AppModel {
 				}
 				if(empty($result['Library']['filter_file'])){
 					$allHaveFilters=false;					
-				}	
+				}
+				if(empty($result['Library']['has_ko'])){
+					$allHaveKo =false;					
+				}					
 				if(empty($result['Library']['is_weighted'])){
 					$allAreWeighted=false;					
 				}								
 				if($result['Library']['pipeline'] != 'HUMANN'){
 					$allAreHumann=false;					
+				}	
+				if(empty($result['Library']['has_sequence'])){
+					$allHaveSequence=false;					
 				}					
 			}
 			else {
@@ -228,6 +236,9 @@ class Project extends AppModel {
 					if(!$result['Population']['has_clusters']){
 						$allHaveClusters=false;
 					}
+					if(!$result['Population']['has_ko']){
+						$allHaveKo =false;				
+					}					
 					if(!$result['Population']['has_filter']){
 						$allHaveFilters=false;
 					}	
@@ -236,7 +247,10 @@ class Project extends AppModel {
 					}	
 					if($result['Population']['pipeline'] != 'HUMANN'){
 						$allAreHumann=false;					
-					}															
+					}
+					if(!$result['Population']['has_sequence']){					
+						$allHaveSequence=false;					
+					}																				
 				}
 			}			
 		}
@@ -245,9 +259,12 @@ class Project extends AppModel {
 		$datatypes['viral']		= $allViral;
 		$datatypes['apis'] 		= $allHaveApis;
 		$datatypes['clusters'] 	= $allHaveClusters;
+		$datatypes['ko'] 		= $allHaveKo;
 		$datatypes['filter'] 	= $allHaveFilters;
 		$datatypes['weighted'] 	= $allAreWeighted;
 		$datatypes['humann'] 	= $allAreHumann;
+		$datatypes['sequence'] 	= $allHaveSequence;
+		
 		return $datatypes;
 	}
 	

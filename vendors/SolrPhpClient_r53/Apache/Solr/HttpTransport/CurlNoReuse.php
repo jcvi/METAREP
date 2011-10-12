@@ -82,10 +82,14 @@ class Apache_Solr_HttpTransport_CurlNoReuse extends Apache_Solr_HttpTransport_Ab
 			CURLOPT_URL => $url,
 
 			// set the timeout
-			CURLOPT_TIMEOUT => $timeout
+			CURLOPT_TIMEOUT => $timeout,			
+			
+//			CURLOPT_CONNECTTIMEOUT => 0,
+//			CURLOPT_TIMEOUT => 0
 		));
 
 		// make the request
+		set_time_limit(0);
 		$responseBody = curl_exec($curl);
 
 		// get info from the transfer
@@ -126,11 +130,12 @@ class Apache_Solr_HttpTransport_CurlNoReuse extends Apache_Solr_HttpTransport_Ab
 			// set the URL
 			CURLOPT_URL => $url,
 
-			// set the timeout
-			CURLOPT_TIMEOUT => $timeout
+			CURLOPT_CONNECTTIMEOUT => 0,
+			CURLOPT_TIMEOUT => 0
 		));
 
 		// make the request
+		set_time_limit(0);
 		$responseBody = curl_exec($curl);
 
 		// get info from the transfer
@@ -177,11 +182,12 @@ class Apache_Solr_HttpTransport_CurlNoReuse extends Apache_Solr_HttpTransport_Ab
 			// set the content type
 			CURLOPT_HTTPHEADER => array("Content-Type: {$contentType}"),
 
-			// set the timeout
-			CURLOPT_TIMEOUT => $timeout
+			CURLOPT_CONNECTTIMEOUT => 0,
+			CURLOPT_TIMEOUT => 0
 		));
 
 		// make the request
+		set_time_limit(0);
 		$responseBody = curl_exec($curl);
 
 		// get info from the transfer

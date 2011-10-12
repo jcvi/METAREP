@@ -109,7 +109,7 @@ class SearchController extends AppController {
 	);
 
 	//this function lets us search the lucene index, by default it returns the first page of all results (*|*)
-	function index($dataset='CBAYVIR',$page=1,$sessionQueryId=null) {
+	function index($dataset,$page=1,$sessionQueryId=null) {
 		$this->loadModel('Project');
 
 		$time_start = getmicrotime();
@@ -119,7 +119,7 @@ class SearchController extends AppController {
 		//add otpional datatypes
 		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
 
-		if($optionalDatatypes['viral'] || $optionalDatatypes['clusters'] || $optionalDatatypes['apis'] || $optionalDatatypes['filter']) {
+		if($optionalDatatypes['viral'] || $optionalDatatypes['clusters'] || $optionalDatatypes['apis'] || $optionalDatatypes['filter']  || $optionalDatatypes['ko'])  {
 			if($optionalDatatypes['viral']) {
 				$this->searchFields['Search By Name']['env_lib'] = 'Environmental Library Name';
 			}
@@ -135,6 +135,22 @@ class SearchController extends AppController {
 			if($optionalDatatypes['filter']) {
 				$this->searchFields['Search By Name']['filter']= 'Filter';
 			}
+			
+			if($optionalDatatypes['ko']) {	
+				
+				$this->facetFields = array(
+									'blast_species'=>'Species (Blast)',
+									'ko_id'=>'Kegg Ortholog',
+									'go_id'=>'Gene Ontology',
+									'ec_id'=>'Enzyme',
+				);
+	
+				$this->resultFields['ko_id'] = 'KO ID';
+							
+				$this->searchFields['Search By Name']['ko_name']='Kegg Ortholog Name';
+				$this->searchFields['Search By Name']['kegg_tree_name']='Kegg Pathway Name (KO)';
+				$this->searchFields['Search By ID']['ko_id']='Kegg Ortholog ID';
+			}			
 		}
 
 		//for paging use existing query session
@@ -170,7 +186,7 @@ class SearchController extends AppController {
 				$this->set('projectName', $this->Project->getProjectName($dataset));
 				$this->set('projectId', $this->Project->getProjectId($dataset));
 				$this->set('dataset',$dataset);
-				$this->set('numHits',0);
+				$this->set('numHits',0);			
 				$this->render();
 			}
 
@@ -180,7 +196,7 @@ class SearchController extends AppController {
 
 
 		//skip facet field com_name for HUMANN data sets
-		if($pipeline === 'HUMANN') {
+		if($pipeline === PIPELINE_HUMANN ) {
 
 			$this->facetFields = array(
 								'blast_species'=>'Species (Blast)',
@@ -257,6 +273,7 @@ class SearchController extends AppController {
 		$this->set('facetFields',$this->facetFields);
 		$this->set('resultFields', $this->resultFields);
 		$this->set('sessionQueryId',$sessionQueryId);
+		$this->set('hasSequence',$optionalDatatypes['sequence']);
 		$this->set('page',$page);
 	}
 
@@ -466,7 +483,7 @@ class SearchController extends AppController {
 
 		$content=$this->Format->facetListToDownloadString('Search Results - Top 10 Functional Categories',$dataset,$facets,$facetFields,$query,$numHits);
 
-		$fileName = "jcvi_metagenomics_report_".time().'.txt';
+		$fileName = uniqid('jcvi_metagenomics_report_').'.txt';
 
 		header("Content-type: text/plain");
 		header("Content-Disposition: attachment;filename=$fileName");
@@ -487,7 +504,7 @@ class SearchController extends AppController {
 
 		$content=$this->Format->facetMetaInformationListToDownloadString('Search Results - Top 10 Metainformation Categories',$facets,$query,$numHits,$numDatasets);
 
-		$fileName = "jcvi_metagenomics_report_".time().'.txt';
+		$fileName = uniqid('jcvi_metagenomics_report_').'.txt';
 
 		header("Content-type: text/plain");
 		header("Content-Disposition: attachment;filename=$fileName");
@@ -509,7 +526,7 @@ class SearchController extends AppController {
 
 		$query = $this->Session->read($sessionQueryId);
 
-		$fileName = "jcvi_metagenomics_report_".time().'.txt';
+		$fileName = uniqid('jcvi_metagenomics_report_').'.txt';
 		$fileLocation = METAREP_TMP_DIR."/$fileName";
 
 		$fh = fopen("$fileLocation", 'w');
@@ -527,8 +544,11 @@ class SearchController extends AppController {
 				$documents = $this->Solr->fetch($dataset,$query,$fields,$i,20000);
 			}
 			catch (Exception $e) {
+							
+
 				$this->Session->setFlash("METAREP Lucene Query Exception. Please correct your query and try again.");
 				$this->redirect(array('action' => 'index'),null,true);
+
 			}
 
 			foreach ( $documents as $document ) {
@@ -545,6 +565,85 @@ class SearchController extends AppController {
 		//echo $content;
 		readfile($fileLocation);
 	}
+
+	/**
+	 * Download sequences in fasta format. Fetches IDs from lucene index and pulls sequences from 
+	 * the sequence store location defined by SEQUENCE_STORE_PATH using fastacmd
+	 *
+	 * @param String $dataset Dataset
+	 * @param int $projectId Project ID 
+	 * @param int $numHits number of hits found for the query
+	 * @param String $sessionQueryId session id of the query
+	 * @return void
+	 * @access public
+	 */
+	public function dowloadSequences($dataset,$projectId,$numHits,$sessionQueryId) {
+		$this->autoRender=false;
+		$this->loadModel('Project');
+		
+		//variable to preserve the original passed-in dataset
+		$originalDataset = $dataset;
+		
+		//read query from session
+		$query = $this->Session->read($sessionQueryId);
+
+		//specify fasta file
+		$fastaFileName 	= uniqid('jcvi_metagenomics_report_').'.fasta';
+		$fastaFilePath  = METAREP_TMP_DIR."/$fastaFileName";
+		
+		//handle populations
+		if($this->Project->isPopulation($originalDataset)) {
+			$this->loadModel('Population');
+			$datasets = $this->Population->getLibraries($originalDataset);		
+		}
+		else {
+			$datasets = array($originalDataset);
+		}		
+		
+		foreach($datasets as $dataset) {			
+			$idFileName    	= uniqid('tmp_').'.txt';
+			$idFilePath		= METAREP_TMP_DIR."/$idFileName";
+			
+			$fh = fopen($idFilePath, 'w');
+			
+			//iterate over index to avoid out-of-memory exceptions
+			$batchSize = 25000;
+			
+			//get rows in batches of $batchSize
+			for($i=0;$i<$numHits+$batchSize;$i+=$batchSize) {
+				try{
+					//foreach batch suze query peptide ids for the given orginal dataset addign the library to the query to 
+					//restric results to library subsets for populations
+					$documents = $this->Solr->fetch($originalDataset,"$query AND library_id:$dataset",'peptide_id',$i,$batchSize);
+				}
+				catch (Exception $e) {
+					$this->Session->setFlash("METAREP Lucene Query Exception. Please correct your query and try again.");
+					$this->redirect(array('action' => 'index'),null,true);
+				}
+	
+				foreach ( $documents as $document ) {
+					fwrite($fh, $document->peptide_id."\n");
+				}
+	
+				unset($documents);
+			}
+			fclose($fh);
+			exec(FASTACMD_PATH." -d ".SEQUENCE_STORE_PATH."/$projectId/$dataset/$dataset -i $idFilePath >> $fastaFilePath");
+			
+			unlink($idFilePath);
+		}	
+		
+		exec(LINUX_BINARY_PATH."/sed -i 's/^>lcl|/>/' $fastaFilePath");
+		
+		//prepare download 
+		header('Content-description: File Transfer');		
+		header('Content-type: text/plain');
+		header("Content-disposition: attachment; filename=$fastaFileName");
+		header('Expires: 0');
+		header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+		header('Pragma: public');
+		readfile($fastaFilePath);				
+	}	
 	
 	/**
 	 * Wrapps around index function and provides access

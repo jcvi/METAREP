@@ -292,6 +292,235 @@ class SolrComponent extends BaseModelComponent {
 	}
 	
 
+	/* Executes a a multi-curl distributed search across the specified datasets using the 
+	 * respective query [client side distributed]
+	 *
+	 * @param String $datasets datasets
+	 * @param String $query query
+	 * @param String $filterQuery filter query
+	 * 
+	 * @return Array returns an array that contains counts for each datasets
+	 * @access public
+	 * @throws Throws exception if an error occurs during the Solr service call
+	 */	
+	
+	public function weightedMultiCurlSearch($datasets,$query,$filterQuery=null) {
+		$countResults = array();
+		$countResults['sum'] = 0;
+		
+		if(!is_null($filterQuery)) {
+			if($query === '*:*' ) {
+				$filterQuery = $filterQuery;
+			}
+			else {
+				$filterQuery  = "($filterQuery) AND ($query)";
+			}
+		}
+
+		$datasetChunks = array_chunk($datasets ,SOLR_NUM_MAX_WEIGHTED_SHARDS);
+
+		//loop through chunks of shards
+		foreach($datasetChunks as $datasetChunk) {
+			
+			$curlRequests = array();//handle array
+			
+			$urls = $this->getSolrShardArgument($datasetChunk);
+				
+			$myurl = "";
+			//collect requests per chunk
+			for($datasetCounter = 0; $datasetCounter<count($datasetChunk);$datasetCounter++) {
+				$h = curl_init();
+
+				if(defined('SOLR_SLAVE_HOST')) {
+					$randomFlag  = mt_rand(0, 1);
+					if($randomFlag == 0) {
+						$shardIp = SOLR_SLAVE_HOST;
+					}
+					if($randomFlag == 1) {
+						$shardIp = SOLR_MASTER_HOST;
+					}
+				}
+				else {
+					$shardIp = SOLR_MASTER_HOST;
+				}
+							
+				$dataset = 	$datasetChunk[$datasetCounter];
+				
+				//set culr options
+				curl_setopt($h,CURLOPT_URL,"http://$shardIp".":".SOLR_PORT."/solr/$dataset/select");
+				curl_setopt($h,CURLOPT_HEADER,false);
+				curl_setopt($h,CURLOPT_HTTPHEADER, array("Content-Type: application/x-www-form-urlencoded; charset=UTF-8"));
+				curl_setopt($h,CURLOPT_POSTFIELDS,"q=*:*&fq=$filterQuery&stats=true&stats.field=weight&rows=0&wt=json&json.nl=map");				
+		 		curl_setopt($h,CURLOPT_RETURNTRANSFER,true);
+		 		curl_setopt($h,CURLOPT_BINARYTRANSFER,true);
+		 		curl_setopt($h,CURLOPT_POST, true);
+		 		curl_setopt($h,CURLOPT_TIMEOUT, 0);
+		 		
+		 		$myurl= "http://$shardIp".":".SOLR_PORT."/solr/$dataset/select?q=*:*&fq=$filterQuery&stats=true&stats.field=weight&rows=0&wt=json&json.nl=map";
+//		 		if($datasetCounter = 0) {
+//		 			debug("http://$shardIp".":".SOLR_PORT."/solr/$dataset/select?q=*:*&fq=$filterQuery&stats=true&stats.field=weight&rows=0&wt=json&json.nl=map");
+//		 		}
+		 		$curlRequests[$dataset]=$h;		 		
+			}	
+				
+			//start multi-search
+			$mh = curl_multi_init();
+			foreach($curlRequests as $dataset => $h) curl_multi_add_handle($mh,$h);
+			$running = null;
+			
+			try {
+				do{
+					set_time_limit (0);
+					curl_multi_exec($mh,$running);
+				}while($running > 0);
+			}
+			catch (Exception $e) {
+				debug($myurl);
+				debug($e->getTrace());
+				#throw new Exception($e);
+			}
+			
+			// get the result and save it in the result ARRAY
+			foreach($curlRequests as $dataset => $h){
+				$responseBody = curl_multi_getcontent($h);
+				$statusCode   = curl_getinfo($h, CURLINFO_HTTP_CODE);
+				$contentType  = curl_getinfo($h, CURLINFO_CONTENT_TYPE);
+				$httpResponse = new Apache_Solr_HttpTransport_Response($statusCode, $contentType, $responseBody);
+				$solrResponse = new Apache_Solr_Response($httpResponse,false, true);
+
+				try {
+				#$data = json_decode(curl_multi_getcontent($h));
+					if(isset($solrResponse->stats->stats_fields->weight->sum)) {
+						$numHits =  round((double) $solrResponse->stats->stats_fields->weight->sum,WEIGHTED_COUNT_PRECISION);
+					}
+					else {
+						$numHits = 0;
+					}
+				}
+				catch (Exception $e) {
+					debug($myurl);
+					debug($e->getTrace());
+				}
+				
+				$countResults['sum'] += $numHits;
+				$countResults['datasets'][$dataset] = $numHits;
+
+				curl_multi_remove_handle($mh,$h);
+			}
+			curl_multi_close($mh); 
+		}	
+		return 	$countResults;
+	}	
+
+	/* Executes a a multi-curl distributed search across the specified datasets using the 
+	 * respective query [client side distributed]
+	 *
+	 * @param String $datasets datasets
+	 * @param String $query query
+	 * @param String $filterQuery filter query
+	 * 
+	 * @return Array returns an array that contains counts for each datasets
+	 * @access public
+	 * @throws Throws exception if an error occurs during the Solr service call
+	 */	
+	
+	public function unweightedMultiCurlSearch($datasets,$query,$filterQuery=null) {
+		$countResults = array();
+		$countResults['sum'] = 0;
+		
+		if(!is_null($filterQuery)) {
+			if($query === '*:*' ) {
+				$filterQuery = $filterQuery;
+			}
+			else {
+				$filterQuery  = "($filterQuery) AND ($query)";
+			}
+		}
+
+			
+		$curlRequests = array();//handle array
+			
+			
+		$myurl = "";
+		//collect requests per chunk
+		foreach($datasets as $dataset) {
+			$h = curl_init();
+
+			if(defined('SOLR_SLAVE_HOST')) {
+				$randomFlag  = mt_rand(0, 1);
+				if($randomFlag == 0) {
+					$solrHostIp = SOLR_SLAVE_HOST;
+				}
+				if($randomFlag == 1) {
+					$solrHostIp = SOLR_MASTER_HOST;
+				}
+			}
+			else {
+				$solrHostIp = SOLR_MASTER_HOST;
+			}
+			
+			//set culr options
+			curl_setopt($h,CURLOPT_URL,"http://$shardIp".":".SOLR_PORT."/solr/$dataset/select");
+			curl_setopt($h,CURLOPT_HEADER,false);
+			curl_setopt($h,CURLOPT_HTTPHEADER, array("Content-Type: application/x-www-form-urlencoded; charset=UTF-8"));
+			curl_setopt($h,CURLOPT_POSTFIELDS,"q=*:*&fq=$filterQuery&rows=0&wt=json&json.nl=map");				
+	 		curl_setopt($h,CURLOPT_RETURNTRANSFER,true);
+	 		curl_setopt($h,CURLOPT_BINARYTRANSFER,true);
+	 		curl_setopt($h,CURLOPT_POST, true);
+	 		curl_setopt($h,CURLOPT_TIMEOUT, 0);
+	 		
+	 		$curlRequests[$dataset]=$h;		 		
+		}	
+				
+		//start multi-search
+		$mh = curl_multi_init();
+		foreach($curlRequests as $dataset => $h) curl_multi_add_handle($mh,$h);
+		$running = null;
+			
+		try {
+			do{
+				set_time_limit (0);
+				curl_multi_exec($mh,$running);
+			}while($running > 0);
+		}
+		catch (Exception $e) {
+			debug($myurl);
+			debug($e->getTrace());
+			#throw new Exception($e);
+		}
+			
+		// get the result and save it in the result ARRAY
+		foreach($curlRequests as $dataset => $h){
+			$responseBody = curl_multi_getcontent($h);
+			$statusCode   = curl_getinfo($h, CURLINFO_HTTP_CODE);
+			$contentType  = curl_getinfo($h, CURLINFO_CONTENT_TYPE);
+			$httpResponse = new Apache_Solr_HttpTransport_Response($statusCode, $contentType, $responseBody);
+			$solrResponse = new Apache_Solr_Response($httpResponse,false, true);
+
+			try {
+			#$data = json_decode(curl_multi_getcontent($h));
+				if(isset($solrResponse->stats->stats_fields->weight->sum)) {
+					$numHits =  round((double) $solrResponse->response->numFound);
+				}
+				else {
+					$numHits = 0;
+				}
+			}
+			catch (Exception $e) {
+				debug($myurl);
+				debug($e->getTrace());
+			}
+			
+			$countResults['sum'] += $numHits;
+			$countResults['datasets'][$dataset] = $numHits;
+
+			curl_multi_remove_handle($mh,$h);
+		}
+		curl_multi_close($mh); 
+		
+		return 	$countResults;
+	}	
+	
 	/**
 	 * Returns the number of documents for an index. If a weighted population is supplied it executes a distributed search across
 	 * population datasets and returns the number of overall documents.
@@ -829,7 +1058,7 @@ class SolrComponent extends BaseModelComponent {
 	 **/
 	private function removeUnassignedValues(&$hits) {
 		foreach($hits as $hit) {
-			$hit->peptide_id = str_replace('JCVI_PEP_metagenomic.orf.','',$hit->peptide_id);
+			##$hit->peptide_id = str_replace('JCVI_PEP_metagenomic.orf.','',$hit->peptide_id);
 			$hit->com_name =  str_replace('unassig$resultned','',$hit->com_name);
 			$hit->com_name_src =  str_replace('unassigned','',$hit->com_name_src);
 			$hit->go_id =  str_replace('unassigned','',$hit->go_id);

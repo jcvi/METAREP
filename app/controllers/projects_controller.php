@@ -250,7 +250,7 @@ class ProjectsController extends AppController {
 //		$content = $this->Format->infoString($ti$this->Project->contain('Library','Population');tle,$selectedDatasets,$filter,null);
 //		$content.= $this->Format->comparisonResultsToDownloadString($counts,$selectedDatasets,$option);
 //
-//		$fileName = "jcvi_metagenomics_report_".time().'.txt';
+//		$fileName = uniqid('jcvi_metagenomics_report_').'.txt';
 //
 //		header("Content-type: text/plain");
 //		header("Content-Disposition: attachment;filename=$fileName");

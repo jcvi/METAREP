@@ -36,13 +36,14 @@ define('HEATMAP_COLOR_GREEN', 4);
 define('FISHER', 0);
 define('ABSOLUTE_COUNTS', 1);
 define('RELATIVE_COUNTS', 2);
-define('HEATMAP', 3);
+define('HEATMAP_COUNTS', 3);
 define('CHISQUARE', 4);
 define('WILCOXON', 5);
 define('METASTATS', 6);
 define('HIERARCHICAL_CLUSTER_PLOT', 7);
 define('MDS_PLOT', 8);
 define('HEATMAP_PLOT', 9);
+define('MOSAIC_PLOT', 10);
 
 //define compare dataset mode
 define('SHOW_ALL_DATASETS',0);
@@ -96,6 +97,6 @@ define('HEATMAP_BLUE_END', 'DEEBF7');
 define('HEATMAP_GREEN_START', '31A354');
 define('HEATMAP_GREEN_END', 'E5F5E0');
 
-define('PHP_HTTP_TRANSPORT_CURL_REUSE', 'CURL_REUSE');
+define('PHP_HTTP_TRANSPORT_CURL_REUSE', 'CURL_NO_REUSE');
 define('PHP_HTTP_TRANSPORT_CURL_NOREUSE', 'CURL_NO_REUSE');
 define('PHP_HTTP_TRANSPORT_FILE_GET_CONTENTS', 'FILE_GET_CONTENTS');

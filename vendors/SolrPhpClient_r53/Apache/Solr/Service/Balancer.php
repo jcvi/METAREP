@@ -893,7 +893,7 @@ class Apache_Solr_Service_Balancer
 
 		$service = $this->_selectReadService();
 		$service->setPath($path);
-
+		
 		do
 		{
 			try

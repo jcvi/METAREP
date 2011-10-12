@@ -50,29 +50,52 @@ class RComponent extends Object {
 			}
 		}
 
-		$subtitle = "data type:$tabName | level:$level | distance matrix:$distanceMatrix";
+		$subtitle = "data type:$tabName | level:$level";
 
 		switch($option) {
 			case HIERARCHICAL_CLUSTER_PLOT:
 				$title 	 = "Hierarchical Clustering Plot";
-				$subtitle.=" | cluster method:$clusterMethod";
-				break;
-			case MDS_PLOT:
-				$title = "MDS Plot";
-
+				$subtitle.=" | distance matrix:$distanceMatrix | cluster method:$clusterMethod";
 				break;
 			case HEATMAP_PLOT:
 				$title = "Heatmap Plot";
-				$subtitle.=" | cluster method:$clusterMethod";
+				$subtitle.=" | distance matrix:$distanceMatrix | cluster method:$clusterMethod";
+				break;				
+			case MDS_PLOT:
+				$title = "MDS Plot";
+				$subtitle.=" | distance matrix:$distanceMatrix";
 				break;
+			case MOSAIC_PLOT:				
+				$title = "Mosaic Plot";
+				break;				
 		}
 
-
-		$result = ' ';
-		$id 	= time();
-
+		$categroyDatasetMatrix = $this->categoryDatasetMatrixToString($datasets,$counts,$plotLabel,$mode);
+		
+		$id 	  = uniqid();
 		$inFile   = "jcvi_metagenomics_report_".$id;
 		$distFile = "jcvi_metagenomics_report_".$id."_dist";
+
+
+		//write to file
+		$fh = fopen(METAREP_TMP_DIR."/$inFile", 'w');		#write session variables
+
+		fwrite($fh,$categroyDatasetMatrix);
+		fclose($fh);
+		#debug(RSCRIPT_PATH." ".METAREP_WEB_ROOT."/scripts/r/plots.r ".METAREP_TMP_DIR."/$inFile $option \"$title\" \"$subtitle\" $distanceMatrix $clusterMethod $heatmapColor"." \"".METAREP_TMP_DIR."/".$distFile."\"");
+		exec(RSCRIPT_PATH." ".METAREP_WEB_ROOT."/scripts/r/plots.r ".METAREP_TMP_DIR."/$inFile $option \"$title\" \"$subtitle\" $distanceMatrix $clusterMethod $heatmapColor"." \"".METAREP_TMP_DIR."/".$distFile."\"");
+
+		if($option == HEATMAP_PLOT || $option == MDS_PLOT || $option == HIERARCHICAL_CLUSTER_PLOT) {
+			$clusterMatrices = file_get_contents(METAREP_TMP_DIR."/$distFile", 'w');
+			$this->Session->write('distantMatrices',$clusterMatrices);
+		}
+		
+		$this->Session->write('plotFile',$inFile);
+	}
+	
+	private function categoryDatasetMatrixToString($datasets,&$counts,$plotLabel,$mode){
+		$result = ' ';
+
 
 		foreach($counts as $category => $row) {
 				
@@ -80,7 +103,8 @@ class RComponent extends Object {
 				$result .= preg_replace('/\s++/','_',trim($category))." ";
 			}
 			else {
-				$result .= preg_replace('/\s++/','_',trim($row['name']))." ";
+				//replace white spaces and quotes
+				$result .= preg_replace('/\'/','',preg_replace('/\s++/','_',trim($row['name'])))." ";
 			}
 		}
 		$result .="\n";
@@ -99,19 +123,7 @@ class RComponent extends Object {
 			}
 			$result .="\n";
 		}
-
-
-		//write to file
-		$fh = fopen(METAREP_TMP_DIR."/$inFile", 'w');		#write session variables
-
-		fwrite($fh,$result);
-		fclose($fh);
-		#debug(RSCRIPT_PATH." ".METAREP_WEB_ROOT."/scripts/r/plots.r ".METAREP_TMP_DIR."/$inFile $option \"$title\" \"$subtitle\" $distanceMatrix $clusterMethod $heatmapColor"." \"".METAREP_TMP_DIR."/".$distFile."\"");
-		exec(RSCRIPT_PATH." ".METAREP_WEB_ROOT."/scripts/r/plots.r ".METAREP_TMP_DIR."/$inFile $option \"$title\" \"$subtitle\" $distanceMatrix $clusterMethod $heatmapColor"." \"".METAREP_TMP_DIR."/".$distFile."\"");
-
-		$clusterMatrices = file_get_contents(METAREP_TMP_DIR."/$distFile", 'w');
-		$this->Session->write('distantMatrices',$clusterMatrices);
-		$this->Session->write('plotFile',$inFile);
+		return $result;
 	}
 
 	/**
@@ -199,18 +211,18 @@ class RComponent extends Object {
 				$meanA = round($column[1],RELATIVE_COUNT_PRECISION);
 				$meanB = round($column[4],RELATIVE_COUNT_PRECISION);
 					
-				#if either mean is zero after rounding skip line
+				//if either mean is zero after rounding skip line
 				if($meanA == 0 ||  $meanB == 0) {
 					$categoryCount--;
 					continue;
 				}
 
-				#get the category from the metastats output
+				//get the category from the metastats output
 				$category = trim($column[0]);
 
 				//for KEGG pathways we need to left-pad the categories with zeros
-				if($mode === 'keggPathways' || $mode === 'keggPathwaysKo') {
-					$category 		= str_pad($category,5,0,STR_PAD_LEFT);
+				if($mode === 'keggPathwaysEc' || $mode === 'keggPathwaysKo') {
+					$category = str_pad($category,5,0,STR_PAD_LEFT);
 				}
 					
 				#init newCounts fields
@@ -230,6 +242,7 @@ class RComponent extends Object {
 				}
 
 				$newCounts[$category][$populationA]['mean'] 	= $meanA*100; //%mean;
+				
 				$newCounts[$category][$populationA]['variance']	= round($column[2],RELATIVE_COUNT_PRECISION);
 				$newCounts[$category][$populationA]['se']		= round($column[3],RELATIVE_COUNT_PRECISION)*100; //%se
 				$newCounts[$category][$populationB]['mean'] 	= $meanB*100; //%mean;
@@ -331,7 +344,7 @@ class RComponent extends Object {
 			$test = 'fisher.test';
 		}
 
-		$id = time();
+		$id = uniqid();
 		$inFile = "metarep_$test.in_".$id.'.txt';
 		$outFile = "metarep_$test.out_".$id.'.txt';
 		$fh = fopen(METAREP_TMP_DIR."/$inFile", 'w');
@@ -393,7 +406,7 @@ class RComponent extends Object {
 		$populationA = $populations[0];
 		$populationB = $populations[1];
 
-		$id = time();
+		$id = uniqid();
 		$inFile = "metarep_wilcox.in_".$id.'.txt';
 		$outFile = "metarep_wilcox.out_".$id.'.txt';
 		$fh = fopen(METAREP_TMP_DIR."/$inFile", 'w');
@@ -487,7 +500,9 @@ class RComponent extends Object {
 				$value =	round(trim(str_replace('[1] ','',$line)),RELATIVE_COUNT_PRECISION);
 
 				if($resultCounter == 1) {
+					
 					$newCounts[$category][$populationA]['median'] = round($value,RELATIVE_COUNT_PRECISION)*100; //%median A
+					
 				}
 				else if($resultCounter == 2) {
 					$newCounts[$category][$populationB]['median'] = round($value,RELATIVE_COUNT_PRECISION)*100;//%median B

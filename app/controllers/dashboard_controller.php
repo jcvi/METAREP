@@ -28,6 +28,7 @@ class DashboardController extends AppController {
 	function index() {
 		$this->loadModel('Project');	
 		$this->loadModel('Blog');
+		
 		$projects = array();
 		
 		$this->Project->contain('Library.id','Population.id');

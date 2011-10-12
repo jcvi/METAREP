@@ -20,6 +20,37 @@ CSS for search page
 	 
 }
 
+#resize-box{
+	position: relative;
+	background-color:#f0f0f0;
+	border:1px dashed #a0a0a0;
+	position:absolute;
+	top:22px;
+	height:20px;
+	right:10px;
+}
+.data-panel table {
+	margin-top:10px;	
+}
+
+#resize-box:hover {
+	background-color:#ffffff;
+}
+
+#resize-box a{
+	font-size:10px;
+	font-family:Arial,sans-serif;
+	text-decoration:none;
+	color:#909090;
+	display:block;
+	float:left;
+	padding:5px 10px;
+}
+
+#resize-box a:hover{
+	color: #fff; background: #e32;
+}
+
 .top-10-list ol {  
 	position: relative;
 	top: 0px;

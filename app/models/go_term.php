@@ -20,13 +20,12 @@
 **/
 
 class GoTerm extends AppModel {
-	var $useDbConfig 	= 'go'; 
-	var $name 			= 'GoTerm';
-	var $useTable 		= 'term';
-	var $primaryKey 	= 'id';
+	var $name 		 = 'GoTerm';
+	var $useTable 	 = 'go_term';
+	var $primaryKey  = 'id';
 	
 	function getIdQueryByName($name) {
-		$results = $this->query("SELECT count(*) as hits,GROUP_CONCAT(DISTINCT CONCAT('go_id:',acc) separator ' OR ') as query,  GROUP_CONCAT(DISTINCT concat(acc,' ',name) separator '@') as suggestions FROM term WHERE name like '%$name%'");	
+		$results = $this->query("SELECT count(*) as hits,GROUP_CONCAT(DISTINCT CONCAT('go_id:',acc) separator ' OR ') as query,  GROUP_CONCAT(DISTINCT concat(acc,' ',name) separator '@') as suggestions FROM go_term WHERE name like '%$name%'");	
 		$query = preg_replace('/[gG][oO]\:/i','GO\:',$results[0][0]['query']);
 		$search['hits']  =  $results[0][0]['hits'];
 		$search['query'] =  $query;
@@ -35,7 +34,7 @@ class GoTerm extends AppModel {
 	}
 
 	function getTreeQueryByName($name) {
-		$results = $this->query("SELECT count(*) as hits,GROUP_CONCAT(DISTINCT CONCAT('go_tree:',trim(LEADING '0' from replace(acc,'GO:',''))) separator ' OR ') as query,  GROUP_CONCAT(DISTINCT concat(acc,' ',name) separator '@') as suggestions FROM term WHERE name like '%$name%'");	
+		$results = $this->query("SELECT count(*) as hits,GROUP_CONCAT(DISTINCT CONCAT('go_tree:',trim(LEADING '0' from replace(acc,'GO:',''))) separator ' OR ') as query,  GROUP_CONCAT(DISTINCT concat(acc,' ',name) separator '@') as suggestions FROM go_term WHERE name like '%$name%'");	
 		$search['hits']  =  $results[0][0]['hits'];
 		$search['query'] =  $results[0][0]['query'];
 		$search['suggestions'] =  explode('@',$results[0][0]['suggestions']);		

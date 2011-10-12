@@ -126,8 +126,11 @@ class PopulationsController extends AppController {
 				$this->data['Population']['has_apis'] 	 = $optionalDatatypes['apis'];
 				$this->data['Population']['has_clusters']= $optionalDatatypes['clusters'];
 				$this->data['Population']['has_filter']  = $optionalDatatypes['filter'];
+				$this->data['Population']['has_ko'] 	 = $optionalDatatypes['ko'];
 				$this->data['Population']['is_viral'] 	 = $optionalDatatypes['viral'];
 				$this->data['Population']['is_weighted'] = $optionalDatatypes['weighted'];
+				$this->data['Population']['has_sequence']= $optionalDatatypes['sequence'];
+				
 
 				//if population could be saved
 				if ($this->Population->save($this->data)) {

@@ -47,7 +47,7 @@ include_once('metarep.php');
  * In development mode, you need to click the flash message to continue.
  */
 
-	Configure::write('debug', '1');
+	Configure::write('debug', '0');
 	
 /**
  * Application wide charset encoding

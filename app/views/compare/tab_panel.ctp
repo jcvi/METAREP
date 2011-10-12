@@ -67,7 +67,7 @@ foreach($tabs as $tab) {
 echo("<ul>");	
 echo $ajax->divEnd('tabs');	
 
-if($option == ABSOLUTE_COUNTS || $option == RELATIVE_COUNTS || $option == HEATMAP) {
+if($option == ABSOLUTE_COUNTS || $option == RELATIVE_COUNTS || $option == HEATMAP_COUNTS) {
 $downloadTitle = 'Download Counts';
 }
 elseif($option == CHISQUARE  || $option == FISHER || $option == METASTATS || $option == WILCOXON) {

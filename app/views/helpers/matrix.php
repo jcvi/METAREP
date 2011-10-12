@@ -104,10 +104,10 @@ class MatrixHelper extends AppHelper {
 		$html .= '</tr></thead><tbody>';
 		
 		$i = 0;
-		#debug($counts);
+		
 		foreach($counts as $category => $row) {	
 			
-				if($maxPvalue != PVALUE_ALL) {	
+				if($maxPvalue != PVALUE_ALL  && ($option == METASTATS || $option == WILCOXON)) {	
 					## handle p-value filtering (non bonferoni corrected)
 					if($maxPvalue < 4 ) {
 						switch ($maxPvalue) {
@@ -121,7 +121,7 @@ class MatrixHelper extends AppHelper {
 							$pvalueCutoff = 0.1;
 							break;												
 						}
-						if( $row['pvalue'] >= $pvalueCutoff)	{
+						if(  $row['pvalue'] >= $pvalueCutoff)	{
 								continue;
 						}									
 					}
@@ -195,18 +195,18 @@ class MatrixHelper extends AppHelper {
 					if($option == METASTATS) {
 						foreach($datasets as $dataset) {	
 							$html .= "<td style=\"text-align:right;\">{$row[$dataset]['total']}</td>";							
-							$html .= "<td style=\"text-align:right;\">".($row[$dataset]['mean']*100)."</td>";
+							$html .= "<td style=\"text-align:right;\">".($row[$dataset]['mean'])."</td>";
 							#$html .= "<td style=\"text-align:right;\">{$row[$dataset]['variance']}</td>";
-							$html .= "<td style=\"text-align:right;\">".($row[$dataset]['se']*100)."</td>";
+							$html .= "<td style=\"text-align:right;\">".($row[$dataset]['se'])."</td>";
 						}	
 											
-						$meanA 			= $row[$datasets[0]]['mean']*100;
-						$lowBoundA 		= ($row[$datasets[0]]['mean']-$row[$datasets[0]]['se'])*100;
-						$upperBoundA 	= ($row[$datasets[0]]['mean']+$row[$datasets[0]]['se'])*100;
+						$meanA 			= $row[$datasets[0]]['mean'];
+						$lowBoundA 		= ($row[$datasets[0]]['mean']-$row[$datasets[0]]['se']);
+						$upperBoundA 	= ($row[$datasets[0]]['mean']+$row[$datasets[0]]['se']);
 						
-						$meanB 			= $row[$datasets[1]]['mean']*100;
-						$lowBoundB 		= ($row[$datasets[1]]['mean']-$row[$datasets[1]]['se'])*100;
-						$upperBoundB 	= ($row[$datasets[1]]['mean']+$row[$datasets[1]]['se'])*100;
+						$meanB 			= $row[$datasets[1]]['mean'];
+						$lowBoundB 		= ($row[$datasets[1]]['mean']-$row[$datasets[1]]['se']);
+						$upperBoundB 	= ($row[$datasets[1]]['mean']+$row[$datasets[1]]['se']);
 											
 						$html .= "<td style=\"text-align:right;\">{$row['mratio']}</td>";	
 						$html .= "<td style=\"text-align:right;\">{$row['pvalue']}</td>";	
@@ -224,30 +224,16 @@ class MatrixHelper extends AppHelper {
 					elseif($option == WILCOXON) {
 						
 						foreach($datasets as $dataset) {			
-							$html .= "<td style=\"text-align:right;\">".($row[$dataset]['median']*100)."</td>";
+							$html .= "<td style=\"text-align:right;\">".($row[$dataset]['median'])."</td>";
 							#$html .= "<td style=\"text-align:right;\">{$row[$dataset]['variance']}</td>";
-							$html .= "<td style=\"text-align:right;\">".($row[$dataset]['mad']*100)."</td>";
+							$html .= "<td style=\"text-align:right;\">".($row[$dataset]['mad'])."</td>";
 						}	
-						
-						//get confidence intervals
-						$medianA 		= $row[$datasets[0]]['median']*100;
-						#$lowBoundA 		= $row[$datasets[0]]['ci_low']*100;
-						#$upperBoundA 	= $row[$datasets[0]]['ci_high']*100;					
-						$medianB 		= $row[$datasets[1]]['median']*100;
-						#$lowBoundB 		= $row[$datasets[1]]['ci_low']*100;
-						#$upperBoundB 	= $row[$datasets[1]]['ci_high']*100;
 											
+						$medianA 		= $row[$datasets[0]]['median'];				
+						$medianB 		= $row[$datasets[1]]['median'];																
 						$html .= "<td style=\"text-align:right;\">{$row['mratio']}</td>";	
 						$html .= "<td style=\"text-align:right;\">{$row['pvalue']}</td>";	
 						$html .= "<td style=\"text-align:right;\">{$row['bonf-pvalue']}</td>";	
-						
-						#$chartUrl 	= "http://chart.apis.google.com/chart?chs=140x18&cht=bhs&chd=t0:-1,";
-						#$chartUrl  .= "{$lowBoundA},{$lowBoundB},-1|-1,{$medianA},{$medianB},-1|-1,{$medianA},{$medianB},";
-						#$chartUrl  .= "-1|-1,{$upperBoundA},{$upperBoundB},-1|-1,{$medianA},{$medianB},-1&chm=F,C00000,0,1:4,5&chxr=0,0,1,100&chbh=1,5,1";
-						
-						#$largeChart 	= "http://chart.apis.google.com/chart?chs=325x48&cht=bhs&chd=t0:-1,{$lowBoundA},{$lowBoundB},-1|-1,{$meanA},{$meanB},-1|-1,{$meanA},{$meanB},-1|-1,{$upperBoundA},{$upperBoundB},-1|-1,{$meanA},{$meanB},-1&chm=F,808080,0,1:4,5&chxr=0,0,1,100&chbh=1,5,1";
-						
-						#$html .="<td style=\"text-align:center;\"><img src=\"$chartUrl\" name=\"ci_chart\">";
 						$html .="</td>";
 					}
 					else {

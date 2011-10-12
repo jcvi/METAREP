@@ -7,7 +7,7 @@
 .ui-multiselect li a { color: #999; text-decoration: none; padding: 0; display: block; float: left; cursor: pointer;}
 .ui-multiselect li.ui-draggable-dragging { padding-left: 10px; }
 
-.ui-multiselect div.selected { position: relative; padding: 0; margin: 0; border: 0; float:left; }
+.ui-multiselect div.selected { position: relative; padding: 0; margin: 0; border: 0; float:left}
 .ui-multiselect ul.selected { position: relative; padding: 0; overflow: auto; overflow-x: hidden; background: #fff; margin: 0; list-style: none; border: 0; position: relative; width: 100%; }
 .ui-multiselect ul.selected li { }
 
@@ -17,7 +17,7 @@
  
 .ui-multiselect .ui-state-default { border: none; margin-bottom: 1px; position: relative; padding-left: 20px;}
 .ui-multiselect .ui-state-hover { border: none; }
-.ui-multiselect .ui-widget-header {border: none; font-size: 11px; margin-bottom: 1px;}
+.ui-multiselect .ui-widget-header {border: none; font-size: 11px; margin-bottom: 1px}
  
 .ui-multiselect .add-all { float: right; padding: 7px;}
 .ui-multiselect .remove-all { float: right; padding: 7px;}

@@ -295,100 +295,6 @@
     <int name="termInfosIndexDivisor">12</int>
   </indexReaderFactory >-->
 
-    <listener event="firstSearcher" class="solr.QuerySenderListener">
-      <arr name="queries">
-        <!-- seed common sort fields -->
-        <lst> 
-        	<str name="q">*:*</str>
-        </lst>        
-        <lst> 
-        	<str name="q">*:*</str>
-        	<str name="stats">true</str>
-            <str name="stats.field">weight</str>
-        </lst>
-       
-        <!-- Search Facets-->            
-        <lst> <str name="q">*:*</str>
-              <str name="facet">true</str>
-              <str name="facet.field">blast_species</str>
-        </lst>
-          <lst> <str name="q">*:*</str>
-              <str name="facet">true</str>
-              <str name="facet.field">ko_id</str>
-        </lst> 
-          <lst> <str name="q">*:*</str>
-              <str name="facet">true</str>
-              <str name="facet.field">go_id</str>
-        </lst>                 
-          <lst> <str name="q">*:*</str>
-              <str name="facet">true</str>
-              <str name="facet.field">ec_id</str>
-        </lst>  
-        
-         <!-- Weighted Facets-->               
-        <lst> <str name="q">*:*</str>
-              <str name="stats">true</str>
-              <str name="stats.field">weight</str>
-              <str name="stats.facet">blast_species</str>
-        </lst>
-        <lst> <str name="q">*:*</str>
-              <str name="stats">true</str>
-              <str name="stats.field">weight</str>
-              <str name="stats.facet">ko_id</str>
-        </lst>
-        <lst> <str name="q">*:*</str>
-              <str name="stats">true</str>
-              <str name="stats.field">weight</str>
-              <str name="stats.facet">go_id</str>
-        </lst>    
-        <lst> <str name="q">*:*</str>
-              <str name="stats">true</str>
-              <str name="stats.field">weight</str>
-              <str name="stats.facet">ec_id</str>
-        </lst> 
-        
-          <!-- Taxonomy Compare tab -->         
-        <lst> <str name="q">*:*</str>
-       		  <str name="fq">blast_tree:2157</str>
-        </lst>       
-        <lst> <str name="q">*:*</str>
-       		  <str name="fq">blast_tree:2</str>
-        </lst>   
-        <lst> <str name="q">*:*</str>
-       		  <str name="fq">blast_tree:2759</str>
-        </lst>   
-           <!-- GO Compare Tab -->          
-        <lst> <str name="q">*:*</str>
-       		  <str name="fq">go_tree:8150</str>
-        </lst>       
-        <lst> <str name="q">*:*</str>
-       		  <str name="fq">go_tree:5575</str>
-        </lst>   
-        <lst> <str name="q">*:*</str>
-       		  <str name="fq">go_tree:3674</str>
-        </lst>   
-           <!-- KEGG KO Compare Tab -->          
-        <lst> <str name="q">*:*</str>
-       		  <str name="fq">kegg_tree:2</str>
-        </lst>       
-        <lst> <str name="q">*:*</str>
-       		  <str name="fq">kegg_tree:5380</str>
-        </lst>   
-        <lst> <str name="q">*:*</str>
-       		  <str name="fq">kegg_tree:6860</str>
-        </lst> 
-        <lst> <str name="q">*:*</str>
-       		  <str name="fq">kegg_tree:9251</str>
-        </lst>                  
-        <lst> <str name="q">*:*</str>
-       		  <str name="fq">kegg_tree:10767</str>
-        </lst> 
-         <lst> <str name="q">*:*</str>
-       		  <str name="fq">kegg_tree:13263</str>
-        </lst>                                                                                      
-      </arr>
-    </listener>
-
 
   <query>
     <!-- Maximum number of clauses in a boolean query... in the past, this affected
@@ -398,7 +304,7 @@
     <maxBooleanClauses>1024000</maxBooleanClauses>
 
 
-    <!-- There are two implementations of 	 available for Solr,
+    <!-- There are two implementations of cache available for Solr,
          LRUCache, based on a synchronized LinkedHashMap, and
          FastLRUCache, based on a ConcurrentHashMap.  FastLRUCache has faster gets
          and slower puts in single threaded operation and thus is generally faster
@@ -426,15 +332,15 @@
 
     <!-- Cache used to hold field values that are quickly accessible
          by document id.  The fieldValueCache is created by default
-         even if not configured here. -->
-         <!--
+         even if not configured here.
       <fieldValueCache
         class="solr.FastLRUCache"
-        size="300000"
-        autowarmCount="1000"
-        showItems="1000"
+        size="512"
+        autowarmCount="128"
+        showItems="32"
       />
-   -->
+    -->
+
    <!-- queryResultCache caches results of searches - ordered lists of
          document ids (DocList) based on a query, a sort, and the range
          of documents requested.  -->
@@ -1052,6 +958,36 @@
     </lst>
   </requestHandler>
 
+  <highlighting>
+   <!-- Configure the standard fragmenter -->
+   <!-- This could most likely be commented out in the "default" case -->
+   <fragmenter name="gap" class="org.apache.solr.highlight.GapFragmenter" default="true">
+    <lst name="defaults">
+     <int name="hl.fragsize">100</int>
+    </lst>
+   </fragmenter>
+
+   <!-- A regular-expression-based fragmenter (f.i., for sentence extraction) -->
+   <fragmenter name="regex" class="org.apache.solr.highlight.RegexFragmenter">
+    <lst name="defaults">
+      <!-- slightly smaller fragsizes work better because of slop -->
+      <int name="hl.fragsize">70</int>
+      <!-- allow 50% slop on fragment sizes -->
+      <float name="hl.regex.slop">0.5</float>
+      <!-- a basic sentence pattern -->
+      <str name="hl.regex.pattern">[-\w ,/\n\"']{20,200}</str>
+    </lst>
+   </fragmenter>
+
+   <!-- Configure the standard formatter -->
+   <formatter name="html" class="org.apache.solr.highlight.HtmlFormatter" default="true">
+    <lst name="defaults">
+     <str name="hl.simple.pre"><![CDATA[<em>]]></str>
+     <str name="hl.simple.post"><![CDATA[</em>]]></str>
+    </lst>
+   </formatter>
+  </highlighting>
+
   <!-- An example dedup update processor that creates the "id" field on the fly
        based on the hash code of some other fields.  This example has overwriteDupes
        set to false since we are using the id field as the signatureField and Solr
@@ -1096,6 +1032,14 @@
     <queryResponseWriter name="custom" class="com.example.MyResponseWriter"/>
   -->
 
+  <!-- XSLT response writer transforms the XML output by any xslt file found
+       in Solr's conf/xslt directory.  Changes to xslt files are checked for
+       every xsltCacheLifetimeSeconds.  
+   -->
+  <queryResponseWriter name="xslt" class="org.apache.solr.request.XSLTResponseWriter">
+    <int name="xsltCacheLifetimeSeconds">5</int>
+  </queryResponseWriter>
+
 
   <!-- example of registering a query parser
   <queryParser name="lucene" class="org.apache.solr.search.LuceneQParserPlugin"/>
@@ -1113,5 +1057,4 @@
     <healthcheck type="file">server-enabled</healthcheck>
     -->
   </admin>
-
 </config>

@@ -58,12 +58,12 @@ class MatrixComponent extends Object {
 		}
 
 		#transform matrix into relative counts
-		if($option == RELATIVE_COUNTS || $option == HEATMAP) {
+		if($option == RELATIVE_COUNTS || $option == HEATMAP_COUNTS) {
 			$this->absoluteToRelativeCounts($selectedDatasets,$counts);
 		}
 
 		#tranform matric for heatmap
-		if($option == HEATMAP) {
+		if($option == HEATMAP_COUNTS) {
 			$this->relativeToRelativeRowCounts($selectedDatasets,$counts);
 		}
 
@@ -185,7 +185,7 @@ class MatrixComponent extends Object {
 		}
 	}
 
-	//devides relative counts in a row by the relative row total (used for heatmap)
+	//devides relative counts in a row by the relative row total (used for heatmap counts)
 	private function relativeToRelativeRowCounts($datasets,&$counts) {
 
 		#loop through counts, row by row [dimension 1]

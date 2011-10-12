@@ -26,11 +26,11 @@ class Taxonomy extends AppModel {
 	var $useTable 	= 'taxonomy';
 
 	public function findTopLevelTaxons() {
-		return $this->find('all', array('conditions' => array('Taxonomy.taxon_id' => array(2157,2,2759,10239, 28384)),'fields' => array('taxon_id','name')));
+		return $this->find('all', array('conditions' => array('Taxonomy.taxon_id' => array(2157,2,2759,12884,10239, 28384)),'fields' => array('taxon_id','name')));
 	}
 	
 	public function getTreeQueryByName($name,$field,$rank = '') {		
-		$query = "SELECT count(*) as hits,GROUP_CONCAT(DISTINCT CONCAT('$field:',taxon_id) separator ' OR ') as query,  GROUP_CONCAT(DISTINCT concat(taxon_id,' ',name,' ',rank) separator '@') as suggestions FROM taxonomy WHERE name like '%$name%' AND is_shown = 1";
+		$query = "SELECT count(*) as hits,GROUP_CONCAT(DISTINCT CONCAT('$field:',taxon_id) separator ' OR ') as query,  GROUP_CONCAT(DISTINCT concat(taxon_id,' ',name,' ',rank) separator '@') as suggestions FROM taxonomy WHERE name like '%$name%'";
 		if(!empty($rank)) {
 			$query.=" AND rank='$rank'"; 
 		}		

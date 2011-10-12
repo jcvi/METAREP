@@ -121,19 +121,20 @@ new Form.Element.EventObserver('CompareSelection.all', function(element, value) 
 	echo $form->input('option', 
 						array('options' => 	
 							array(	'Summary' => array( 
-												1 =>'Absolute Counts',
-												2 =>'Relative Counts',
-												3 =>'Heatmap Counts',
+												ABSOLUTE_COUNTS =>'Absolute Counts',
+												RELATIVE_COUNTS =>'Relative Counts',
+												HEATMAP_COUNTS =>'Heatmap Counts',
 												),
 									'Statistical Test' => array( 
-												4 =>'Chi-Square Test of Independence',
-												5 =>'Wilcoxon Rank Sum Test',
-												6 =>'METASTATS - non parametric t-test',),
+												CHISQUARE =>'Chi-Square Test of Independence',
+												WILCOXON =>'Wilcoxon Rank Sum Test',
+												METASTATS =>'METASTATS - non parametric t-test',),
 							
 									'Plots' => array( 
 												HIERARCHICAL_CLUSTER_PLOT  =>'Hierarchical Cluster Plot',												
 												HEATMAP_PLOT =>'HeatMap Plot',
-												MDS_PLOT =>'Multidimensional Scaling Plot',),			
+												MDS_PLOT =>'Multidimensional Scaling Plot',
+												MOSAIC_PLOT =>'Mosaic Plot',),			
 							),
 							'label' => false,'selected' => $option,'div'=>'comparator-select-option')
 						);

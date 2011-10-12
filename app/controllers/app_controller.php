@@ -30,7 +30,7 @@ class AppController extends Controller {
 	//treated with caution. It caused a chache exception and returned imcomplete
 	//model objects google"$persistModel cakephp incomplete object". Setting this to false
 	//until the root cause for this exception has been identified.
-	var $persistModel 	= false;	
+	var $persistModel 	= true;	
 	
 	var $helpers 		= array('Session','Html', 'Form','Javascript','Ajax');
 	var $components 	= array('Session','Cookie','RequestHandler','Authsome' => array('model' => 'User'));
@@ -71,6 +71,7 @@ class AppController extends Controller {
 							'search/count',
 							'search/dowloadFacets',
 							'search/dowloadData',
+							'search/dowloadSequences',
 							'search/link',
 							'browse/blastTaxonomy',
 							'browse/apisTaxonomy',

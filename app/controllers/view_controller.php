@@ -57,7 +57,6 @@ class ViewController extends AppController {
 						'hmm_id'=>array('name'=>'HMM','action'=>'facet','facetField'=>'hmm_id','isActive'=>1),
 						 KEGG_PATHWAYS =>array('name'=>'Kegg Pathway (EC)','facetField'=>'ec_id','action'=>'pathway','isActive'=>1),
 						 METACYC_PATHWAYS =>array('name'=>'Metacyc Pathway (EC)','facetField'=>'ec_id','action'=>'pathway','isActive'=>1),
-						// 'ko_id'=>array('name'=>'Kegg Ortholog','action'=>'pathway','isActive'=>0),
 						  );															
 						  
 	//this function lets us view all detail of the lucene index
@@ -71,6 +70,10 @@ class ViewController extends AppController {
 		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
 
 		if(JCVI_INSTALLATION) {	
+			if($optionalDatatypes['ko']) {			
+				$this->tabs['ko'] =array('name'=>'Kegg Ortholog','action'=>'facet','facetField'=>'ko_id','isActive'=>1);
+				$this->resultFields['ko_id'] = 'KO ID';
+			}	
 			if($optionalDatatypes['clusters']) {
 				$this->tabs[CORE_CLUSTERS] = array('name'=>'Core Cluster','action'=>'facet','facetField'=>'cluster_id','facetPrefix'=>CORE_CLUSTERS,'isActive'=>1);
 				$this->tabs[FINAL_CLUSTERS] = array('name'=>'Final Cluster','action'=>'facet','facetField'=>'cluster_id','facetPrefix'=>FINAL_CLUSTERS,'isActive'=>1);
@@ -82,13 +85,13 @@ class ViewController extends AppController {
 				$this->tabs['library_id'] = array('name'=>'Library','action'=>'facet','facetField'=>'library_id','isActive'=>1);
 			}
 			if($optionalDatatypes['filter']) {			
-				$this->tabs['filter'] = array('name'=>'Filter','action'=>'facet','facetField'=>'filter','isActive'=>1);
-			}
+				$this->tabs['filter'] = array('name'=>'Filter','action'=>'facet','facetField'=>'filter','isActive'=>1);				
+			}		
 		}			
 		
 		$pipeline	=  $this->Project->getPipeline($dataset);
 		
-		if($pipeline === 'HUMANN') {  
+		if($pipeline === PIPELINE_HUMANN) {  
 			$this->resultFields = array(
 								'peptide_id'=>'Peptide ID',
 								'com_name'=>'Common Name',
@@ -109,11 +112,11 @@ class ViewController extends AppController {
 						'ec_id'=>array('name'=>'Enzyme','action'=>'facet','facetField'=>'ec_id','isActive'=>1),						
 						 KEGG_PATHWAYS =>array('name'=>'Kegg Pathway (EC)','action'=>'pathway','facetField'=>'ec_id','isActive'=>1),
 						 METACYC_PATHWAYS =>array('name'=>'Metacyc Pathway (EC)','action'=>'pathway','facetField'=>'ec_id','isActive'=>1),
-						// 'com_name'=>array('name'=>'Common Name','action'=>'facet','isActive'=>0),
-						// 'hmm_id'=>array('name'=>'HMM','action'=>'facet','isActive'=>0),
 						  );						
 		}				
-				
+
+
+		
 		//Solr query to fetch data rows (data tab)
 		$solrArguments = array(	'fl' => join(' ',array_keys($this->resultFields)),
 								'facet'	=> 'true',
@@ -169,7 +172,7 @@ class ViewController extends AppController {
 		$this->set('page',$page);
 	}
 	
-	function facet($dataset='CBAYVIR',$sessionId,$tabId,$limit=20) {	
+	function facet($dataset,$sessionId,$tabId,$limit=20) {	
 		$tabs = $this->Session->read($sessionId.'tabs');
 
 		$facetField  = $tabs[$tabId]['facetField'];
@@ -293,9 +296,10 @@ class ViewController extends AppController {
 		$evidenceQueries['Species (Blast)'] = 'NOT blast_species:unassigned AND NOT blast_species:unresolved';
 		$evidenceQueries['Gene Ontology'] 	= 'NOT go_id:unassigned';
 		$evidenceQueries['Enzyme'] 			= 'NOT ec_id:unassigned';
+		
 			
-		if($pipeline === 'HUMANN') {  		
-			$evidenceQueries['Kegg Ortholog'] 		= 'NOT ko_id:unassigned';	
+		if($pipeline === PIPELINE_HUMANN || $optionalDatatypes['ko']) {  		
+			$evidenceQueries['Kegg Ortholog'] = 'NOT ko_id:unassigned';	
 		}
 		else {
 			$evidenceQueries['HMM'] 		= 'NOT hmm_id:unassigned';
@@ -311,6 +315,8 @@ class ViewController extends AppController {
 		if($optionalDatatypes['filter']) {			
 			$evidenceQueries['Filter'] = 'NOT filter:unassigned';
 		}
+		$evidenceQueries['Any Evidence'] 	= '-com_name_src:(CAMERA OR "N/A" OR "No Evidence" OR unassigned)';
+		
 		$this->addSummaryCounts($dataset,$totalCount,'Evidence Summary',$filterQuery,$evidenceQueries,$summaryCounts);
 	
 		// common name summaries
@@ -323,13 +329,14 @@ class ViewController extends AppController {
 		if($optionalDatatypes['viral']) {
 			
 			$viralQueries['PEPSTATS']   		= $filterQuery;
+			$viralQueries['UNIREF_PEP'] 		= 'com_name_src:UNIREF*';
+			$viralQueries['ACLAME_PEP']  		= 'com_name_src:ACLAME*';
+			$viralQueries['PFAM/TIGRFAM_HMM'] 	= 'hmm_id:(PF* OR TIGR*)';
+			$viralQueries['NV_NT/SANGER PEP'] 	= 'NOT env_lib:unassigned';
+			$viralQueries['COM2GO'] 			= 'go_src:com2go';
+			$viralQueries['ACLAME_HMM']  		= 'hmm_id:ACLAME_*';
 			$viralQueries['ALLGROUP_PEP'] 		= 'com_name_src:ALLGROUP*';
 			$viralQueries['PRIAM']	 			= 'ec_src:PRIAM*';
-			$viralQueries['NV_NT'] 				= 'NOT env_lib:unassigned';
-			$viralQueries['FRAG_HMM'] 			= 'com_name_src:FRAG_HMM*';
-			$viralQueries['ACLAME_HMM']  		= 'hmm_id:ACLAME_*';
-			$viralQueries['PFAM/TIGRFAM_HMM'] 	= 'hmm_id:(PF* OR TIGR*)';
-			$viralQueries['COM2GO'] 			= 'go_src:com2go';
 		
 			$this->addSummaryCounts($dataset,$totalCount,'Viral Evidence Summary',$filterQuery,$viralQueries,$summaryCounts);
 		}
@@ -456,7 +463,7 @@ class ViewController extends AppController {
 		}
 
 		#generate download file name
-		$fileName = "jcvi_metagenomics_report_".time().'.txt';
+		$fileName = uniqid('jcvi_metagenomics_report_').'.txt';
 		
 		#prepare for download
         header("Content-type: text/plain"); 

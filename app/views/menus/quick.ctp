@@ -67,6 +67,12 @@ foreach ($projects as $project) {
 		echo("<li>".$html->link(__('Compare', true), array('controller'=> 'compare',$population['name']))."</li>"); 
 		echo("<li>".$html->link(__('Browse Blast Taxonomy', true), array('controller'=> 'browse', 'action'=>'blastTaxonomy',$population['name']))."</li>"); 			      
 		if($population['has_apis']) {echo("<li>".$html->link(__('Browse Apis Taxonomy', true), array('controller'=> 'browse', 'action'=>'apisTaxonomy',$population['name']))."</li>"); }				               			
+			if($library['pipeline'] === PIPELINE_HUMANN || $library['has_ko']) {
+			echo("<li>".$html->link(__('Browse Kegg Pathways (KO)', true), array('controller'=> 'browse', 'action'=>'keggPathwaysKo',$library['name']))."</li>");		
+		}
+		if($population['pipeline'] === PIPELINE_HUMANN || $population['has_ko']) {
+			echo("<li>".$html->link(__('Browse Kegg Pathways (KO)', true), array('controller'=> 'browse', 'action'=>'keggPathwaysKo',$library['name']))."</li>");		
+		}			
 		echo("<li>".$html->link(__('Browse Kegg Pathways', true), array('controller'=> 'browse', 'action'=>'keggPathwaysEc',$population['name']))."</li>");		      
 		echo("<li>".$html->link(__('Browse Metacyc Pathways', true), array('controller'=> 'browse', 'action'=>'metacycPathways',$population['name']))."</li>");		      
 		echo("<li>".$html->link(__('Browse Enzymes', true), array('controller'=> 'browse', 'action'=>'enzymes',$population['name']))."</li>");
@@ -85,7 +91,7 @@ foreach ($projects as $project) {
 		echo("<li>".$html->link(__('Browse Blast Taxonomy', true), array('controller'=> 'browse', 'action'=>'blastTaxonomy',$library['name']))."</li>");
 		if($library['apis_database'] !='') {echo("<li>".$html->link(__('Browse Apis Taxonomy', true), array('controller'=> 'browse', 'action'=>'apisTaxonomy',$library['name']))."</li>"); }				
 		
-		if($library['is_weighted']) {
+		if($library['pipeline'] === PIPELINE_HUMANN || $library['has_ko']) {
 			echo("<li>".$html->link(__('Browse Kegg Pathways (KO)', true), array('controller'=> 'browse', 'action'=>'keggPathwaysKo',$library['name']))."</li>");		
 		}					
 		echo("<li>".$html->link(__('Browse Kegg Pathways (EC)', true), array('controller'=> 'browse', 'action'=>'keggPathwaysEc',$library['name']))."</li>");		

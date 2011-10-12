@@ -20,9 +20,8 @@
 **/
 
 class GoGraph extends AppModel {
-	var $useDbConfig = 'go'; 
 	var $name 		 = 'GoGraph';
-	var $useTable 	 = 'graph_path';
+	var $useTable 	 = 'go_graph_path';
 	var $primaryKey  = 'id';
 	var $recursive  = 0;
 	

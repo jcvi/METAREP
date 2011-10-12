@@ -239,7 +239,8 @@ class Pathway extends AppModel {
 								'facet.mincount'=> 1,
 								"facet.limit" 	=> -1
 						);						
-		try	{			
+		try	{		
+			
 			$result = $solr->search($dataset,$query,0,0,$solrArguments);			
 		}
 		catch(Exception $e){
@@ -295,6 +296,7 @@ class Pathway extends AppModel {
 			$queryResults= $this->query("select id,name,level,external_id,ec_id FROM $pathwayModel where id = $pathwayId");
 		
 			$results = array();
+			
 			$results['id'] 			= $queryResults[0][$pathwayModel]['id'];
 			$results['name'] 		= $queryResults[0][$pathwayModel]['name'];
 			$results['level'] 		= $queryResults[0][$pathwayModel]['level'];
@@ -425,7 +427,7 @@ class Pathway extends AppModel {
 		$parentExternalId 	= $parent['external_id'];
 		$parentEcId 		= $parent['ec_id'];
 
-		if($parentLevel == 'enzyme') {
+		if($parentLevel === 'enzyme') {
 			$solrEcId = str_replace("-","*",$parentEcId);
 			array_push($enzymeIds,$solrEcId);
 			return $enzymeIds;

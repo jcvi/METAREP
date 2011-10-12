@@ -648,6 +648,8 @@ class DboMysql extends DboMysqlBase {
  * @return unknown
  */
 	function fetchResult() {
+		
+		
 		if ($row = mysql_fetch_row($this->results)) {
 			$resultRow = array();
 			$i = 0;

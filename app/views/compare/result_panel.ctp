@@ -153,21 +153,16 @@ else {
 	
 	echo $form->create( 'Post' );
 	
-//	if(!isset($level)) {
-//		$level = 'root';
-//	}
-//	else {
-//		debug($level);
-//	}
+
 	echo $form->input( 'level', array( 'options' => $levels, 'selected' => $level,'label' => 'Level', 'empty'=>'--select level--','div'=>'comparator-drop-down-one'));
 	
-	if($option == HEATMAP) {
+	if($option == HEATMAP_COUNTS) {
 		echo $form->input( 'heatmap', array( 'options' => array(HEATMAP_COLOR_YELLOW_RED=>'red-yellow (default)',
 																HEATMAP_COLOR_YELLOW_BLUE=>'yellow-blue',
 																HEATMAP_COLOR_BLUE =>'blue',
 																HEATMAP_COLOR_GREEN =>'green'),'label' => 'Color', 'selected'=>$heatmapColor,'empty'=>'--Select Heatmap Color--','div'=>'comparator-drop-down-two'));
 	}
-				
+	
 	#to track changes in the drop down
 	echo $ajax->observeField( 'PostLevel', 
 	    array(
@@ -177,7 +172,7 @@ else {
 	    	'with' => 'Form.serialize(\'PostAddForm\')'
 	    ) 
 	);
-	if($option == HEATMAP) {
+	if($option == HEATMAP_COUNTS) {
 		echo $ajax->observeField( 'PostHeatmap', 
 		    array(
 		        'url' => array( 'controller' => 'compare','action'=>'changeHeatmapColor'),
@@ -226,8 +221,8 @@ else {
 			    ) 
 		);			
 	}		
-	
-	if($option == HEATMAP_PLOT || $option == MDS_PLOT || $option == HIERARCHICAL_CLUSTER_PLOT) {	
+
+	if($option == HEATMAP_PLOT || $option == MDS_PLOT || $option == HIERARCHICAL_CLUSTER_PLOT ) {	
 		echo $form->input('plotLabel', array( 'options' => array(
 				PLOT_LIBRARY_NAME=>'Library Name',
 				PLOT_LIBRARY_LABEL => 'Library Label',
@@ -289,7 +284,7 @@ else {
 				    ) 
 			);						
 		}
-		if($option == HEATMAP_PLOT) {
+		if($option == HEATMAP_PLOT ) {
 			echo $form->input('heatmap', array( 'options' => array(HEATMAP_COLOR_YELLOW_RED=>'red-yellow (default)',
 																	HEATMAP_COLOR_YELLOW_BLUE=>'yellow-blue',
 																	HEATMAP_COLOR_BLUE =>'blue',
@@ -303,12 +298,10 @@ else {
 				    	'with' => 'Form.serialize(\'PostAddForm\')'
 				    ) 
 			);	
-		}
-
-	
-		
-		echo $form->end();	
-		
+		}		
+	}
+	echo $form->end();	
+	if($option == HEATMAP_PLOT || $option == MDS_PLOT || $option == HIERARCHICAL_CLUSTER_PLOT || $option == MOSAIC_PLOT) {	
 		switch($option) {
 				case HIERARCHICAL_CLUSTER_PLOT:
 					$plotFile .= "_hclust_plot.pdf";
@@ -319,7 +312,9 @@ else {
 				case HEATMAP_PLOT:	
 					$plotFile .= "_heat_map.pdf";
 					break;	
-				
+				case MOSAIC_PLOT:	
+					$plotFile .= "_mosaic_plot.pdf";
+					break;					
 		}
 		
 	echo ("
@@ -334,7 +329,7 @@ else {
 		
 		echo $form->end();	
 
-		if($option == HEATMAP) {
+		if($option == HEATMAP_COUNTS) {
 			if($flipAxis == 0) {
 				echo $matrix->printHeatMap($selectedDatasets,$counts,$option,$mode,$colorGradient);
 			}

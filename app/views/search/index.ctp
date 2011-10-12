@@ -91,18 +91,35 @@
 	
  	<div id="search-results">
 		<?php if($numHits != 0) { ?>
+
 		
 			<?php echo $html->div('download', $html->link($html->image("download-medium.png",array("title" => "Download Top Ten List")), array('controller'=> 'search','action'=>'dowloadFacets',$dataset,$numHits,$sessionQueryId),array('escape' => false)));?>	
 			
 			<?php echo $facet->topTenList($facets,$facetFields,$numHits);?>	
 					
 			<div class="facet-pie-panel">
+			
 			<?php echo $html->div('download', $html->link($html->image("download-medium.png",array("title" => "Download Top Ten List")), array('controller'=>  'search','action'=>'dowloadFacets',$dataset,$numHits,$sessionQueryId),array('escape' => false)));?>	
 			<?php echo $facet->topTenPieCharts($facets,$facetFields,$numHits,"700x200");?>
 			</div>
-			
 			<div class="data-panel">
-			<?php echo $html->div('download', $html->link($html->image("download-medium.png",array("title" => "Download Peptide Id List")), array('controller'=>  'search','action'=>'dowloadData',$dataset,$numHits,$sessionQueryId),array('escape' => false)));?>	
+			
+			<?php 
+			$downloadIdsLinkImg 	= $html->link($html->image("download-small.png",array("title" => "Download IDs")),array('controller' =>  'search','action'=>'dowloadData',$dataset,$numHits,$sessionQueryId),array('escape' => false));
+			$downloadIdsLink 		= $html->link('Download IDs',array('controller' =>  'search','action'=>'dowloadData',$dataset,$numHits,$sessionQueryId),array('escape' => false));
+			
+			if($hasSequence)	{
+				$action =  array('controller' =>  'search','action'=>'dowloadSequences',$dataset,$projectId,$numHits,$sessionQueryId);
+			 	$downloadSeqImg = $html->link($html->image("download-small.png",array("title" => "Download Sequences")),$action,array('escape' => false));
+				$downloadSeqLink= $html->link('Download Sequences',$action,array('escape' => false));
+			 	echo("<div id=\"resize-box\">$downloadIdsLinkImg $downloadIdsLink $downloadSeqImg $downloadSeqLink</div>");
+			}
+			else {
+				echo("<div id=\"resize-box\">$downloadIdsLinkImg $downloadIdsLink</div>");
+						#echo $html->div('download', $html->link($html->image("download-medium.png",array("title" => "Download Peptide Id List")), array('controller'=>  'search','action'=>'dowloadData',$dataset,$numHits,$sessionQueryId),array('escape' => false)));	
+			}
+			?>
+			
 			<?php  
 					echo $luceneResultPaginator->data($dataset,$documents,$page,$numDocuments,NUM_SEARCH_RESULTS,$sessionQueryId,$resultFields);				
 			?>

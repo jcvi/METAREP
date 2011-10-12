@@ -66,9 +66,10 @@ class BrowseController extends AppController {
 		$this->loadModel('Taxonomy');
 		$this->pageTitle = 'Browse Taxonomy (Blast)';
 			
-		$pipeline	=  $this->Project->getPipeline($dataset);
+		$pipeline			=  $this->Project->getPipeline($dataset);
+		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
 		
-		if($pipeline === 'HUMANN') { 
+		if($pipeline === PIPELINE_HUMANN || $optionalDatatypes['ko']) { 
  			$this->facetFields = array(
 								'blast_species'=>'Species (Blast)',
 								'ko_id'=>'Kegg Ortholog',
@@ -185,17 +186,18 @@ class BrowseController extends AppController {
 		$this->loadModel('Project');
 		$this->loadModel('Taxonomy');		
 		$this->pageTitle = 'Browse Taxonomy (Apis)';
-
-		$pipeline	=  $this->Project->getPipeline($dataset);
 		
-		if($pipeline === 'HUMANN') { 	
+		$pipeline			=  $this->Project->getPipeline($dataset);
+		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
+		
+		if($pipeline === PIPELINE_HUMANN || $optionalDatatypes['ko']) { 
  			$this->facetFields = array(
 								'blast_species'=>'Species (Blast)',
 								'ko_id'=>'Kegg Ortholog',
 								'go_id'=>'Gene Ontology',
 								'ec_id'=>'Enzyme',
 							);			
-		}		
+		}
 		
 		if($this->Session->check($function.'.browse.query')){
 			$query = $this->Session->read($function.'.browse.query');
@@ -307,16 +309,17 @@ class BrowseController extends AppController {
 		$this->loadModel('Enzymes');			
 		$this->pageTitle = 'Browse Enzymes';
 				
-		$pipeline	=  $this->Project->getPipeline($dataset);
+		$pipeline			=  $this->Project->getPipeline($dataset);
+		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
 		
-		if($pipeline === 'HUMANN') { 
+		if($pipeline === PIPELINE_HUMANN || $optionalDatatypes['ko']) { 
  			$this->facetFields = array(
 								'blast_species'=>'Species (Blast)',
 								'ko_id'=>'Kegg Ortholog',
 								'go_id'=>'Gene Ontology',
 								'ec_id'=>'Enzyme',
 							);			
-		}		
+		}	
 		
 		if($this->Session->check($function.'.browse.query')){
 			$query = $this->Session->read($function.'.browse.query');
@@ -427,16 +430,17 @@ class BrowseController extends AppController {
 		$this->loadModel('GoGraph');	
 		$this->pageTitle = 'Browse Gene Ontology';
 
-		$pipeline	=  $this->Project->getPipeline($dataset);
+		$pipeline			=  $this->Project->getPipeline($dataset);
+		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
 		
-		if($pipeline === 'HUMANN') { 	
+		if($pipeline === PIPELINE_HUMANN || $optionalDatatypes['ko']) { 
  			$this->facetFields = array(
 								'blast_species'=>'Species (Blast)',
 								'ko_id'=>'Kegg Ortholog',
 								'go_id'=>'Gene Ontology',
 								'ec_id'=>'Enzyme',
 							);			
-		}		
+		}
 		
 		if($this->Session->check($function.'.browse.query')){
 			$query = $this->Session->read($function.'.browse.query');
@@ -656,15 +660,16 @@ class BrowseController extends AppController {
 
 		$function = $this->underscoreToCamelCase($pathwayModel);
 
-		$pipeline	=  $this->Project->getPipeline($dataset);
-
-		if($pipeline === PIPELINE_HUMANN) {
-			$this->facetFields = array(
-						'blast_species'=>'Species (Blast)',
-						'ko_id'=>'Kegg Ortholog',
-						'go_id'=>'Gene Ontology',
-						'ec_id'=>'Enzyme',
-			);
+		$pipeline			=  $this->Project->getPipeline($dataset);
+		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
+		
+		if($pipeline === PIPELINE_HUMANN || $optionalDatatypes['ko']) { 
+ 			$this->facetFields = array(
+								'blast_species'=>'Species (Blast)',
+								'ko_id'=>'Kegg Ortholog',
+								'go_id'=>'Gene Ontology',
+								'ec_id'=>'Enzyme',
+							);			
 		}
 
 		//initialize variables
@@ -875,7 +880,7 @@ class BrowseController extends AppController {
 		$content = $this->Format->infoString("Browse $mode Results",$dataset,$query,0,$numHits,$node);		
 		$content.=$this->Format->facetToDownloadString($node,$childCounts,$numHits);
 		
-		$fileName = "jcvi_metagenomics_report_".time().'.txt';
+		$fileName = uniqid('jcvi_metagenomics_report_').'.txt';
 		
         header("Content-type: text/plain"); 
         header("Content-Disposition: attachment;filename=$fileName");
@@ -916,7 +921,7 @@ class BrowseController extends AppController {
 		#die("Browse $mode Results - Top 10 Functional Categories,$dataset,$facets,$query,$numHits,$node");
 		$content=$this->Format->facetListToDownloadString("Browse $mode Results - Top 10 Functional Categories",$dataset,$facets,$facetFields,$query,$numHits,$node);
 		
-		$fileName = "jcvi_metagenomics_report_".time().'.txt';
+		$fileName = uniqid('jcvi_metagenomics_report_').'.txt';
 		
         header("Content-type: text/plain"); 
         header("Content-Disposition: attachment;filename=$fileName");

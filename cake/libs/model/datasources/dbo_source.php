@@ -381,6 +381,8 @@ class DboSource extends DataSource {
  * @return string SQL field
  */
 	function name($data) {
+		set_time_limit(0);
+		
 		if ($data == '*') {
 			return '*';
 		}
