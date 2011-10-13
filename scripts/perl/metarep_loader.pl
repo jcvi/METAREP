@@ -337,7 +337,7 @@ sub createIndexFromHumannFile() {
 		my $numDocuments = 1;	
 		
 		my ($peptideId,$geneName,$weight,$blastEvalue,$blastPid,$blastCov,$keggTaxon,$ecId,$ecSrc,
-		$blastTaxon,$comName,$comNameSrc,$koId,$goId,$goSrc,$goTree,$koTree,$blastTree,$blastSpecies,$blastEvalueExponent);
+		$blastTaxon,$comName,$comNameSrc,$koId,$koSrc,$goId,$goSrc,$goTree,$koTree,$blastTree,$blastSpecies,$blastEvalueExponent);
 		
 		## foreach line in file create index entry
 		while(<FILE>) {
@@ -367,6 +367,10 @@ sub createIndexFromHumannFile() {
 			$comName 	= &getCommonName($geneName);
 			$comNameSrc = $geneName;		
 			$koId  		= &getKoId($geneName);
+			
+			if($koId) {
+				$koSrc = $geneName;
+			}
 
 			if($koId) {
 				my $goResults = &getGoIdsFromKO($koId);
@@ -417,7 +421,7 @@ sub createIndexFromHumannFile() {
 
 			## add entry to index
 	        &addDocument($peptideId,$datsetName,$comName,$comNameSrc,$goId,$goSrc,$goTree,$ecId,$ecSrc,
-	        undef,$blastSpecies,$blastEvalue,$blastEvalueExponent,$blastPid,$blastCov,$blastTree,undef,$weight,$koId,$koTree);         
+	        undef,$blastSpecies,$blastEvalue,$blastEvalueExponent,$blastPid,$blastCov,$blastTree,undef,$weight,$koId,$koSrc,$koTree);         
 
 			if(($numDocuments % $args{max_num_docs}) == 0) {
 					&nextIndex($datsetName,$xmlSplitSet);
@@ -513,7 +517,7 @@ sub createIndexFromJpmapFile() {
        					
 		## set index field
 	    &addDocument($peptideId,$dataset,$comName,$comNameSrc,$goId,$goSrc,$goTree,$ecId,$ecSrc,
-	    $hmmId,$blastEntry->{species},$blastEntry->{evalue},$blastEntry->{evalue_exp},$blastEntry->{pid},$blastEntry->{coverage},$blastEntry->{blast_tree},undef,undef,undef,undef);      
+	    $hmmId,$blastEntry->{species},$blastEntry->{evalue},$blastEntry->{evalue_exp},$blastEntry->{pid},$blastEntry->{coverage},$blastEntry->{blast_tree},undef,undef,undef,undef,undef);      
 	        
 		if(($numDocuments % $args{max_num_docs}) == 0) {
 			&nextIndex($dataset,$xmlSplitSet);
@@ -587,6 +591,7 @@ sub createIndexFromTabFile() {
 	            $blastCov,
 				$filter,
 				$koId,
+				$koSrc,
 				$weight
 	        ) = split("\t",$_);	 
 
@@ -649,7 +654,7 @@ sub createIndexFromTabFile() {
 			}
 			       
 	        &addDocument($peptideId,$libraryId,$comName,$comNameSrc,$goId,$goSrc,$goTree,$ecId,$ecSrc,
-	        $hmmId,$blastSpecies,$blastEvalue,$blastEvalueExponent,$blastPid,$blastCov,$blastTree,$filter,$weight,$koId,$koTree);         
+	        $hmmId,$blastSpecies,$blastEvalue,$blastEvalueExponent,$blastPid,$blastCov,$blastTree,$filter,$weight,$koId,$koSrc,$koTree);         
 
 			if(($numDocuments % $args{max_num_docs}) == 0) {
 					&nextIndex($datsetName,$xmlSplitSet);
@@ -759,7 +764,7 @@ sub pushIndex() {
 
 sub addDocument() {
 	my ($peptideId,$libraryId,$comName,$comNameSrc,$goId,$goSrc,$goTree,$ecId,$ecSrc,
-        $hmmId,$blastSpecies,$blastEvalue,$blastEvalueExponent,$blastPid,$blastCov,$blastTree,$filter,$weight,$koId,$koTree) = @_;	 
+        $hmmId,$blastSpecies,$blastEvalue,$blastEvalueExponent,$blastPid,$blastCov,$blastTree,$filter,$weight,$koId,$koSrc,$koTree) = @_;	 
 	
 	print INDEX "<doc>\n";		
 		
@@ -776,6 +781,7 @@ sub addDocument() {
 	&printMultiValue("hmm_id",$hmmId);		
 	&printMultiValue("filter",$filter);
 	&printMultiValue("ko_id",$koId);
+	&printMultiValue("ko_src",$koSrc);
 	&printMultiValue("kegg_tree",$koTree);
 	&printSingleValue("weight",$weight);
 	
