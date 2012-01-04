@@ -3,7 +3,7 @@ METAREP DB DIRECTORY
 metarep.mysql.db mysql datbaase accessed by the webinterface
 metarep.sqlite3.db sqlite3 database accessed during the indexing process
 
-both DBs contain the following lookup data and versionP
+both DBs contain the following lookup data and version
 KEGG 		2011-09-01
 GENE ONTOLOGY 	2011-09-05
 NCBI TAXONOMY   2011-09-30	

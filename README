@@ -1,5 +1,4 @@
 METAREP DIRECTORIES
-
 /app     web application files
 /cake    cake framework files
 /data    example dataset*
@@ -9,10 +8,57 @@ METAREP DIRECTORIES
 /solr    solr/lucene configuration files
 /vendors 3rd-party php tools
 
+ADDTIONAL INFORMATION
 Please visit the project's wiki page at http://wiki.github.com/jcvi/METAREP
 for additional information
 
+EXAMPLE DATA (/data folder)
 *De Long vertical ocean depth profile dataset (7 libraries)
 http://www.scienceonline.org/cgi/content/full/311/5760/496
 JCVI's metagenomics annotation pipeline has been used to annotate the raw reads
 http://standardsingenomics.org/index.php/sigen/article/view/sigs.651139
+
+RELEASE NOTES 
+JCVI Metagenomics Reports - Version 1.3.1
+
+New Feature:
+METAREP-391 update viral evidence summary for view page
+METAREP-409 update NCBI taxonomy, KEGG, GO, and enzymes:
+
+NCBI taxonomy version 09/30/2011: 280,602 new taxa KEGG version 09/01/2011: 21 new KEGG KO pathways; 1 new KEGG EC pathway Gene Ontology version 09/05/2011
+
+METAREP-407 implement GO slim support for compare page
+METAREP-406 implement mosaic plot option for compare page
+METAREP-205 sequence export option for search page
+
+Bug Fixes:
+METAREP-408 fix compare panel misalignment
+
+
+JCVI Metagenomics Reports - Version 1.2.0
+
+Improvement
+METAREP-244 - Increased speed of web page build-up
+METAREP-247 - Integrate new METAREP logo into web layout
+
+New Feature
+METAREP-228 - Added unresolved taxonomy fractions to Browse APIS pages
+METAREP-243 - Search datasets using name based searches for Taxonomy, HMM, Enzymes, GO and KEGG pathway names
+METAREP-245 - Added search option to filter Browse Taxonomy/GO/Pathway/EC pages
+METAREP-248 - Implemented PHP based load balancing option
+
+Bug
+METAREP-246 - Fix View Download Cache Issue
+
+
+JCVI Metagenomics Reports - Version 1.1.0
+
+New Feature
+METAREP-215 - Search all datasets option; generate meta-information summaries
+METAREP-217 - Allow users to test METAREP without creating an account
+METAREP-218 - Allow distance matrix export for hierarchical clustering, heatmap, mds plots
+METAREP-219 - Added color legend to heatmap
+METAREP-220 - Fixed search example links in search help dialog
+METAREP-221 - Use new radio buttons in compare page to limit selection to project datasets
+METAREP-223 - Compare datasets using Wilcoxon Rank Sum Test
+METAREP-224 - Ajax support for search dataset pages
