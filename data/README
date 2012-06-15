@@ -1,0 +1,37 @@
+EXAMPLE DATA 
+
+/data/tab 
+/data/xml 
+
+DeLong et al. Vertical Ocean Depth Profile datasets (7 libraries)
+http://www.scienceonline.org/cgi/content/full/311/5760/496
+JCVI's Prokaryotic Metagenomics Annotation Pipeline (JPMAP) was used to
+annotate the reads
+
+https://github.com/jcvi/JCVI_HMP_metagenomic_pipeline
+http://standardsingenomics.org/index.php/sigen/article/view/sigs.651139
+
+
+/data/humann 
+
+NIH HMP Metabolic Reconstruction datasets (7 libraries)
+HMP Unifed Metabolic Analysis Network (HUMAnN) pipeline was used to annotate
+the reads
+
+http://huttenhower.sph.harvard.edu/humann
+
+See also
+http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0029044
+
+
+/data/jpmap
+
+NIH HMP Pretty-Good-Assembly datasets (2 libraries)
+JCVI's Prokaryotic Metagenomics Annotation Pipeline (JPMAP) has been used to 
+annotate the contigs
+
+https://github.com/jcvi/JCVI_HMP_metagenomic_pipeline
+http://standardsingenomics.org/index.php/sigen/article/view/sigs.651139
+
+See also
+http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.002904

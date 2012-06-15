@@ -1,3 +1,10 @@
-JCVI Prokaryotic Metagenomics Reports Pipeline (JPMAP) HMP example results 
+NIH HMP Pretty-Good-Assembly datasets (2 libraries)
+JCVI's Prokaryotic Metagenomics Annotation Pipeline (JPMAP) has been used to 
+annotate the contigs
+
 https://github.com/jcvi/JCVI_HMP_metagenomic_pipeline
-http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0029044
+http://standardsingenomics.org/index.php/sigen/article/view/sigs.651139
+
+See also
+http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.002904
+

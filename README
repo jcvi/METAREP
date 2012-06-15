@@ -1,7 +1,7 @@
 METAREP DIRECTORIES
 /app     web application files
 /cake    cake framework files
-/data    example dataset*
+/data    example datasets
 /scripts perl and R scripts
 /doc     documentation
 /db      relational databases  
@@ -11,12 +11,6 @@ METAREP DIRECTORIES
 ADDTIONAL INFORMATION
 Please visit the project's wiki page at http://wiki.github.com/jcvi/METAREP
 for additional information
-
-EXAMPLE DATA (/data folder)
-*De Long vertical ocean depth profile dataset (7 libraries)
-http://www.scienceonline.org/cgi/content/full/311/5760/496
-JCVI's metagenomics annotation pipeline has been used to annotate the raw reads
-http://standardsingenomics.org/index.php/sigen/article/view/sigs.651139
 
 RELEASE NOTES 
 JCVI Metagenomics Reports - Version 1.3.1
