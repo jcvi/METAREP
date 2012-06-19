@@ -268,7 +268,7 @@ define('SEQUENCE_STORE_PATH','');
  * Path to fastcmd
  */
 
-define('FASTACMD_PATH','/usr/local/bin/fastacmd');
+define('FASTACMD_PATH','');
 
 /**
  * Path to linux binaries (sed, etc.)
