@@ -25,20 +25,20 @@ class DATABASE_CONFIG {
 	var $default = array(
 		'driver' => 'mysqli',
 		'persistent' => true,
-		'host' => 'mysql51-dmz-pro',
-		'login' => 'ifx_mg_reports',
-		'password' => 'mgano',
-		'database' => 'ifx_metagenomics_reports',
+		'host' => '',
+		'login' => '',
+		'password' => '',
+		'database' => '',
 	);
 	
 	//GO MySQL database connection parameters
 	var $go = array(
 		'driver' => 'mysqli',
 		'persistent' => true,
-		'host' => 'mysql51-dmz-pro',
-		'login' => 'access',
-		'password' => 'access',
-		'database' => 'gene_ontology',
+		'host' => '',
+		'login' => '',
+		'password' => '',
+		'database' => '',
 	);
 	
 	//METAREP Blog connection parameters
