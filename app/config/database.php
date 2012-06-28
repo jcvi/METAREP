@@ -25,10 +25,27 @@ class DATABASE_CONFIG {
 	var $default = array(
 		'driver' => 'mysqli',
 		'persistent' => true,
+<<<<<<< HEAD
 		'host' => 'localhost',
 		'login' => '<your-login>',
 		'password' => '<your-password>',
 		'database' => 'metarep',
+=======
+		'host' => '',
+		'login' => '',
+		'password' => '',
+		'database' => '',
+	);
+	
+	//GO MySQL database connection parameters
+	var $go = array(
+		'driver' => 'mysqli',
+		'persistent' => true,
+		'host' => '',
+		'login' => '',
+		'password' => '',
+		'database' => '',
+>>>>>>> fee3526058a62a7117cd16c82bb05db6ff96882b
 	);
 	
 	//METAREP Blog connection parameters
