@@ -31,7 +31,7 @@ metarep_loader.pl generates METAREP lucene indices from various input files.
 			
 =head1 SYNOPSIS
 
-perl scripts/perl/metarep_loader.pl --project_id 1 --input_dir data/tab --format=tab --sqlite_db db/metarep.sqlite3.db 
+perl scripts/perl/metarep_loader.pl --project_id 1 --project_dir data/tab --format=tab --sqlite_db db/metarep.sqlite3.db 
 --solr_url http://localhost:1234 --solr_home_dir <SOLR_HOME> --solr_instance_dir <SOLR_HOME>/metarep-solr 
 --mysql_host localhost --mysql_db ifx_hmp_metagenomics_reports --mysql_username metarep --mysql_password metarep
 --tmp_dir /usr/local/scratch 

@@ -91,33 +91,8 @@
 		);
 		
 	});
-</script>
 
-
- <script type="text/javascript">
-	  var is_production = true;
-	  var dev_test = /(-dev)|(-test)/;
-	  var hostname = location.hostname;
-	
-	  if(hostname.search(dev_test) != -1) {
-	    is_production = false;
-	  } // end if(hostname.search(dev_test) != -1)
-	
-	  if(is_production) {
-	    var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-	    document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-	  } // end if(is_production)
-	</script>
-	<script type="text/javascript">
-	  if(is_production) {
-	    try {
-	      var pageTracker = _gat._getTracker("UA-9809410-3");
-	      pageTracker._setDomainName(".jcvi.org");
-	      pageTracker._trackPageview();
-	    } catch(err) {}
-	  } // end if(is_production)
-	  
-	  jQuery.fn.qtip.styles.mystyle = { // Last part is the name of the style
+	jQuery.fn.qtip.styles.mystyle = { // Last part is the name of the style
 			   width: 250,
 			   background: '#A2D959',
 			   color: 'black',
@@ -136,9 +111,35 @@
 			         }
 				},
 			   name: 'dark' // Inherit the rest of the attributes from the preset dark style
-			}
-	  
-</script>       	
+	}		
+</script>
+
+<?if(defined('GOOGLE_ANALYTICS_TRACKER_ID') && defined('GOOGLE_ANALYTICS_DOMAIN_NAME')):?>
+<!--Handle Google Analytics Tracking. Configure the parameters in app/config/metarep.php-->
+ <script type="text/javascript">
+	  var is_production = true;
+	  var dev_test = /(-dev)|(-test)/;
+	  var hostname = location.hostname;
+	
+	  if(hostname.search(dev_test) != -1) {
+	    is_production = false;
+	  } // end if(hostname.search(dev_test) != -1)
+	
+	  if(is_production) {
+	    var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+	    document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+	  } // end if(is_production)
+	</script>		
+	<script type="text/javascript">
+	  if(is_production) {
+	    try {
+	      var pageTracker = _gat._getTracker("<?echo(GOOGLE_ANALYTICS_TRACKER_ID);?>");
+	      pageTracker._setDomainName("<?echo(GOOGLE_ANALYTICS_DOMAIN_NAME);?>");
+	      pageTracker._trackPageview();
+	    } catch(err) {}
+	  } // end if(is_production)  
+</script>   
+<? endif;?>	     	
       
 <style type="text/css">
 	/*demo page css*/	

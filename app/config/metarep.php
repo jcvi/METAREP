@@ -164,6 +164,20 @@ define('METAREP_SUPPORT_EMAIL','metarep-support@jcvi.org');
 //define('INTERNAL_EMAIL_EXTENSION','');
 
 /**
+ * Google Analytics Tracker ID
+ * 
+*/
+
+//define('GOOGLE_ANALYTICS_TRACKER_ID','');
+
+/**
+ * Google Analytics Domain Name
+ * 
+*/
+
+//define('GOOGLE_ANALYTICS_DOMAIN_NAME','');
+
+/**
 * PHP HTTP transport implementation for retrieving Solr responses.
 * Two cCURL implementations (CURL_REUSE,CURL_NO_REUSE) and one implementation based on
 * file_get_contents (FILE_GET_CONTENTS) can be specified. For the curl implemention
