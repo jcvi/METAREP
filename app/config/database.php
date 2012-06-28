@@ -13,7 +13,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.1
+* @version METAREP v 1.3.4
 * @author Johannes Goll
 * @lastmodified 2011-10-12
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -25,27 +25,10 @@ class DATABASE_CONFIG {
 	var $default = array(
 		'driver' => 'mysqli',
 		'persistent' => true,
-<<<<<<< HEAD
 		'host' => 'localhost',
 		'login' => '<your-login>',
 		'password' => '<your-password>',
 		'database' => 'metarep',
-=======
-		'host' => '',
-		'login' => '',
-		'password' => '',
-		'database' => '',
-	);
-	
-	//GO MySQL database connection parameters
-	var $go = array(
-		'driver' => 'mysqli',
-		'persistent' => true,
-		'host' => '',
-		'login' => '',
-		'password' => '',
-		'database' => '',
->>>>>>> fee3526058a62a7117cd16c82bb05db6ff96882b
 	);
 	
 	//METAREP Blog connection parameters
