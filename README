@@ -13,7 +13,6 @@ Please visit the project's wiki page at http://wiki.github.com/jcvi/METAREP
 for additional information
 
 RELEASE NOTES 
-
 JCVI Metagenomics Reports - Version 1.3.2 (bug fix release)
 
 Bug Fixes:
@@ -52,7 +51,7 @@ METAREP-243 - Search datasets using name based searches for Taxonomy, HMM, Enzym
 METAREP-245 - Added search option to filter Browse Taxonomy/GO/Pathway/EC pages
 METAREP-248 - Implemented PHP based load balancing option
 
-Bug
+Bug Fixes
 METAREP-246 - Fix View Download Cache Issue
 --
 
