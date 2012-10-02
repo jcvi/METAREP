@@ -668,7 +668,7 @@ class SolrComponent extends BaseModelComponent {
 
 		//add index information for cores that are going to be merged
 		foreach($datasets as $dataset) {
-			$mergeUrl .= "&indexDir=".SOLR_DATA_DIR."/$projectId/$dataset/index";
+			$mergeUrl .= "&indexDir=".SOLR_DATA_DIR."/$dataset/index";
 		}
 		try {				
 			$this->log("Create Core: $projectId,$core");

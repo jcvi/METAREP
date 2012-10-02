@@ -210,6 +210,18 @@ define('NUM_TOP_FACET_COUNTS',10);
 define('NUM_SEARCH_RESULTS',10);
 
 /**
+ * Number of View Results
+ * 
+ * The METAREP view page displays on the first tab
+ * a list of data entries. Specifiy  how many are shown 
+ * by default
+ * 
+ * Default: 20
+ */
+
+define('NUM_VIEW_RESULTS',20);
+
+/**
  * Number of METASTATS bootstrap permutations
  * Used for estimating null distribution of the 
  * METASTATS t statistic.

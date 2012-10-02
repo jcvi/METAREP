@@ -9,7 +9,7 @@
 #
 # link http://www.jcvi.org/metarep METAREP Project
 # package metarep
-# version METAREP v 1.3.0
+# version METAREP v 1.3.4
 # author Kelvin Li et al.
 # lastmodified 2010-07-09
 # license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -55,12 +55,14 @@ while(!(is.na(args[arg_count]))){
 	CompleteLinkagePlotPDF = paste(InputFileName, "_hclust_plot.pdf", sep="")
 	MDSPlotPDF = paste(InputFileName, "_mds_plot.pdf", sep="")
 	HeatMapPDF = paste(InputFileName, "_heat_map.pdf", sep="")
+	MosaicPlotPDF = paste(InputFileName, "_mosaic_plot.pdf", sep="")
 	EliminatedSamplesTXT = paste(InputFileName, ".eliminated.txt", sep="")
 	
 	cat("\n")
 	cat("             Input File Name: ", InputFileName, "\n")
 	cat("    CompleteLinkage Plot PDF: ", CompleteLinkagePlotPDF, "\n")
 	cat("                MDS Plot PDF: ", MDSPlotPDF, "\n")
+	cat("    Mosaic Plot PDF: ", MosaicPlotPDF, "\n")
 	cat("                Heat Map PDF: ", HeatMapPDF, "\n")
 	cat("Eliminated Samples Text File: ", EliminatedSamplesTXT, "\n")
 	
@@ -158,14 +160,12 @@ while(!(is.na(args[arg_count]))){
 		## draw Hierarchical Clustering Plot
 		pdf(CompleteLinkagePlotPDF,width=11,height=(5+(1*numRows/3)))
 		
-		
-		
 		## calculate pairwise distances
 		Zdist<-vegdist(Z, method=DistanceMethod);	
 		
 		hclustout = hclust(Zdist,method=ClusterMethod)
 		
-		op <- par(mar=c(5,2,5,15),oma =c(5,2,2,5))
+		op <- par(mar=c(5,2,5,17),oma =c(5,2,2,5))
 		
 		## hierarchical Clustering
 		plot(as.dendrogram(hclustout), horiz = TRUE,  cexRow=label_scale* 0.80, sub="",main=Title,xlab=paste(DistanceMethod,' distance'))
@@ -226,7 +226,7 @@ while(!(is.na(args[arg_count]))){
 		
 		plot(mds$points,type="n", main=args[3], xlim=c(min-margin, max+margin),xlab="Dimension 1", ylab="Dimension 2")
 		text(mds$points,labels=names(M[,1]), cex=0.8*label_scale)
-		mtext(Subtitle,line= 0,cex= 0.75)
+		mtext(Subtitle,line= 1,cex= 0.75)
 		
 		# If there were samples eliminated, throw a message on the plot
 		if(num_samples_eliminated > 0){
@@ -297,6 +297,35 @@ while(!(is.na(args[arg_count]))){
 		write.table(NULL,ClusterFile, sep = "\t",append=TRUE)
 		write.table(as.matrix(t(Z)),ClusterFile, sep = "\t",append=TRUE)
 	}	
+
+	###############################################################################
+	#
+	# Mosaic Plot
+	#
+	###############################################################################	
+	
+	if(Option == 10) {
+		height = 8+log(numCols)*1.3;
+		width = 6+log(numRows)*1.3;
+		pdf(MosaicPlotPDF, width=width,height=height);
+		
+		par(pin=c(width*0.90, height*0.75))
+		mosaicplot(A, las = 2,ann=FALSE,main=Title,color=terrain.colors(numCols),adj=1,cex.axis=(0.70-numCols/200))
+		
+		mtext(Subtitle,line= 1,cex= 0.75)
+		par(mar=c(2, 2, 5, 1)) 
+		
+		Margins <- capture.output( par()$mar )
+		Margins <- substr(Margins, 5, nchar(Margins))
+		Margins <-
+				paste("mar = c(", gsub(" ",",",Margins), ")", sep="")
+		
+		shortname <- "" # or maybe a filename
+		mtext(paste(shortname, " ",
+						format(Sys.time(), "%Y-%m-%d %H:%M")),
+				cex=0.6, line=0, side=SOUTH<-1, adj=0, outer=TRUE)
+		dev.off()
+	}
 	
 	##############################################################################
 	##############################################################################
@@ -311,6 +340,8 @@ while(!(is.na(args[arg_count]))){
 	
 	arg_count=arg_count+1;
 }
+
+
 
 writeLines("Done.\n")
 

@@ -12,7 +12,7 @@
 #
 # link http://www.jcvi.org/metarep METAREP Project
 # package metarep
-# version METAREP v 1.3.1
+# version METAREP v 1.3.4
 # author Johannes Goll
 # lastmodified 2011-06-02
 # license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -1084,7 +1084,7 @@ sub deleteMetarepDataset() {
 
 sub deleteSolrCore() {
 	my $core = shift;
-
+	
 	## delete all documents of existing index
 	print "Deleting index: java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_home_dir}/delete.xml...\n";
 	`java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_home_dir}/delete.xml `;
