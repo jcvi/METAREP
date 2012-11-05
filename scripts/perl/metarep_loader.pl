@@ -1213,7 +1213,7 @@ sub getNcbiTaxonId() {
 	my $keggTaxonId = shift;
 	my @ecIdAccessions= ();
 	
-	my $sth = $sqliteDbConnection->prepare("Select ncbi_ncbi_taxon_id from taxon where kegg_ncbi_taxon_id='$keggTaxonId'");
+	my $sth = $sqliteDbConnection->prepare("Select ncbi_taxon_id from kegg_taxon where kegg_taxon_id='$keggTaxonId'");
 	$sth->execute();
 	
 	my $ecId = undef;
