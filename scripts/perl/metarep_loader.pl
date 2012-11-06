@@ -267,8 +267,8 @@ if(!$metarepDbConnection) {
 
 ## connect to sqlite database
 print "Trying to connect to Sqlite database=".$args{sqlite_db}."\n";
-my $sqliteDbConnection = DBI->connect( "dbi:SQLite:$args{sqlite_db}",
-									 "", "", {PrintError=>1,RaiseError=>1,AutoCommit=>0} );	
+my $sqliteDbConnection = DBI->connect( "dbi:SQLite:$args{sqlite_db}","", "", {PrintError=>1,RaiseError=>1,AutoCommit=>0} );	
+
 if(!$sqliteDbConnection) {
 		pod2usage(
 			-message =>	"\n\nERROR:Could not connect to SQLite database $args{sqlite_db}\n",
@@ -276,6 +276,9 @@ if(!$sqliteDbConnection) {
 			-verbose => 1
 	);
 }
+
+## increase memory by increasing SQLITE cache_size
+$sqliteDbConnection->do("PRAGMA cache_size = 20000");
 
 if(defined($args{project_dir})) {
 	if($args{format} eq 'jpmap') {
