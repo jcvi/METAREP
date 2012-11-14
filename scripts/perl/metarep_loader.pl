@@ -137,6 +137,7 @@ GetOptions(
 	'tmp_dir|y=s',	
 	'xml_only|x',	
 	'help|man|?',
+	'solr_home_dir|h=s', ## legacy argument
 ) || pod2usage(2);
 
 ## print help
