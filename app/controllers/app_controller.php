@@ -22,7 +22,7 @@
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
 
-require_once('../config/constants.php');
+require_once(METAREP_WEB_ROOT.'/app/config/constants.php');
 
 class AppController extends Controller {
 	

@@ -1,7 +1,7 @@
 #! usr/local/bin/perl
 
 ###############################################################################
-# File: metarep_loader.php
+# File: metarep_loader.pl
 # Description: Loads annotation data into METAREP.
 
 # METAREP : High-Performance Comparative Metagenomics Framework (http://www.jcvi.org/metarep)
@@ -25,6 +25,9 @@ use Encode;
 use utf8;
 use Getopt::Long qw(:config no_ignore_case no_auto_abbrev);
 use Pod::Usage;
+use Log::Log4perl qw(:easy);
+use Cwd 'abs_path';
+
 
 =head1 NAME
 metarep_loader.pl generates METAREP lucene indices from various input files.
@@ -32,7 +35,7 @@ metarep_loader.pl generates METAREP lucene indices from various input files.
 =head1 SYNOPSIS
 
 perl scripts/perl/metarep_loader.pl --project_id 1 --project_dir data/tab --format=tab --sqlite_db db/metarep.sqlite3.db 
---solr_url http://localhost:1234 --solr_home_dir <SOLR_HOME> --solr_instance_dir <SOLR_HOME>/metarep-solr 
+--solr_master_url http://localhost:1234 --solr_instance_dir <SOLR_SERVER_HOME_DIR>/metarep-solr 
 --mysql_host localhost --mysql_db ifx_hmp_metagenomics_reports --mysql_username metarep --mysql_password metarep
 --tmp_dir /usr/local/scratch 
 
@@ -52,11 +55,11 @@ B<--project_dir, -d>
 B<--sqlite_db, -q>
 	METAREP SQLite database
 	
-B<--solr_url, -s>
-	METAREP solr server URL incl. port [default: http://localhost:8983]
-	
-B<--solr_home_dir, -h>
-	Solr server home directory (<SOLR_HOME>)
+B<--solr_url, -m>
+	METAREP solr master server URL incl. port [default: http://localhost:8983]
+
+B<--solr_slave_url, -s>
+	METAREP solr master server URL incl. port [default: http://localhost:8983]
 
 B<--solr_instance_dir, -w>
 	Solr instance (configuration) directory (<SOLR_HOME>/metarep-solr)
@@ -89,7 +92,7 @@ B<--go_password, -f>
 	Gene Ontology MySQL password [default: mysql_password]	
 	
 B<--tmp_dir, -y>
-	Directory to store temporary files (XML files gnerated before the Solr load)
+	Directory to store temporary files (XML files generated before the Solr load)
 
 B<--xml_only, -x>
 	Useful for debugging. Generates only XML files in the specified tmp directory without pushing the data to the Solr server. 
@@ -106,6 +109,12 @@ Johannes Goll  C<< <jgoll@jcvi.org> >>
 
 my $initialJavaHeapSize = '250M';
 
+## specify log4j logger
+Log::Log4perl->easy_init(
+		{ level => $INFO, file => 'stdout', layout=>"%d{yyyy-M-d hh:mm:ss} METAREP-%p\t%m%n"});
+		
+my $log = get_logger();
+	
 my %args = ();
 
 ## handle user arguments
@@ -116,8 +125,8 @@ GetOptions(
 	'format|f=s',
 	'project_dir|d=s',
 	'sqlite_db|q=s',
-	'solr_url|s=s',
-	'solr_home_dir|h=s',
+	'solr_url|m=s',
+	'solr_slave_url|s=s',
 	'solr_instance_dir|w=s',
 	'solr_data_dir|h=s',
 	'solr_max_mem|z=s',
@@ -130,11 +139,12 @@ GetOptions(
 	'help|man|?',
 ) || pod2usage(2);
 
-#print help
+## print help
 if($args{help}) {
 	pod2usage(-exitval => 1, -verbose => 2);
 }
 
+## validate arguments
 if(!defined($args{format})) {
 	pod2usage(
 		-message => "\n\nERROR: A format needs to be defined.\n",
@@ -167,7 +177,7 @@ elsif(!defined($args{project_dir}) || !-d $args{project_dir}) {
 elsif(!defined($args{tmp_dir}) || !(-d $args{tmp_dir})) {
 	pod2usage(
 			-message =>
-"\n\nERROR: A valid xml directory needs to be defined.\n",
+"\n\nERROR: A valid tmp directory needs to be defined.\n",
 			-exitval => 1,
 			-verbose => 1
 	);
@@ -184,14 +194,6 @@ elsif(!defined($args{mysql_password})) {
 	pod2usage(
 			-message =>
 "\n\nERROR: A METAREP MySQL password needs to be defined.\n",
-			-exitval => 1,
-			-verbose => 1
-	);
-}
-elsif(!defined($args{solr_home_dir}) && !$args{xml_only}) {
-	pod2usage(
-			-message =>
-"\n\nERROR: A Solr home directory needs to be defined.\n",
 			-exitval => 1,
 			-verbose => 1
 	);
@@ -224,6 +226,12 @@ if(defined($args{format})) {
 	}
 }
 
+## get metarep installation directory
+my $scriptPath =  abs_path($0)."\n\n";
+my $rootDir = $scriptPath;
+$rootDir =~ s/\/scripts\/perl\/metarep_loader\.pl//;
+$rootDir = &clean($rootDir);
+
 ## set global variables
 my $koAncestorHash = undef;
 my $goAncestorHash = undef;
@@ -251,34 +259,51 @@ if(!defined($args{max_num_docs})) {
 if(!defined($args{format})) {
 	$args{format} = 'metarep';
 }
+if(!defined($args{sqlite_db})) {
+	if( -e "$rootDir/db/metarep.sqlite3.db.gz") {
+		pod2usage(
+				-message =>
+"\n\nERROR: Please unzip SQLite database at $rootDir/db/metarep.sqlite3.db.gz.\n",
+				-exitval => 1,
+				-verbose => 1
+		);		
+	}
+	elsif( -e "$rootDir/db/metarep.sqlite3.db") {
+		$args{sqlite_db} = "$rootDir/db/metarep.sqlite3.db";
+	}
+	else {
+		pod2usage(
+				-message =>
+"\n\nERROR: Cannot find SQLite database at $rootDir/db/metarep.sqlite3.db.\n",
+				-exitval => 1,
+				-verbose => 1
+		);		
+	}
+}
 
 ## connect to METAREP MySQL database
-print "Trying to connect to MySQL database=".$args{mysql_db}." host=".$args{mysql_host}."\n";
-my $metarepDbConnection = DBI->connect_cached("DBI:mysql:".$args{mysql_db}.";host=".$args{mysql_host}."",$args{mysql_username},$args{mysql_password}, { 'RaiseError' => 0 });
+$log->info("Trying to connect to MySQL database=".$args{mysql_db}." host=".$args{mysql_host});
+my $metarepDbConnection = DBI->connect_cached("DBI:mysql:".$args{mysql_db}.";host=".$args{mysql_host}."",$args{mysql_username},$args{mysql_password}, { 'RaiseError' => 1 });
 
 if(!$metarepDbConnection) {
-		pod2usage(
-			-message =>
-"\n\nERROR:Could not connect to $args{mysql_db} MySQL database\n",
-			-exitval => 1,
-			-verbose => 1
-	);
+	$log->logdie("ERROR: Could not connect to $args{mysql_db} MySQL database.");
 }
+$log->info("Sucessfully connected to MySQL database.");
 
-## connect to sqlite database
-print "Trying to connect to Sqlite database=".$args{sqlite_db}."\n";
-my $sqliteDbConnection = DBI->connect( "dbi:SQLite:$args{sqlite_db}","", "", {PrintError=>1,RaiseError=>1,AutoCommit=>0} );	
 
-if(!$sqliteDbConnection) {
-		pod2usage(
-			-message =>	"\n\nERROR:Could not connect to SQLite database $args{sqlite_db}\n",
-			-exitval => 1,
-			-verbose => 1
-	);
+## connect to SQLite database
+$log->info("Trying to connect to SQLite database=$args{sqlite_db}.");
+
+my $sqliteDbConnection = DBI->connect( "dbi:SQLite:$args{sqlite_db}",
+									 "", "", {PrintError=>1,RaiseError=>1,AutoCommit=>0} );	
+if(!$sqliteDbConnection) {	
+	$log->logdie("ERROR: :Could not connect to SQLite database $args{sqlite_db}.");
 }
+$log->info("Sucessfully connected to Sqlite database.");
 
 ## increase memory by increasing SQLITE cache_size
 $sqliteDbConnection->do("PRAGMA cache_size = 20000");
+$log->info("Set Sqlite PRAGMA cache_size = 20000.");
 
 if(defined($args{project_dir})) {
 	if($args{format} eq 'jpmap') {
@@ -297,7 +322,7 @@ if(defined($args{project_dir})) {
 		my @files = grep(/\.$args{format}$/,readdir(DIR));
 			
 		foreach my $file(@files) {
-			print "Processing file $file \n";
+			$log->info("Processing file $file.");
 				
 			if($args{format} eq 'tab') {
 				&createIndexFromTabFile("$args{project_dir}/$file");
@@ -561,24 +586,24 @@ sub createIndexFromTabFile() {
 		
 	open FILE, "$file" or die "Could not open file $file.";
 		
-		#parse dataset name		
-		my $datsetName = basename($file);
-		$datsetName =~ s/\.tab//;
+	#parse dataset name		
+	my $datsetName = basename($file);
+	$datsetName =~ s/\.tab//;
+	
+	#create index file
+	&openIndex($datsetName);
+	
+	## count documents and XML files
+	my $xmlSplitSet  = 2;
+	my $numDocuments = 1;	
 		
-		#create index file
-		&openIndex($datsetName);
-		
-		## count documents and XML files
-		my $xmlSplitSet  = 2;
-		my $numDocuments = 1;	
-		
-		while(<FILE>) {
-			chomp $_;
+	while(<FILE>) {
+		chomp $_;
 			
-			my ($blastTree,$blastSpecies,$blastEvalueExponent,$goTree,$koTree);
+		my ($blastTree,$blastSpecies,$blastEvalueExponent,$goTree,$koTree);
 			
-			#read fields
-	        my (
+		#read fields
+	    my (
 	            $peptideId, 
 	            $libraryId, 
 	            $comName, 
@@ -693,13 +718,9 @@ $sqliteDbConnection->disconnect();
 
 sub openIndex {
 	my $dataset = shift;
-
 	my $outFile	= "$args{tmp_dir}/$dataset"."_1.xml";
-	#open output file
-	print "Creating index file $outFile ...\n";
-	
+	$log->info("Creating Solr XML file $outFile");	
 	open(INDEX, ">$outFile") || die("Could not create file $outFile.");
-
 	print INDEX "<add>\n";
 }
 
@@ -710,13 +731,13 @@ sub openIndex {
 sub nextIndex {
 	my ($dataset,$xmlSplitSet) = @_;
 	
-	#close exiting index
+	## close existing index
 	&closeIndex();
 	
-	#define next index file
+	## define next index file
 	my $outFile	= "$args{tmp_dir}/$dataset"."_".$xmlSplitSet.".xml";
 	
-	#save filehandle in variable	
+	## save filehandle in variable	
 	open(INDEX, ">$outFile") || die("Could not create file $outFile.");	
 
 	print INDEX "<add>\n";
@@ -732,37 +753,43 @@ sub closeIndex {
 }
 
 ########################################################
-## pushes new index file to Solr server; adds MySQL dataset
+## Pushes new index file to Solr server; adds MySQL dataset
 ########################################################
-
 sub pushIndex() {
 	my ($dataset,$xmlSplitSet,$isWeighted,$hasKo) = @_;
 
-	print "Deleting dataset from METAREP MySQL database...\n";
+	$log->info("Deleting dataset $dataset from METAREP MySQL database.");
 	&deleteMetarepDataset($dataset);
 	
-	print "Deleting Solr Core (if exists)...\n";
-	&deleteSolrCore($dataset);
+	$log->info("Deleting Solr master core $dataset (if exists).");
+	&deleteSolrCore($dataset,$args{solr_url});
 	
-	print "Creating Solr core...\n";
-	&createSolrCore($dataset);
+	$log->info("Creating Solr master core $dataset (if exists).");
+	&createSolrCore($dataset,$args{solr_url});
 	
-	for(my $set = 1; $set <= $xmlSplitSet;$set++){
+	## do the same for the slave server if defined	
+	if(defined($args{solr_slave_url})) {
+		$log->info("Deleting/creating Solr slave core $dataset (if exists).");
+		&deleteSolrCore($dataset,$args{solr_slave_url});
+		&createSolrCore($dataset,$args{solr_slave_url});
+	}
+	
+	for(my $set = 1; $set < $xmlSplitSet;$set++){
 		my $xmlFile = "$dataset"."_".$set.".xml";
 		
-		print "Loading Solr index...\n";
+		$log->info("Posting Solr XML file to Solr master server $dataset core.");
 		&loadSolrIndex($dataset,$xmlFile);
 	
-		print "Optimizing Solr index...\n";
+		$log->info("Optimizing Solr master $dataset core index.");
 		&optimizeIndex($dataset);
 	}
 	
-	print "Adding dataset to METAREP MySQL database....\n";
+	$log->info("Insert dataset $dataset into METAREP MySQL database.");
 	&createMetarepDataset($dataset,$isWeighted,$hasKo);	
 }
 
 ########################################################
-## adds lucene document to lucene index
+## Adds lucene document to lucene index
 ########################################################
 
 sub addDocument() {
@@ -771,36 +798,36 @@ sub addDocument() {
 	
 	print INDEX "<doc>\n";		
 		
-	#write core fields
-	&printSingleValue("peptide_id",$peptideId);
-	&printSingleValue("library_id",$libraryId);
-	&printMultiValue("com_name",$comName);
-	&printMultiValue("com_name_src",$comNameSrc);
-	&printMultiValue("go_id",$goId);
-	&printMultiValue("go_src",$goSrc);
-	&printMultiValue("go_tree",$goTree);
-	&printMultiValue("ec_id",$ecId);
-	&printMultiValue("ec_src",$ecSrc);		
-	&printMultiValue("hmm_id",$hmmId);		
-	&printMultiValue("filter",$filter);
-	&printMultiValue("ko_id",$koId);
-	&printMultiValue("ko_src",$koSrc);
-	&printMultiValue("kegg_tree",$koTree);
-	&printSingleValue("weight",$weight);
+	## write core fields
+	&printSingleValue('peptide_id',$peptideId);
+	&printSingleValue('library_id',$libraryId);
+	&printMultiValue('com_name',$comName);
+	&printMultiValue('com_name_src',$comNameSrc);
+	&printMultiValue('go_id',$goId);
+	&printMultiValue('go_src',$goSrc);
+	&printMultiValue('go_tree',$goTree);
+	&printMultiValue('ec_id',$ecId);
+	&printMultiValue('ec_src',$ecSrc);		
+	&printMultiValue('hmm_id',$hmmId);		
+	&printMultiValue('filter',$filter);
+	&printMultiValue('ko_id',$koId);
+	&printMultiValue('ko_src',$koSrc);
+	&printMultiValue('kegg_tree',$koTree);
+	&printSingleValue('weight',$weight);
 	
-	#write best hit Blast fields
+	## write best Blast hit fields
 	&printSingleValue('blast_species',$blastSpecies);
 	&printSingleValue('blast_evalue',$blastEvalue);
 	&printSingleValue('blast_evalue_exp',$blastEvalueExponent);
 	&printSingleValue('blast_pid',$blastPid);
 	&printSingleValue('blast_cov',$blastCov);	
-	&printMultiValue("blast_tree",$blastTree);			
+	&printMultiValue( 'blast_tree',$blastTree);			
 	
 	print INDEX "</doc>\n";		
 }
 
 ########################################################
-## writes a single values field to the lucene index.
+## Writes a single values field to the lucene index.
 ########################################################
 
 sub printSingleValue {
@@ -808,14 +835,13 @@ sub printSingleValue {
 	
 	$value = &clean($value);
 	
-	if($value ne '') {
-		
+	if($value ne '') {		
 		print INDEX "<field name=\"$field\">$value</field>\n";	
 	}
 }
 
 ########################################################
-## writes multi-valued fields.
+## Writes multi-valued fields.
 ########################################################
 
 sub printMultiValue() {
@@ -837,7 +863,7 @@ sub printMultiValue() {
 }
 
 ########################################################
-## takes a species taxon id and returns an array that contains its lineage
+## Takes a species taxon id and returns an array that contains its lineage
 ########################################################
 
 sub getTaxonAncestors() {
@@ -916,7 +942,7 @@ sub getKoAncestors(){
 }
 
 ########################################################
-#Returns array of GO ancestors (integer part of the ID).
+# Returns array of GO ancestors (integer part of the ID).
 ########################################################
 
 sub getGoAncestors(){
@@ -989,7 +1015,7 @@ sub getParentTaxonId() {
 }
 
 ########################################################
-## returns species level of taxon; returns 'unresolved' string if taxon is higher than species.
+## Returns species level of taxon; returns 'unresolved' string if taxon is higher than species.
 ########################################################
 
 sub getSpecies() {
@@ -1086,15 +1112,15 @@ sub deleteMetarepDataset() {
 ########################################################
 
 sub deleteSolrCore() {
-	my $core = shift;
+	my ($core,$solrUrl) = @_;
 	
 	## delete all documents of existing index
-	print "Deleting index: java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_home_dir}/delete.xml...\n";
-	`java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_home_dir}/delete.xml `;
+	$log->debug("Deleting index: java -Durl=$solrUrl/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $rootDir/solr/post.jar $rootDir/solr/delete.xml.");
+	system("java -Durl=$solrUrl/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $rootDir/solr/post.jar $rootDir/solr/delete.xml 1>/dev/null");
 		
 	## unload core from core registry
-	print "Unloading index: curl $args{solr_url}/solr/admin/cores?action=UNLOAD&core=$core \n";
-	`curl \"$args{solr_url}/solr/admin/cores?action=UNLOAD&core=$core\"`;
+	$log->debug("Unloading index: curl $solrUrl/solr/admin/cores?action=UNLOAD&core=$core.");
+	system("curl \"$solrUrl/solr/admin/cores?action=UNLOAD&core=$core\" 1>/dev/null 2>/dev/null");
 }
 
 ########################################################
@@ -1102,11 +1128,11 @@ sub deleteSolrCore() {
 ########################################################
 
 sub createSolrCore() {
-	my $core = shift;
+	my ($core,$solrUrl) = @_;
 	
 	## create core
-	print "Creating new core: curl $args{solr_url}/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_home_dir}/example/solr&dataDir=$args{solr_instance_dir}/$core...\n";
-	`curl \"$args{solr_url}/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_instance_dir}&dataDir=$args{solr_data_dir}/$core\"`;	
+	$log->debug("Creating new core: curl $solrUrl/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_instance_dir}&dataDir=$args{solr_data_dir}/$core.");
+	system("curl \"$solrUrl/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_instance_dir}&dataDir=$args{solr_data_dir}/$core\" 1>/dev/null 2>/dev/null");	
 }
 
 ########################################################
@@ -1117,10 +1143,10 @@ sub loadSolrIndex() {
 	my ($core,$xmlFile) = @_;
 	
 	my $file = "$args{tmp_dir}/$xmlFile";
-	
-	#load index
-	print "Loading Dataset Index: java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $file ...\n";
-	`java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $file`;
+
+	## post Solr xml file to master server core	
+	$log->debug("Loading Dataset Index: java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $rootDir/solr/post.jar $file.");
+	system("java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $rootDir/solr/post.jar $file 1>/dev/null");
 }
 
 ########################################################
@@ -1130,10 +1156,8 @@ sub loadSolrIndex() {
 sub optimizeIndex() {
 	my $core = shift;
 	
-	#optimize index
-	print "Optimize Dataset Index: java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_home_dir}/optimize.xml \n";
-	`java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem}  -jar $args{solr_home_dir}/example/exampledocs/post.jar $args{solr_home_dir}/optimize.xml `;
-
+	$log->debug("Optimize Dataset Index: java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem} -jar $rootDir/solr/post.jar $rootDir/solr/optimize.xml.");
+	system("java -Durl=$args{solr_url}/solr/$core/update -Xms$initialJavaHeapSize -Xmx$args{solr_max_mem}  -jar $rootDir/solr/post.jar $rootDir/solr/optimize.xml 1>/dev/null");
 }
 
 ########################################################
@@ -1161,7 +1185,7 @@ sub createMetarepDataset() {
 	}
 	
 	my $query ="insert ignore into libraries (name,project_id,created,updated,pipeline,is_weighted,has_ko) VALUES (?,?,curdate(),curdate(),'$pipeline',$isWeighted,$hasKo)";
-	print $query."\n";
+	$log->debug("$query.");
 
 	## reconnect to avoid time-out
 	$metarepDbConnection = DBI->connect_cached("DBI:mysql:".$args{mysql_db}.";host=".$args{mysql_host}."",$args{mysql_username},$args{mysql_password}, { 'RaiseError' => 0 });
@@ -1344,7 +1368,7 @@ sub readPeptideIdToSubjectIdMapping() {
 		}
 	}
 	
-	print "Reading Annotation File $annotationFile...\n";
+	$log->info("Reading Annotation File $annotationFile.");
 	
 	while(<FILE>) {	
 		chomp;			
@@ -1588,4 +1612,15 @@ sub getTaxonIdByName() {
 	$sth->fetch;
 	
 	return $taxonId;
+}
+
+sub isExistingSolrCore() {
+	my $core = shift;
+	my $res = `wget '$args{solr_url}/solr/$core/admin/ping' 2>&1`;
+	if($res =~ /ERROR 404/) {
+		return 0;
+	}
+	else {
+		return 1;
+	}
 }
