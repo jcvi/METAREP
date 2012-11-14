@@ -59,7 +59,7 @@ B<--solr_url, -m>
 	METAREP solr master server URL incl. port [default: http://localhost:8983]
 
 B<--solr_slave_url, -s>
-	METAREP solr master server URL incl. port [default: http://localhost:8983]
+	METAREP solr slave server URL incl. port [default: http://localhost:8983]
 
 B<--solr_instance_dir, -w>
 	Solr instance (configuration) directory (<SOLR_HOME>/metarep-solr)
