@@ -8,9 +8,20 @@ METAREP DIRECTORIES
 /solr    solr/lucene configuration files
 /vendors 3rd-party php tools
 
-ADDTIONAL INFORMATION
+INSTALLATION AND ADDTIONAL INFORMATION
 Please visit the project's wiki page at http://wiki.github.com/jcvi/METAREP
-for additional information
+for additional information. The 1.3.2 installation guide can be found at 
+https://github.com/jcvi/METAREP/wiki/Installation-Guide-v-1.3.2
+
+VIDEO DOCUMENTATION
+5 min overview
+http://www.youtube.com/watch?v=DJNjM7LMVWU
+
+web tutorial 
+http://www.youtube.com/watch?v=7FPJaPyLjMk&feature=relmfu
+
+implementation details
+http://www.youtube.com/watch?v=j0rlTIkvfvI
 
 RELEASE NOTES 
 JCVI Metagenomics Reports - Version 1.3.2 (bug fix release)

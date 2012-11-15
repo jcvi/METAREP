@@ -8,10 +8,9 @@ KEGG 		2011-09-01
 GENE ONTOLOGY 	2011-09-05
 NCBI TAXONOMY   2011-09-30	
 
+To update both databases, you can use the scripts/perl/metarep_update_database.pl
+script. 
+
 patch_enzymes.sql execute mysql import to insert missing high level enzyme categories
 (version 1.3.0 and 1.3.1 before 2011-01-04.
 mysql -u -p <db-name> < patch_enzymes.sql
-
-
-
-
