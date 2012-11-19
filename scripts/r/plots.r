@@ -15,6 +15,11 @@
 # license http://www.opensource.org/licenses/mit-license.php The MIT License
 ###############################################################################
 
+## install package vegan if not already installed
+list.of.packages <- c("vegan");
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
 FRACT_NOISE_THRESHOLD <- 0.00025
 
 progname <- commandArgs(FALSE)[5]
