@@ -16,7 +16,7 @@
 ###############################################################################
 
 ## install package vegan if not already installed
-list.of.packages <- c("vegan");
+list.of.packages <- c('vegan','MASS','gplots');
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages,dependencies = T)
 
@@ -47,7 +47,7 @@ if(is.na(args[arg_count])){
 # Main program loop
 
 while(!(is.na(args[arg_count]))){
-	InputFileName=args[arg_count]
+        InputFileName           = as.character(args[1])	
 	Option 			= as.numeric(args[2])
 	Title 			= as.character(args[3])
 	Subtitle 		= as.character(args[4])
