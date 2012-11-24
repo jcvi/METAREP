@@ -112,7 +112,7 @@ $facetFields = $session->read("$function.browse.facetFields");
 				<?php echo $html->div('browse-download-classification', $html->link($html->image("download-medium.png"), array('controller'=> 'browse','action'=>'downloadChildCounts',$dataset,$node,$mode,array_sum($childCounts),urlencode($filter)),array('escape' => false)));?>						
 				
 				
-				<h2 <span class="selected_library"><?php echo(base64_decode($node))?></h2>
+				<h2><span class="selected_library"><?php echo(base64_decode($node))?></h2>
 				<?php 				
 					
 					if($level != 'pathway') {		
