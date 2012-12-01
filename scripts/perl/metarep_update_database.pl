@@ -13,7 +13,7 @@
 #
 # link http://www.jcvi.org/metarep METAREP Project
 # package metarep
-# version METAREP v 1.3.1
+# version METAREP v 1.4.0
 # author Johannes Goll
 # lastmodified 2012-06-18
 # license http://www.opensource.org/licenses/mit-license.php The MIT License

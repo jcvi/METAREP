@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -26,7 +26,7 @@ class LibrariesController extends AppController {
 	var $uses 		= array('Library','Project');
 	var $components = array('Solr');
 
-	function edit($id = null) {	
+	function edit($id = null,$projectId = null) {	
 		$this->loadModel('Library');
 		$this->Library->contain('Project');
 		
@@ -34,7 +34,7 @@ class LibrariesController extends AppController {
 			$this->Session->setFlash("Invalid library id.");
 			$this->redirect("/projects/view/$projectId",null,true);
 		}
-		if (!empty($this->data)) {
+		if(!empty($this->data)) {
 			
 			if ($this->Library->save($this->data)) {
 				$this->data = $this->Library->read(null, $id);
@@ -51,7 +51,7 @@ class LibrariesController extends AppController {
 		}
 		if (empty($this->data)) {
 			$this->data = $this->Library->read(null, $id);	
-			
+			Cache::delete($id.'project');
 			if(empty($this->data)) {
 				$this->Session->setFlash("Invalid library id.");
 				$this->redirect("/projects/index",null,true);

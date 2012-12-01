@@ -14,22 +14,21 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
 
 class MatrixHelper extends AppHelper {
- 	var $helpers = array('Session');
+ 	var $helpers = array('Session','Html');
 	var $uses = array('Library');
 		
-	function printTable($datasets,$counts,$option,$mode,$maxPvalue) {
-			
+	function printTable($datasets,$counts,$option,$mode,$maxPvalue,$level) {
+		
 		$html='';
 				
-		#debug($datasets);
-		if($option == METASTATS || $option == WILCOXON) {	
+		if($option == METASTATS || $option == WILCOXON || $option == CHISQUARE || $option == FISHER || $option == PROPORTION_TEST) {	
 			
 				$libraryCountPopulationA = $this->Session->read('libraryCountPopulationA');
 				$libraryCountPopulationB = $this->Session->read('libraryCountPopulationB');
@@ -55,8 +54,9 @@ class MatrixHelper extends AppHelper {
 					
 					$html .= "<th style=\"padding-right:5px;width:7%;\">Mean Ratio</th>";
 					$html .= "<th style=\"padding-right:5px;width:7%;\">p-value</th>";
-					$html .= "<th style=\"padding-right:5px;width:7%;\">p-value (bonf. corr.)</th>";					
-					$html .= "<th style=\"padding-right:5px;width:21%;\">CI (%Mean +/- %SE)</th>";	
+					$html .= "<th style=\"padding-right:5px;width:7%;\">p-value (bonferroni)</th>";	
+					$html .= "<th style=\"padding-right:5px;width:7%;\">q-value (fdr)</th>";				
+					$html .= "<th style=\"padding-right:5px;width:14%;\">CI (%Mean +/- %SE)</th>";	
 				}
 				elseif($option == WILCOXON) {
 					$html .= "<table style=\"border:1px; padding-bottom:5px; border-bottom-style:solid;border-width:1px;\">
@@ -77,82 +77,119 @@ class MatrixHelper extends AppHelper {
 					
 					$html .= "<th style=\"padding-right:5px;width:9%;\">Median Ratio</th>";
 					$html .= "<th style=\"padding-right:5px;width:8%;\">p-value</th>";
-					$html .= "<th style=\"padding-right:5px;width:8%;\">p-value (bonf. corr.)</th>";					
+					$html .= "<th style=\"padding-right:5px;width:8%;\">p-value (bonf. corr.)</th>";		
+								
 					#$html .= "<th style=\"padding-right:5px;width:14%;\">CI (Mean +/- SE)</th>";
-				}		
+				}
+				elseif($option == CHISQUARE || $option == FISHER || $option == PROPORTION_TEST){
+					if($option == CHISQUARE) {
+						$test = 'Chi-Square Test of Independence';
+					}
+					elseif($option == FISHER) {
+						$test = 'Fishers Exact Test';
+					}
+					elseif($option == PROPORTION_TEST) {
+						$test = 'Equality of Proportions Test';
+					}
+					
+					$html .= "<table style=\"border:1px; padding-bottom:5px; border-bottom-style:solid;border-width:1px;\">
+						<tr>"	;
+					$html .= "<th style=\"padding-right:5px; width:30%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">$test</th>";			
+					$html .= "<th style=\"padding-center:5px; width:16%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[0]} (n=1)</th>";
+					$html .= "<th style=\"padding-center:5px; width:16%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">{$datasets[1]} (n=1)</th>";
+					$html .= "<th style=\"padding-center:5px; width:38%; border-width:0px;font-size:1.2em;background-color:#FFFFFF;\">Significance</th>";
+					$html .= "</tr></table>";
+					$html .= "<table cellpadding=\"0px\" cellspacing=\"0\", id=\"myTable\" class=\"tablesorter comparison-results-table\"><thead> 	
+						<tr>	
+							<th style=\"padding-right:5px;width:30%;\">Category</th>";
+					$html .= '<th style=\"padding-right:5px;width:8%;\">Count</th>';	
+					$html .= '<th style=\"padding-right:5px;width:8%;\">Prop.</th>';	
+					$html .= '<th style=\"padding-right:5px;width:8%;\">Count</th>';	
+					$html .= '<th style=\"padding-right:5px;width:8%;\">Prop.</th>';	
+					$html .= '<th style=\"padding-right:5px;width:7%;\">Log Odds Ratio</th>';							
+					$html .= '<th style=\"padding-right:5px;width:7%;\">Rel. Risk</th>';					
+					$html .= '<th style=\"padding-right:5px;width:7%;\">p-value</th>';
+					$html .= '<th style=\"padding-right:5px;width:7%;\">p-value (bonferroni)</th>';
+					$html .= '<th style=\"padding-right:5px;width:7%;\">q-value (fdr)</th>';
+					
+					if(($mode === 'keggPathwaysEc' || $mode === 'keggPathwaysKo') && $level === 'pathway') {
+						$html .= '<th style=\"padding-right:2px; \">Action</th>';
+					}
+				}
 		}
 		else {
 		
 			$html .= "<table cellpadding=\"0px\" cellspacing=\"0\", id=\"myTable\" class=\"tablesorter comparison-results-table\"><thead> 	
 						<tr>	
 							<th>Category</th>";			
-			
+
 			foreach($datasets as $dataset) {
-					$html .= "<th style=\"padding-right:5px; \">$dataset</th>";		
+					$html .= "<th style=\"padding-right:0px; \">$dataset</th>";		
 			}	
 			if($option == ABSOLUTE_COUNTS) {			
 				$html .= '<th style=\"padding-right:10px; \">Total</th>';
-			}
-			
-			if($option == CHISQUARE || $option == FISHER) {	
-				$html .= '<th style=\"padding-right:10px; \">Total</th>';
-				$html .= '<th style=\"padding-right:10px; \">p-value</th>';
-				$html .= '<th style=\"padding-right:10px; \">p-value (Bonf. Corr.)</th>';
-			}			
+			}		
 		}
 		
 		$html .= '</tr></thead><tbody>';
 		
-		$i = 0;
+		## end of header; start data rows
+		$i = 0;	
+		
 		
 		foreach($counts as $category => $row) {	
-			
-				if($maxPvalue != PVALUE_ALL  && ($option == METASTATS || $option == WILCOXON)) {	
-					## handle p-value filtering (non bonferoni corrected)
-					if($maxPvalue < 4 ) {
-						switch ($maxPvalue) {
-							case PVALUE_HIGH_SIGNIFICANCE;
-							$pvalueCutoff = 0.01;
-							break;
-							case PVALUE_MEDIUM_SIGNIFICANCE;
-							$pvalueCutoff = 0.05;
-							break;
-							case PVALUE_LOW_SIGNIFICANCE;
-							$pvalueCutoff = 0.1;
-							break;												
-						}
-						if(  $row['pvalue'] >= $pvalueCutoff)	{
-								continue;
-						}									
-					}
-	
-					## handle p-value filtering (bonferoni corrected)
-					else if($maxPvalue > 3 ) {
-						switch ($maxPvalue) {
-							case PVALUE_BONFERONI_HIGH_SIGNIFICANCE;
-							$pvalueCutoff = 0.01;
-							break;
-							case PVALUE_BONFERONI_MEDIUM_SIGNIFICANCE;
-							$pvalueCutoff = 0.05;
-							break;
-							case PVALUE_BONFERONI_LOW_SIGNIFICANCE;
-							$pvalueCutoff = 0.1;
-							break;												
-						}	
-						if( $option == METASTATS) {
-							if( $row['qvalue'] >= $pvalueCutoff)	{
-								continue;
-							}	
-						}
-						if( $option == WILCOXON) {
-							if( $row['bonf-pvalue'] >= $pvalueCutoff)	{
-								continue;
-							}	
-						}								
-					}
-				}				
-		
 				
+				if($maxPvalue != PVALUE_ALL  && ($option == METASTATS || $option == WILCOXON || $option == FISHER || $option == CHISQUARE || $option == PROPORTION_TEST)) {
+						
+					$fieldName = null;
+					$cutoff = null;
+						
+					// handle p-value filtering
+					switch ($maxPvalue) {
+						case PVALUE_HIGH_SIGNIFICANCE;
+						$cutoff = 0.01;
+						$fieldName = 'pvalue';
+						break;
+						case PVALUE_MEDIUM_SIGNIFICANCE;
+						$cutoff = 0.05;
+						$fieldName = 'pvalue';
+						break;
+						case PVALUE_LOW_SIGNIFICANCE;
+						$cutoff = 0.1;
+						$fieldName = 'pvalue';
+						break;
+						case PVALUE_BONFERONI_HIGH_SIGNIFICANCE;
+						$cutoff = 0.01;
+						$fieldName = 'bvalue';
+						break;
+						case PVALUE_BONFERONI_MEDIUM_SIGNIFICANCE;
+						$cutoff = 0.05;
+						$fieldName = 'bvalue';
+						break;
+						case PVALUE_BONFERONI_LOW_SIGNIFICANCE;
+						$cutoff = 0.1;
+						$fieldName = 'bvalue';
+						break;
+						case PVALUE_FDR_HIGH_SIGNIFICANCE;
+						$cutoff = 0.01;
+						$fieldName = 'qvalue';
+						break;
+						case PVALUE_FDR_MEDIUM_SIGNIFICANCE;
+						$cutoff = 0.05;
+						$fieldName = 'qvalue';
+						break;
+						case PVALUE_FDR_LOW_SIGNIFICANCE;
+						$cutoff = 0.1;
+						$fieldName = 'qvalue';
+						break;						
+					}
+					
+					if(! is_null($fieldName) && $row[$fieldName] >= $cutoff)	{
+							
+						continue;
+					}
+				}
+					
 				if($row['sum'] > 0 || $option == METASTATS || $option == WILCOXON) {					
 									
 					if ($i++ % 2 == 0) {
@@ -169,6 +206,7 @@ class MatrixHelper extends AppHelper {
 						$html .= "<tr>";
 						$rowValue = '';
 
+						
 						switch ($mode) {
 							case 'taxonomy':
 								$rowValue = "{$row['name']} (taxid:$category)";
@@ -210,7 +248,9 @@ class MatrixHelper extends AppHelper {
 											
 						$html .= "<td style=\"text-align:right;\">{$row['mratio']}</td>";	
 						$html .= "<td style=\"text-align:right;\">{$row['pvalue']}</td>";	
+						$html .= "<td style=\"text-align:right;\">{$row['bvalue']}</td>";	
 						$html .= "<td style=\"text-align:right;\">{$row['qvalue']}</td>";	
+					
 						
 						$chartUrl 	= "http://chart.apis.google.com/chart?chs=140x18&cht=bhs&chd=t0:-1,";
 						$chartUrl  .= "{$lowBoundA},{$lowBoundB},-1|-1,{$meanA},{$meanB},-1|-1,{$meanA},{$meanB},";
@@ -233,10 +273,31 @@ class MatrixHelper extends AppHelper {
 						$medianB 		= $row[$datasets[1]]['median'];																
 						$html .= "<td style=\"text-align:right;\">{$row['mratio']}</td>";	
 						$html .= "<td style=\"text-align:right;\">{$row['pvalue']}</td>";	
-						$html .= "<td style=\"text-align:right;\">{$row['bonf-pvalue']}</td>";	
+						$html .= "<td style=\"text-align:right;\">{$row['bvalue']}</td>";							
 						$html .="</td>";
 					}
+					elseif($option == CHISQUARE || $option == FISHER || $option == PROPORTION_TEST) {
+						
+						$countA 		= $row[$datasets[0]];	
+						$countB 		= $row[$datasets[1]];
+						$proportionA 	= $row['propa'];
+						$proportionB 	= $row['propb'];
+						
+						$html .= "<td style=\"text-align:right;\">$countA</td>";
+						$html .= "<td style=\"text-align:right;\">$proportionA</td>";
+						$html .= "<td style=\"text-align:right;\">$countB</td>";
+						$html .= "<td style=\"text-align:right;\">$proportionB</td>";							
+						$html .= "<td style=\"text-align:right;\">{$row['oratio']}</td>";		
+						$html .= "<td style=\"text-align:right;\">{$row['rrisk']}</td>";	
+						$html .= "<td style=\"text-align:right;\">{$row['pvalue']}</td>";	
+						$html .= "<td style=\"text-align:right;\">{$row['bvalue']}</td>";	
+						$html .= "<td style=\"text-align:right;\">{$row['qvalue']}</td>";	
+						if(($mode === 'keggPathwaysEc' || $mode === 'keggPathwaysKo') && $level === 'pathway') {
+							$html .= "<td style=\"text-align:center;\">{$this->Html->link($this->Html->image("pathway.jpg",array("title" => "Compare {$row['name']} Pathway Map",'width'=>'25px')), array('controller'=> 'compare','action'=>'pathwayMap',$mode,'enzyme',$category),array('escape' => false,'target' => '_blank'))}</td>";	
+						}
+					}
 					else {
+						
 						#set the individual counts
 						foreach($datasets as $dataset) {	
 								$count = $row[$dataset];					
@@ -248,23 +309,12 @@ class MatrixHelper extends AppHelper {
 							$sum 	= trim($counts[$category]['sum']);
 							$html .= "<td style=\"text-align:right; \">$sum</td>";
 						}
-						if($option == CHISQUARE || $option == FISHER) {	
-							$html .= "<td style=\"text-align:right;\">{$row['pvalue']}</td>";	
-							$adjPValue= $row['pvalue'] * count($counts);
-							
-							if($adjPValue>1) {
-								$adjPValue=1;
-							}
-							$html .= "<td style=\"text-align:right;\">$adjPValue</td>";			
-						}
 					}
 					
 					$html .= '</tr>';
 				}		
 		}
 			
-		
-//		die($html);
 		if(preg_match('/.*<tbody>$/',$html)) {
 			return 'No hits found for the selected pvalue cut off. Adjust filter settings and try again.';
 		}
@@ -278,7 +328,7 @@ class MatrixHelper extends AppHelper {
 
 	function printFlippedTable($datasets,$counts,$option,$mode) {
 	
-		#generate table heading
+		## generate table heading
 		$html = "<table cellpadding=\"0px\" cellspacing=\"0\", id=\"myTable\" class=\"tablesorter comparison-results-table\"><thead> 	
 					<tr>	
 						<th>Dataset</th>";
@@ -293,19 +343,19 @@ class MatrixHelper extends AppHelper {
 		
 		$html .= '</tr></thead><tbody> ';
 
-		#add total column of absolute counts
+		## add total column of absolute counts
 		if($option == ABSOLUTE_COUNTS) {	
 			array_push($datasets,'Total')	;
 		}
 
-		#add p-value and adj. p-value if user has selected a test
+		## add p-value and adj. p-value if user has selected a test
 		if($option == CHISQUARE || $option == FISHER) {	
 				array_push($datasets,'Total')	;
 				array_push($datasets,'P-Value')	;
 				array_push($datasets,'P-Value (Bonf. Corr.)')	;
 		}
 		
-		#loop through each dataset [dimension 1]	
+		## loop through each dataset [dimension 1]	
 		foreach($datasets as $dataset) {		
 				
 			$rowValue = '';
@@ -331,7 +381,7 @@ class MatrixHelper extends AppHelper {
 					break;
 			}
 			
-			//set font weight to bold for total 
+			## set font weight to bold for total 
 			if($dataset === 'Total') {
 				$html .= "<tr style=\"text-align:left;font-weight:bold;\"><td >$dataset</td>";
 			}
@@ -339,20 +389,15 @@ class MatrixHelper extends AppHelper {
 				$html .= "<tr style=\"text-align:left;\"><td>$dataset</td>";				
 			}
 			
-			#set the individual counts
+			## set the individual counts
 			foreach($counts as $category => $row) {	
-				#exclude unclassified
+				## exclude unclassified
 				if($row['sum'] > 0) { 
 					if($dataset==='P-Value') {
 						$count = $row['pvalue'];	
 					}
 					elseif($dataset==='P-Value (Bonf. Corr.)') {
-						$adjPValue= $row['pvalue'] * count($counts);
-				
-						if($adjPValue>1) {
-							$adjPValue=1;
-						}
-						$count = $adjPValue;
+						$count = $row['bvalue'];
 					}
 					elseif($dataset==='Total') {
 						$count  = $row['sum'];
@@ -379,7 +424,7 @@ class MatrixHelper extends AppHelper {
 		
 		$html = $this->printHeatmapColorLegend($colorGradient);	
 		
-		#print table header
+		## print table header
 		$html .= "<table cellpadding=\"0\" cellspacing=\"0\" id=\"myTable\" class=\"tablesorter comparison-results-table\"><thead>	
 					<tr>	
 						<th>Category</th>";

@@ -19,7 +19,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.3.0
+  @version METAREP v 1.4.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -68,9 +68,9 @@ echo("<ul>");
 echo $ajax->divEnd('tabs');	
 
 if($option == ABSOLUTE_COUNTS || $option == RELATIVE_COUNTS || $option == HEATMAP_COUNTS) {
-$downloadTitle = 'Download Counts';
+	$downloadTitle = 'Download Counts';
 }
-elseif($option == CHISQUARE  || $option == FISHER || $option == METASTATS || $option == WILCOXON) {
+elseif($option == CHISQUARE  || $option == FISHER || $option == PROPORTION_TEST || $option == METASTATS || $option == WILCOXON) {
 	$downloadTitle = 'Download Statistics';
 }
 elseif($option > 6) {
@@ -86,6 +86,7 @@ jQuery(function() {
 	jQuery("#tabs").tabs({ spinner: '<img src="/metarep/img/ajax.gif\"/>' });
 	jQuery("#tabs").tabs( "option", "disabled", <?php echo('['.implode(',',$inactiveTabs).']');?>);
 	 jQuery("#tabs").tabs( "option", "selected",<?php echo($currentTabPosition);?>);
+	 jQuery("#CompareMinCount").val(<?php echo($minCount);?>);
 	 
 });
 

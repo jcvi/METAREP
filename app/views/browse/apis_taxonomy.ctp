@@ -15,7 +15,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.3.0
+  @version METAREP v 1.4.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -37,7 +37,7 @@ $facetFields = $session->read("$mode.browse.facetFields");
 <div id="Browse">
 	<ul id="breadcrumb">
 	 	<li><a href="/metarep/dashboard/index" title="Dashboard"><img src="/metarep/img/home.png" alt="Dashboard" class="home" /></a></li>
-	    <li><?php echo $html->link('List Projects', "/projects/index");?></li>
+	    <li><?php echo $html->link('Projects', "/projects/index");?></li>
 	    <li><?php echo $html->link('View Project', "/projects/view/$projectId");?></li>
 	    <li><?php echo $html->link('Browse Dataset', "/browse/apisTaxonomy/$dataset");?></li>
 	</ul>
@@ -81,8 +81,9 @@ $facetFields = $session->read("$mode.browse.facetFields");
 				<div id="browse-classification-panel">	
 					<fieldset>
 					<legend>Taxonomic Distribution</legend>
+					
 					<?php echo $html->div('browse-download-classification', $html->link($html->image("download-medium.png"), array('controller'=> 'browse','action'=>'downloadChildCounts',$dataset,$taxon,$mode,array_sum($childCounts),urlencode($filter)),array('escape' => false)));?>						
-					<h2 <span class="selected_library"><?php echo($taxon)?></h2>
+					<h2><span class="selected_library"><?php echo($taxon)?></h2>
 					<?php 
 					echo $facet->pieChart('',$childCounts,$numHits,"700x300");
 					?>

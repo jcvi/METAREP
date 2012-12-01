@@ -16,7 +16,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -26,18 +26,9 @@ class FacetHelper extends AppHelper {
 
 	var $uses = array('Go');
 	
-	//private $pieChartColor = "4D89F9";
-	//private $pieChartColor = "999900";
-	//private $pieChartColor = "666666";
-	//private $pieChartColor = "CCC999";
-	//private $pieChartColor = "003d4c";
-	//private $pieChartColor = "2C2416";
-	//private $pieChartColor = '9E0142,D53E4F,F46D43,FDAE61,FEE08B,FFFFBF,E6F598,ABDDA4,66C2A5,3288BD,5E4FA2';
-	//private $pieChartColor = '8DD3C7,FFFFB3,BEBADA,FB8072,80B1D3,FDB462,B3DE69,FCCDE5,D9D9D9,BC80BD,CCEBC5';
-	//private $pieChartColor = 'A6CEE3,1F78B4,B2DF8A,33A02C,FB9A99,E31A1C,FDBF6F,FF7F00,CAB2D6,6A3D9A,FFFF99';
-	private $pieChartColor = 'F99D31,6DB33F,00A4E4,E31B23';
-	
-	
+
+	private $pieChartColor = 'F99D31,6DB33F,00A4E4,E31B23'; ## orange, ## green
+		
 	//private $pieChartColor = "5C4033";
 	
 	function printFacet($facet,$results,$hits) {
@@ -48,11 +39,12 @@ class FacetHelper extends AppHelper {
 			$class = str_replace('_empty_','unassigned',$class);
 			$perc = (float) round(($count/$hits)*100,2);
 			
-			if(is_float($count)) {
-				$count =  number_format($count,2);
+			$numDec = strlen(substr(strrchr($count, "."), 1));
+			if($numDec == 0) {
+				$count = number_format($count,0);		
 			}
 			else {
-				$count =  number_format($count);
+				$count = number_format($count,WEIGHTED_COUNT_PRECISION);
 			}
 			$html.= "<li><B>$class</B> ($perc%) ($count)</li>";
 		}

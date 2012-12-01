@@ -18,7 +18,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.3.0
+  @version METAREP v 1.4.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -65,22 +65,27 @@ foreach ($projects as $project) {
 		echo("<li>".$html->link(__('View', true), array('controller'=> 'view', 'action'=>'index',$population['name']))."</li>"); 
 		echo("<li>".$html->link(__('Search', true), array('controller'=> 'search', 'action'=>'index',$population['name']))."</li>"); 	
 		echo("<li>".$html->link(__('Compare', true), array('controller'=> 'compare',$population['name']))."</li>"); 
-		echo("<li>".$html->link(__('Browse Blast Taxonomy', true), array('controller'=> 'browse', 'action'=>'blastTaxonomy',$population['name']))."</li>"); 			      
-		if($population['has_apis']) {echo("<li>".$html->link(__('Browse Apis Taxonomy', true), array('controller'=> 'browse', 'action'=>'apisTaxonomy',$population['name']))."</li>"); }				               			
+		echo("<li>".$html->link(__('Browse Taxonomy (Blast)', true), array('controller'=> 'browse', 'action'=>'blastTaxonomy',$population['name']))."</li>"); 			      
+		if($population['has_apis']) {echo("<li>".$html->link(__('Browse Taxonomy (APIS)', true), array('controller'=> 'browse', 'action'=>'apisTaxonomy',$population['name']))."</li>"); }				               			
 			if($library['pipeline'] === PIPELINE_HUMANN || $library['has_ko']) {
-			echo("<li>".$html->link(__('Browse Kegg Pathways (KO)', true), array('controller'=> 'browse', 'action'=>'keggPathwaysKo',$library['name']))."</li>");		
+			echo("<li>".$html->link(__('Browse Kegg Pathways (KO)', true), array('controller'=> 'browse', 'action'=>'keggPathwaysKo',$population['name']))."</li>");		
 		}
 		if($population['pipeline'] === PIPELINE_HUMANN || $population['has_ko']) {
-			echo("<li>".$html->link(__('Browse Kegg Pathways (KO)', true), array('controller'=> 'browse', 'action'=>'keggPathwaysKo',$library['name']))."</li>");		
+			echo("<li>".$html->link(__('Browse Kegg Pathways (KO)', true), array('controller'=> 'browse', 'action'=>'keggPathwaysKo',$population['name']))."</li>");		
 		}			
 		echo("<li>".$html->link(__('Browse Kegg Pathways', true), array('controller'=> 'browse', 'action'=>'keggPathwaysEc',$population['name']))."</li>");		      
 		echo("<li>".$html->link(__('Browse Metacyc Pathways', true), array('controller'=> 'browse', 'action'=>'metacycPathways',$population['name']))."</li>");		      
 		echo("<li>".$html->link(__('Browse Enzymes', true), array('controller'=> 'browse', 'action'=>'enzymes',$population['name']))."</li>");
 		echo("<li>".$html->link(__('Browse Gene Ontology', true), array('controller'=> 'browse', 'action'=>'geneOntology',$population['name']))."</li>");  		               			
+		
+		if($population['has_sequence']) {
+			debug('TEST');
+			echo("<li>".$html->link(__('Blast Sequence', true), array('controller'=> 'blast', 'action'=>'index',$population['name']))."</li>");		
+		}
 		echo('</ul>');             			
 	} 	
 	//build library entries			               		               
-	foreach ($project['Library'] as $library) {	
+	foreach ($project['Library'] as $library) {			
 		echo("<ul id=\"project_id_{$project['Project']['id']}\" class=\"jGlide_001_tiles\" title=\" {$project['Project']['name']} \" alt=\"Select dataset from list:\">");                			
 		echo("<li rel=\"library_id_{$library['id']}\">{$library['name']} </li>"); 
 		echo('</ul>');		               			
@@ -88,8 +93,8 @@ foreach ($projects as $project) {
 		echo("<li>".$html->link(__('View', true), array('controller'=> 'view', 'action'=>'index',$library['name']))."</li>"); 
 		echo("<li>".$html->link(__('Search', true), array('controller'=> 'search', 'action'=>'index',$library['name']))."</li>"); 	
 		echo("<li>".$html->link(__('Compare', true), array('controller'=> 'compare',$library['name']))."</li>");  			               			
-		echo("<li>".$html->link(__('Browse Blast Taxonomy', true), array('controller'=> 'browse', 'action'=>'blastTaxonomy',$library['name']))."</li>");
-		if($library['apis_database'] !='') {echo("<li>".$html->link(__('Browse Apis Taxonomy', true), array('controller'=> 'browse', 'action'=>'apisTaxonomy',$library['name']))."</li>"); }				
+		echo("<li>".$html->link(__('Browse Taxonomy (Blast)', true), array('controller'=> 'browse', 'action'=>'blastTaxonomy',$library['name']))."</li>");
+		if($library['apis_database'] !='') {echo("<li>".$html->link(__('Browse Taxonomy (APIS)', true), array('controller'=> 'browse', 'action'=>'apisTaxonomy',$library['name']))."</li>"); }				
 		
 		if($library['pipeline'] === PIPELINE_HUMANN || $library['has_ko']) {
 			echo("<li>".$html->link(__('Browse Kegg Pathways (KO)', true), array('controller'=> 'browse', 'action'=>'keggPathwaysKo',$library['name']))."</li>");		
@@ -98,6 +103,9 @@ foreach ($projects as $project) {
 		echo("<li>".$html->link(__('Browse Metacyc Pathways (EC)', true), array('controller'=> 'browse', 'action'=>'metacycPathways',$library['name']))."</li>");		            
 		echo("<li>".$html->link(__('Browse Enzymes', true), array('controller'=> 'browse', 'action'=>'enzymes',$library['name']))."</li>");
 		echo("<li>".$html->link(__('Browse Gene Ontology', true), array('controller'=> 'browse', 'action'=>'geneOntology',$library['name']))."</li>");  	               			
+		if($library['has_sequence']) {	
+			echo("<li>".$html->link(__('Blast Sequence', true), array('controller'=> 'blast', 'action'=>'index',$library['name']))."</li>");  	               			
+		}
 		if($library['apis_dataset'] && JCVI_INSTALLATION) {	
 			echo("<li>".$html->link(__('View External APIS Page', true), array('controller'=> 'iframe', 'action'=>'apis',$library['project_id'],base64_encode("http://www.jcvi.org/apis/".$library['apis_database']."/".$library['apis_dataset'])))."</li>");  	               			
 		}

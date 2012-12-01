@@ -13,20 +13,25 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
 
-class TaxonomyApis extends AppModel {
+
+
+
+
+
+class TaxonomyApis extends AppModel{
 
 	var $name 		= 'taxonomyApis';
 	var $primaryKey = 'taxon_id';
 	var $useTable 	= 'taxonomy_apis';
 
 	public function findTopLevelTaxons() {
-		return $this->find('all', array('conditions' => array('TaxonomyApis.parent_tax_id' => array(1)),'fields' => array('taxon_id','name')));
+		return $this->find('all', array('conditions' => array('TaxonomyApis.taxon_id' => array(2157,2,2759,12884,10239, 28384)),'fields' => array('taxon_id','name')));
 	}
 	
 	public function getTreeQueryByName($name,$field,$rank = '') {		

@@ -16,7 +16,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -30,7 +30,7 @@ class AppController extends Controller {
 	//treated with caution. It caused a chache exception and returned imcomplete
 	//model objects google"$persistModel cakephp incomplete object". Setting this to false
 	//until the root cause for this exception has been identified.
-	var $persistModel 	= true;	
+	var $persistModel 	= false;	
 	
 	var $helpers 		= array('Session','Html', 'Form','Javascript','Ajax');
 	var $components 	= array('Session','Cookie','RequestHandler','Authsome' => array('model' => 'User'));
@@ -56,6 +56,10 @@ class AppController extends Controller {
 							'compare/download',	
 							'search/all',
 							'search/downloadMetaInformationFacets',	
+							'phylodb/search',
+							'phylodb/protein',	
+							'phylodb/seguid',	
+							
 	); 
 
 	//urls that need to be checked for matching user id
@@ -113,8 +117,8 @@ class AppController extends Controller {
 	);	
 		
 	//handle permissions
-	function beforeFilter() {
-	
+	function beforeFilter() {	
+		
 		//get current url
 		$controller 	= $this->params['controller'] ;
 		$action 		= $this->params['action'] ;

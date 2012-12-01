@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -63,7 +63,7 @@ class ProjectsController extends AppController {
 	
 	function view($id = null) {
 		$this->loadModel('Project');
-		$this->Project->contain('Library','Population');
+		$this->Project->contain('Library',array('Population'=>'Library'));
 		
 		if(!$id) {
 			$this->Session->setFlash(__('Invalid Project.', true));
@@ -79,11 +79,18 @@ class ProjectsController extends AppController {
 						$library['count'] = number_format($this->Solr->documentCount($library['name']));				
 					}
 				}
-				if($project['Population']) {
+				
+				if($project['Population']) {					
 					foreach($project['Population'] as &$population) {
-						$population['count'] = number_format($this->Solr->documentCount($population['name']));				
+						$population['count'] = number_format($this->Solr->documentCount($population['name']));	
+						$populationLibraryCountResult = $this->Project->Library->Population->find(
+														'all',array('contain'=>array('Library.id'),
+														'fields'=>array('Population.id'),
+														'conditions'=>array('Population.name'=>$population['name'])));	
+						$population['libraryCount'] = 	sizeof($populationLibraryCountResult[0]['Library']);						
 					}			
-				}						
+				}	
+								
 				Cache::write($id.'project', $project);
 			}
 		}		

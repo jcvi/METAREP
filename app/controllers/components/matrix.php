@@ -18,7 +18,7 @@
  *
  * @link http://www.jcvi.org/metarep METAREP Project
  * @package metarep
- * @version METAREP v 1.3.0
+ * @version METAREP v 1.4.0
  * @author Johannes Goll
  * @lastmodified 2010-07-09
  * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -40,20 +40,20 @@ class MatrixComponent extends Object {
 		//unclassified contains the total count - classified counts
 		//$this->addUnclassifiedCategory($selectedDatasets,$counts);
 
-		if($option == CHISQUARE || $option === FISHER) {
+		if($option == CHISQUARE || $option == FISHER || $option == PROPORTION_TEST) {
 			#add p-values to the counts matrix
-			$this->R->writeContingencyMatrix($selectedDatasets,$counts,$this->totalCounts,$option);
+			$this->R->executeTwoWaySampleTest($selectedDatasets,$counts,$this->totalCounts,$option);
 			return;
 		}
 		elseif($option == WILCOXON) {
-			$this->absoluteToRelativeCounts($selectedDatasets,$counts,6);
+			$this->absoluteToRelativeCounts($selectedDatasets,$counts,RELATIVE_COUNT_PRECISION);
 			$this->R->writeWilcoxonMatrix($selectedDatasets,$counts);
 		}
 		elseif($option == METASTATS) {
 			$this->R->writeMetastatsMatrix($selectedDatasets,$counts);
 		}
 		#handle all plot options
-		elseif($option > 6) {
+		elseif($option == HEATMAP_PLOT || $option == MDS_PLOT || $option == HIERARCHICAL_CLUSTER_PLOT || $option == MOSAIC_PLOT) {
 			$this->R->writeRPlotMatrix($selectedDatasets,$counts,$option,$plotLabel,$clusterMethod,$distanceMatrix);
 		}
 

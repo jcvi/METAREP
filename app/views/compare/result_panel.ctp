@@ -20,7 +20,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.3.0
+  @version METAREP v 1.4.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -46,25 +46,24 @@ $distanceMatrix		= $session->read('distanceMatrix');
 $clusterMethod		= $session->read('clusterMethod');
 $maxPvalue			= $session->read('maxPvalue');
 
-
-
 $currentTabPosition =0;
 $tabPosition = 0;
 
+if(isset($tabs)) {
 foreach($tabs as $tab) {
 	if($tab['function'] === $mode) {
 		$currentTabPosition = $tabPosition;
 	}
 	$tabPosition ++;
 }
-
+}
 
 ?>
 
 <script>
 jQuery(document).ready(function(){
   jQuery.noConflict() ;
- 
+  
   jQuery("#myTable").tablesorter({widgets:['zebra'] <?php 
   	if($option == METASTATS){ 
   		echo(", sortList: [[8,0]]");
@@ -72,10 +71,10 @@ jQuery(document).ready(function(){
   	else if($option == WILCOXON){ 
   		echo(", sortList: [[6,0]]");
   	}  	
-  	elseif($option == CHISQUARE) {
-  		echo(", sortList: [[4,0]]");
+  	elseif($option == CHISQUARE || $option == FISHER || $option == PROPORTION_TEST) {
+  		echo(",  sortList: [[7,0],[5,1]] ");
   	}
-  	elseif($mode === 'keggPathways') {
+  	elseif($mode === 'keggPathwaysEc') {
   		echo(", sortList: [[0,0]]");
   	} 
   	elseif($mode === 'metacycPathways') {
@@ -192,7 +191,7 @@ else {
 		exit();
 	}
 
-	if($option == METASTATS || $option == WILCOXON) {
+	if($option == METASTATS || $option == WILCOXON || $option == CHISQUARE || $option == FISHER || $option == PROPORTION_TEST) {
 		echo $form->input('maxPvalue', 
 			array( 'options' => 
 					array(
@@ -203,18 +202,24 @@ else {
 								PVALUE_MEDIUM_SIGNIFICANCE => '< 0.05',
 								PVALUE_LOW_SIGNIFICANCE => '< 0.10',
 							),
-						'bonf. corr. p-value' =>
+						'p-value (bonferroni)' =>
 							array(	
 								PVALUE_BONFERONI_HIGH_SIGNIFICANCE=>'< 0.01',
 								PVALUE_BONFERONI_MEDIUM_SIGNIFICANCE => '< 0.05',
 								PVALUE_BONFERONI_LOW_SIGNIFICANCE => '< 0.10',
-							),						
+							),	
+						'q-value (fdr)' =>
+							array(	
+								PVALUE_FDR_HIGH_SIGNIFICANCE=>'< 0.01',
+								PVALUE_FDR_MEDIUM_SIGNIFICANCE => '< 0.05',
+								PVALUE_FDR_LOW_SIGNIFICANCE => '< 0.10',
+							),													
 						),							
 				'selected' => $maxPvalue,'label' => 'max. p-value', 'empty'=>'--Select Pvalue--','div'=>'comparator-drop-down-two'));
 	
 		echo $ajax->observeField('PostMaxPvalue', 
 			    array(
-			        'url' => array( 'controller' => 'compare','action'=>'changePvalue'),
+			        'url' => array( 'controller' => 'compare','action'=>'changeMaxPvalue'),
 			        'frequency' => 0.2,
 			    	'update' => 'comparison-results', 'loading' => 'Element.show(\'spinner\')', 'complete' => 'Element.hide(\'spinner\'); Element.hide(\'comparison-results\');Effect.Appear(\'comparison-results\',{ duration: 0.5 })',
 			    	'with' => 'Form.serialize(\'PostAddForm\')'
@@ -339,10 +344,10 @@ else {
 		}
 		else {
 			if($flipAxis == 0) {
-				echo $matrix->printTable($selectedDatasets,$counts,$option,$mode,$maxPvalue);
+				echo $matrix->printTable($selectedDatasets,$counts,$option,$mode,$maxPvalue,$level);
 			}
 			elseif($flipAxis == 1) {		
-				echo $matrix->printFlippedTable($selectedDatasets,$counts,$option,$mode);
+				echo $matrix->printFlippedTable($selectedDatasets,$counts,$option,$mode,$level);
 			}
 		}
 	}

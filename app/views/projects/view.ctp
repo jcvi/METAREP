@@ -16,7 +16,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.3.0
+  @version METAREP v 1.4.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -25,7 +25,7 @@
 
 <ul id="breadcrumb">
   	<li><a href="/metarep/dashboard/index" title="Dashboard"><img src="/metarep/img/home.png" alt="Dashboard" class="home" /></a></li>
-    <li><?php echo $html->link('List Projects', "/projects/index");?></li>
+    <li><?php echo $html->link('Projects', "/projects/index");?></li>
     <li><?php echo $html->link('View Project', "/projects/view/{$project['Project']['id']}");?></li>
 </ul>
 
@@ -76,28 +76,31 @@ or has been configured not to display inline frames.]</iframe></p>");
        	$userGroup  	= $currentUser['UserGroup']['name'];	
     ?>	
     <?php 
-    echo("<dl><dt>Options</dt><dd>");
-    #display project options (create pppulation | download all datasets) 
-    if($currentUserId == $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP || $project['Project']['has_ftp']) {		
+    
+    ## display project options (create pppulation | download all datasets) 
+    echo("<dl><dt>Options</dt><dd>"); 
+    
+    if($currentUserId == $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP ) {		
 			if($currentUserId === $project['Project']['user_id'] || $userGroup === ADMIN_USER_GROUP) {
 				echo $html->link(__('Add Population', true), array('controller'=>'populations','action'=>'add', $project['Project']['id'])); 
 				echo('&nbsp;|');
 			}
+			echo $html->link(__('Import Library', true), array('controller'=>'import','action'=>'index', $project['Project']['id'])); 
+			echo('&nbsp;|');
 			if($project['Project']['has_ftp']) {				
 				echo $html->link(__('Download All Libraries', true), 
 				array('controller'=>'projects','action'=>'ftp', $project['Project']['id'],
 				$project['Project']['id']."_all"));} 
-				echo('&nbsp;|');
-
+				echo('&nbsp;|');							
     }
-			echo $html->link(__('Refresh', true), 
-				array('controller'=>'projects','action'=>'refresh', $project['Project']['id'])); 	
-		echo "</dd></dl>";    
+	echo $html->link(__('Refresh', true), 
+	array('controller'=>'projects','action'=>'refresh', $project['Project']['id'])); 	
+	echo "</dd></dl>";    
     ?>
 </fieldset>	
 </div>
 
-<?php if (!empty($project['Population'])):?>
+<?php if (!empty($project['Population'])): #debug($project);?>
 <div class="related">
 	<fieldset>
 		<legend>Project Populations</legend>
@@ -106,6 +109,7 @@ or has been configured not to display inline frames.]</iframe></p>");
 	<tr>
 		<th><?php __('Updated'); ?></th>
 		<th><?php __('#Entries'); ?></th>
+		<th><?php __('#Libraries'); ?></th>
 		<th><?php __('Name'); ?></th>
 		<th><?php __('Description'); ?></th>
 		<th ><?php __('Annotation Pipeline'); ?></th>	
@@ -130,9 +134,12 @@ or has been configured not to display inline frames.]</iframe></p>");
 		<td style="width:4%;text-align:right">
 			<?php  echo $population['count'];; ?>
 		</td>		
-		<td style="width:25%;text-align:left">
+		<td style="width:4%;text-align:right">
+			<?php  echo $population['libraryCount'];; ?>
+		</td>	
+		<td style="width:20%;text-align:left">
 			<?php echo $population['name']; ?>
-		</td>
+		</td>			
 		<td >
 			<?php echo $population['description']; ?>
 		</td>
@@ -152,7 +159,7 @@ or has been configured not to display inline frames.]</iframe></p>");
 	
 			<?php 
 			
-			
+					#debug($population);
 					echo("<select onChange=\"goThere(this.options[this.selectedIndex].value)\" name=\"s1\">
 					<option value=\"\" SELECTED>--Select Action--</option>
 					<option value=\"/metarep/view/index/{$population['name']}\">View</option>
@@ -162,15 +169,20 @@ or has been configured not to display inline frames.]</iframe></p>");
 					if($population['has_apis']) {
 						echo("<option value=\"/metarep/browse/apisTaxonomy/{$population['name']}\">Browse Taxonomy (Apis)</option>");
 					}	
+													
+					echo("<option value=\"/metarep/browse/keggPathwaysEc/{$population['name']}\">Browse Kegg Pathways (EC)</option>");
 					if($population['pipeline'] === PIPELINE_HUMANN || $population['has_ko'] ) {
-						echo("<option value=\"/metarep/browse/keggPathwaysKo/{$library['name']}\">Browse Kegg Pathways (KO)</option>");
-					}									
-					echo("	
-					<option value=\"/metarep/browse/keggPathwaysEc/{$population['name']}\">Browse Kegg Pathways</option>
-					<option value=\"/metarep/browse/metacycPathways/{$population['name']}\">Browse Metacyc Pathways</option>
+						echo("<option value=\"/metarep/browse/keggPathwaysKo/{$population['name']}\">Browse Kegg Pathways (KO)</option>");
+					}
+					echo("<option value=\"/metarep/browse/metacycPathways/{$population['name']}\">Browse Metacyc Pathways (EC)</option>
 					<option value=\"/metarep/browse/enzymes/{$population['name']}\">Browse Enzymes</option>
-					<option value=\"/metarep/browse/geneOntology/{$population['name']}\">Browse Gene Ontology</option>
-					</select>");?>	
+					<option value=\"/metarep/browse/geneOntology/{$population['name']}\">Browse Gene Ontology</option>");
+					
+					if($population['has_sequence']) {
+						echo("<option value=\"/metarep/blast/index/{$population['name']}\">Blast Sequence</option>");
+					}
+										
+					echo("</select>");?>	
 			</td>	
 		</tr>
 	<?php endforeach; ?>
@@ -278,6 +290,9 @@ or has been configured not to display inline frames.]</iframe></p>");
 					<option value=\"/metarep/browse/metacycPathways/{$library['name']}\">Browse Metacyc Pathways (EC)</option>
 					<option value=\"/metarep/browse/enzymes/{$library['name']}\">Browse Enzymes</option>
 					<option value=\"/metarep/browse/geneOntology/{$library['name']}\">Browse Gene Ontology</option>");
+					if($library['has_sequence']) {	
+						echo("<option value=\"/metarep/blast/index/{$library['name']}\">Blast Sequence</option>");
+					}					
 					if($library['has_ftp']) {	
 						echo("<option value=\"/metarep/projects/ftp/{$project['Project']['id']}/{$library['name']}\">Download</option>");
 					}

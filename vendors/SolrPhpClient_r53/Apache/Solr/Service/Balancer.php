@@ -897,8 +897,12 @@ class Apache_Solr_Service_Balancer
 		do
 		{
 			try
-			{
-				return $service->search($query, $offset, $limit, $params, $method);
+			{	
+				$result = $service->search($query, $offset, $limit, $params, $method);
+				$result->host=$service->getHost();
+				$result->searchUrl=$service->getSearchUrl();
+				$result->transport= get_class($service->getHttpTransport());
+				return $result;
 			}
 			catch (Apache_Solr_HttpTransportException $e)
 			{

@@ -19,7 +19,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.3.0
+  @version METAREP v 1.4.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -39,7 +39,7 @@
 
 <ul id="breadcrumb">
  	<li><a href="/metarep/dashboard/index" title="Dashboard"><img src="/metarep/img/home.png" alt="Dashboard" class="home" /></a></li>
-    <li><?php echo $html->link('List Projects', "/projects/index");?></li>
+    <li><?php echo $html->link('Projects', "/projects/index");?></li>
     <li><?php echo $html->link('View Project', "/projects/view/$projectId");?></li>
     <li><?php echo $html->link('New Population', "/populations/add/$projectId");?></li>
 </ul>

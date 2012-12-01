@@ -206,6 +206,22 @@ include_once('metarep.php');
  		'lock' => false, //[optional]  use file locking
  		'serialize' => true,
 	));
+
+/**
+ *
+ * Model Cache Engine Configuration
+ * Default settings provided below
+ *
+ * File storage engine.
+ */
+  Cache::config('_cake_model_', array(
+	'engine' => 'File', //[required]
+	'duration'=> '+999 days', //[optional]
+ 	'path' => METAREP_TMP_DIR, //[optional] use system tmp directory - remember to use absolute path
+ 	'prefix' => 'phylo_metarep_cake_model_', //[optional]  prefix every cache file with this string
+ 	'lock' => false, //[optional]  use file locking
+ 	'serialize' => true,
+  ));  	
 	
 /**
  *

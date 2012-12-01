@@ -22,7 +22,7 @@
  *
  * @link http://www.jcvi.org/metarep METAREP Project
  * @package metarep
- * @version METAREP v 1.3.0
+ * @version METAREP v 1.4.0
  * @author Johannes Goll
  * @lastmodified 2010-07-09
  * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -44,7 +44,7 @@ class SearchController extends AppController {
 	var $name 			= 'Search';
 	var $helpers 		= array('LuceneResultPaginator','Facet','Tree','Ajax','Dialog');
 	var $uses 			= array();
-	var $components 	= array('Session','RequestHandler','Solr','Format');
+	var $components 	= array('Session','RequestHandler','Solr','Download','Format','Blast');
 
 	var $searchFields 	= array(1 => 'Lucene Query',
 
@@ -119,7 +119,7 @@ class SearchController extends AppController {
 		//add otpional datatypes
 		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
 
-		if($optionalDatatypes['viral'] || $optionalDatatypes['clusters'] || $optionalDatatypes['apis'] || $optionalDatatypes['filter']  || $optionalDatatypes['ko'])  {
+		if($optionalDatatypes['viral'] || $optionalDatatypes['clusters'] || $optionalDatatypes['apis'] || $optionalDatatypes['filter']  || $optionalDatatypes['ko'] || $optionalDatatypes['sequence'])  {
 			if($optionalDatatypes['viral']) {
 				$this->searchFields['Search By Name']['env_lib'] = 'Environmental Library Name';
 			}
@@ -150,7 +150,13 @@ class SearchController extends AppController {
 				$this->searchFields['Search By Name']['ko_name']='Kegg Ortholog Name';
 				$this->searchFields['Search By Name']['kegg_tree_name']='Kegg Pathway Name (KO)';
 				$this->searchFields['Search By ID']['ko_id']='Kegg Ortholog ID';
-			}			
+			}	
+
+			if($optionalDatatypes['sequence']) {	
+				$this->searchFields['Search By Sequence (Blast)']['seq_id05']='Search By Sequence (BLAST 1E-5)';
+				$this->searchFields['Search By Sequence (Blast)']['seq_id10']='Search By Sequence (BLAST 1E-10)';
+				$this->searchFields['Search By Sequence (Blast)']['seq_id50']='Search By Sequence (BLAST 1E-50)';
+			}				
 		}
 
 		//for paging use existing query session
@@ -172,7 +178,7 @@ class SearchController extends AppController {
 			$field = $this->data['Search']['field'];
 
 			try{
-				$query = $this->generateLuceneQuery($query,$field);
+				$query = $this->generateLuceneQuery($query,$field,$dataset);
 			}
 			catch (Exception $e) {
 				//write query
@@ -193,7 +199,6 @@ class SearchController extends AppController {
 			$sessionQueryId = 'query_'.time();
 			$this->Session->write($sessionQueryId,$query);
 		}
-
 
 		//skip facet field com_name for HUMANN data sets
 		if($pipeline === PIPELINE_HUMANN ) {
@@ -260,6 +265,7 @@ class SearchController extends AppController {
 
 		$this->Session->write('facetFields',$this->facetFields);
 		$this->Session->write('searchFields',$this->searchFields);
+		$this->Session->write('resultFields',$this->resultFields);
 
 		//prepare view
 		$this->set('projectName', $this->Project->getProjectName($dataset));
@@ -290,9 +296,9 @@ class SearchController extends AppController {
 		//adjust fields to allow search accross all samples including weighted datasets
 		unset($this->searchFields['Search By Blast Statistics']);
 		unset($this->searchFields['Search By Name']['hmm_name']);
-		unset($this->searchFields['Search By Name']['kegg_name']);
+		#unset($this->searchFields['Search By Name']['kegg_name']);
 		unset($this->searchFields['Search By ID']['hmm_id']);
-		unset($this->searchFields['Search By ID']['kegg_id']);		
+		#unset($this->searchFields['Search By ID']['kegg_id']);		
 	
 		//if a query string has been passed in as a variable
 		if($query != "*:*") {
@@ -484,11 +490,7 @@ class SearchController extends AppController {
 		$content=$this->Format->facetListToDownloadString('Search Results - Top 10 Functional Categories',$dataset,$facets,$facetFields,$query,$numHits);
 
 		$fileName = uniqid('jcvi_metagenomics_report_').'.txt';
-
-		header("Content-type: text/plain");
-		header("Content-Disposition: attachment;filename=$fileName");
-			
-		echo $content;
+		$this->Download->string($fileName,$content);
 	}
 
 	public function downloadMetaInformationFacets() {
@@ -505,65 +507,82 @@ class SearchController extends AppController {
 		$content=$this->Format->facetMetaInformationListToDownloadString('Search Results - Top 10 Metainformation Categories',$facets,$query,$numHits,$numDatasets);
 
 		$fileName = uniqid('jcvi_metagenomics_report_').'.txt';
-
-		header("Content-type: text/plain");
-		header("Content-Disposition: attachment;filename=$fileName");
-			
-		echo $content;
+		$this->Download->string($fileName,$content);
 	}	
 
 	/**
-	 * Download list of IDs. Writes data to file first before opening the download dialog.
+	 * Download all annotations or list of IDs. Writes data to file first before opening the download dialog.
 	 *
 	 * @param String $dataset Dataset
 	 * @param int $numHits number of the search
 	 * @param String $sessionQueryId session id of the query
+	 * @param boolean $idsOnly if true, onlyue download IDs; if false download all annotations
 	 * @return void
 	 * @access public
 	 */
-	public function dowloadData($dataset,$numHits,$sessionQueryId) {
+	public function dowloadAnnotation($dataset,$numHits,$sessionQueryId,$idsOnly) {
 		$this->autoRender=false;
 
 		$query = $this->Session->read($sessionQueryId);
+		$resultFields = $this->Session->read('resultFields');
 
 		$fileName = uniqid('jcvi_metagenomics_report_').'.txt';
 		$fileLocation = METAREP_TMP_DIR."/$fileName";
 
 		$fh = fopen("$fileLocation", 'w');
 
-		$content = $this->Format->infoString('Search Results - Peptide Id List',$dataset,$query,0,$numHits);
-		$content.="Peptide Id\n";
+		if($idsOnly) {
+			$title  = "Peptide ID List";
+			$fields = array('peptide_id');
+		}
+		else {
+			$title  = "Annotation List";
+			
+			$fields = array_keys($resultFields);
+			
+		}
+		
+		$content = $this->Format->infoString("Search Results - $title",$dataset,$query,0,$numHits);
+
+		//add heading
+		$headingFields = array();
+		foreach($fields as $field) {
+			array_push($headingFields,$resultFields[$field]);
+		}	
+		$content.=join("\t",$headingFields)."\n";	
 		fwrite($fh, $content);
-
-		$fields = 'peptide_id';
-
+		
+		$fieldArgument =  join(',',$fields);
+		
+		
 		//get rows in batches of 10,000 and add to content string
 		for($i=0;$i<$numHits+20000;$i+=20000) {
 
 			try{
-				$documents = $this->Solr->fetch($dataset,$query,$fields,$i,20000);
+				$documents = $this->Solr->fetch($dataset,$query,$fieldArgument,$i,20000);
 			}
 			catch (Exception $e) {
-							
-
 				$this->Session->setFlash("METAREP Lucene Query Exception. Please correct your query and try again.");
 				$this->redirect(array('action' => 'index'),null,true);
 
 			}
 
-			foreach ( $documents as $document ) {
-				//$content .=$row->peptide_id."\n";
-				fwrite($fh, $document->peptide_id."\n");
+			foreach ($documents as $document ) {
+				$rowArray = array();				
+				foreach($fields as $field) {
+					if(is_array($document->{$field})) {
+						array_push($rowArray,join('||',$document->{$field}));						
+					}
+					else {
+						array_push($rowArray,$document->{$field});
+					}
+				}
+				fwrite($fh, join("\t",$rowArray)."\n");
 			}
-
 			unset($documents);
 		}
 		fclose($fh);
-
-		header('Content-type: text/plain');
-		header("Content-disposition: attachment; filename=$fileName");
-		//echo $content;
-		readfile($fileLocation);
+		$this->Download->textFile($fileName,$fileLocation);
 	}
 
 	/**
@@ -680,7 +699,7 @@ class SearchController extends AppController {
 	 * @return String lucene query (<field>:<term>)
 	 * @access private
 	 */
-	private function generateLuceneQuery($query,$field) {
+	private function generateLuceneQuery($query,$field,$dataset=null) {
 		//delete prvious suggestions
 		$this->Session->delete('suggestions');
 
@@ -786,6 +805,21 @@ class SearchController extends AppController {
 						$this->loadModel('Pathway');
 						$searchByNameResults = $this->Pathway->getEnzymeQueryByPathwayId($query,METACYC_PATHWAYS);
 						break;
+					case "seq_id05":
+						$this->loadModel('Project');	
+						$sequence = preg_replace('/\s+/', '', $query);
+						$searchByNameResults = $this->Blast->getSubjectIdQueryBySequence($dataset,$sequence,'1E-5');
+						break;	
+					case "seq_id10":
+						$this->loadModel('Project');	
+						$sequence = preg_replace('/\s+/', '', $query);					
+						$searchByNameResults = $this->Blast->getSubjectIdQueryBySequence($dataset,$sequence,'1E-10');
+						break;	
+					case "seq_id50":
+						$this->loadModel('Project');	
+						$sequence = preg_replace('/\s+/', '', $query);				
+						$searchByNameResults = $this->Blast->getSubjectIdQueryBySequence($dataset,$sequence,'1E-50');
+						break;							
 					case "cluster_name":
 						$this->loadModel('Cluster');
 						$searchByNameResults = $this->Cluster->getClusterQueryByName($query);

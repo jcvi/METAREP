@@ -14,7 +14,7 @@
  *
  * @link http://www.jcvi.org/metarep METAREP Project
  * @package metarep
- * @version METAREP v 1.3.0
+ * @version METAREP v 1.4.0
  * @author Johannes Goll
  * @lastmodified 2010-07-09
  * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -29,15 +29,16 @@ require_once('vendors/SolrPhpClient_r53/Apache/Solr/HttpTransport/CurlNoReuse.ph
 require_once('vendors/SolrPhpClient_r53/Apache/Solr/HttpTransport/FileGetContents.php' );
 require_once('vendors/SolrPhpClient_r53/Apache/Solr/HttpTransport/Response.php' );
 
+
 define('SOLR_CONNECT_EXCEPTION', "There was a problem with fetching data from the Lucene index. Please contact ".METAREP_SUPPORT_EMAIL." if this problem is persistent");
 
 class SolrComponent extends BaseModelComponent {
 
 	var $uses = array();
-
-	//$method POST or GET
+	var $components = array('Parallelization');
 	var $method = 'POST';
-
+	
+	
 	private $solrLoadBalancer;
 
 	/**
@@ -80,6 +81,9 @@ class SolrComponent extends BaseModelComponent {
 			}
 		}
 			
+		if(SOLR_TRACK_QTIME) {
+			$this->SolrQtime =& ClassRegistry::init('SolrQtime');
+		}
 		//create load balancing object
 		$this->solrLoadBalancer = new Apache_Solr_Service_Balancer($solrServices);
 	}
@@ -240,6 +244,8 @@ class SolrComponent extends BaseModelComponent {
 			}
 		}		
 		if(count($weightedDatasets) > 0) {
+			#$result = $this->testMultiCurlSearch($weightedDatasets,$queries,$filterQuery);
+			
 			foreach($queries as $query) {
 				if(is_null($query2CategoryMapping)) {
 					$split = explode(":", $query,2);
@@ -250,15 +256,19 @@ class SolrComponent extends BaseModelComponent {
 					$category = $query2CategoryMapping[$query];		
 				}				
 				try {
+					
 					$result = $this->weightedDistributedSearch($weightedDatasets,$filterQuery,$query);
+					//$result = $this->testMultiCurlSearch($weightedDatasets,$filterQuery,$query);
 				}
 				catch (Exception $e) {
 					throw new Exception($e);
 				}	
 				$counts[$category]['sum'] = $result['sum'];	
-				foreach($result['datasets'] as $weightedDataset =>$count) {
-						$counts[$category][$weightedDataset] = $count;	
-				}	
+				if(isset($result['datasets'])) {
+					foreach($result['datasets'] as $weightedDataset =>$count) {
+							$counts[$category][$weightedDataset] = $count;	
+					}	
+				}
 				unset($result);			
 			}
 		}
@@ -269,7 +279,8 @@ class SolrComponent extends BaseModelComponent {
 										'facet.query' 		=> $queries,
 										"facet.limit" 		=> -1);	
 				try {
-					$result = $this->unweightedSearch($unweightedDataset,$filterQuery,0,0,$solrArguments);					
+					$result = $this->unweightedSearch($unweightedDataset,$filterQuery,0,0,$solrArguments);	
+					#$result = $this-unweightedMultiCurlSearch($unweightedDatasets,$filterQuery,$query);
 				}
 				catch (Exception $e) {
 					throw new Exception($e);
@@ -289,6 +300,84 @@ class SolrComponent extends BaseModelComponent {
 				}							
 			}					
 		}
+	}
+	
+	public function request_callback($response, $info, $request) {
+	        // parse the page title out of the returned HTML
+	        if (preg_match("~<title>(.*?)</title>~i", $response, $out)) {
+	                $title = $out[1];
+	        }
+	        echo "<b>$title</b><br />";
+	        debug($info);
+	    debug($request);
+	        echo "<hr>";
+	}
+	
+	public function testMultiCurlSearch($datasets,$queries,$filterQuery=null) {
+		
+		$processes = array();
+		#debug($datasets);
+		foreach($queries as $query) {
+			
+			$countResults = array();
+			$countResults['sum'] = 0;
+			
+			if(!is_null($filterQuery)) {
+				if($query === '*:*' ) {
+					$solrQuery = $filterQuery;
+				}
+				else {
+					$solrQuery  = "($filterQuery) AND ($query)";
+				}
+			}
+			$solrQuery  = 	$query;
+			//$datasetChunks = array_chunk($datasets ,SOLR_NUM_MAX_WEIGHTED_SHARDS);
+			
+				
+			
+			
+			$urls = $this->getSolrShardArgument($datasets);	
+			
+			//collect requests per chunk
+			for($datasetCounter = 0; $datasetCounter<count($datasets);$datasetCounter++) {
+				
+		
+				if(defined('SOLR_SLAVE_HOST')) {
+					$randomFlag  = mt_rand(0, 1);
+					if($randomFlag == 0) {
+						$shardIp = SOLR_SLAVE_HOST;
+					}
+					if($randomFlag == 1) {
+						$shardIp = SOLR_MASTER_HOST;
+					}
+				}
+				else {
+					$shardIp = SOLR_MASTER_HOST;
+				}
+				
+				$dataset = 	$datasets[$datasetCounter];
+							
+				$processes[$dataset.$query]['url'] 			= "http://$shardIp".":".SOLR_PORT."/solr/$dataset/select";
+				$processes[$dataset.$query]['dataset'] 		= $dataset;
+				$processes[$dataset.$query]['query'] 		= $solrQuery;			
+				$processes[$dataset.$query]['solrArguments']= array(
+																'q'=>'*:*',
+																'fq'=>$solrQuery,
+																'stats'=>'true',
+																'stats.field'=>'weight',
+																'rows' => '0',
+																'wt' => 'json',
+																'json.nl' =>'map'
+																);											
+			
+			}	
+		}
+//		debug(sizeof($queries));
+//		debug(sizeof($datasets));
+//		debug(sizeof($processes));
+		//die();
+		$this->Parallelization->execute($processes);
+		return 	$countResults;		
 	}
 	
 
@@ -327,6 +416,8 @@ class SolrComponent extends BaseModelComponent {
 			$urls = $this->getSolrShardArgument($datasetChunk);
 				
 			$myurl = "";
+			
+			
 			//collect requests per chunk
 			for($datasetCounter = 0; $datasetCounter<count($datasetChunk);$datasetCounter++) {
 				$h = curl_init();
@@ -570,13 +661,22 @@ class SolrComponent extends BaseModelComponent {
 			
 			//get shard argument
 			$params['shards'] = $this->getSolrShardArgument($datasets);
-				
+
+			if(SOLR_TRACK_QTIME) {
+				$start = $this->time();
+			}
+						
 			try {
 				$solrResult = $this->solrLoadBalancer->search("/solr/{$datasets[0]}",'*:*', 0,0,$params, $this->method);
 			}
 			catch (Exception $e) {
 				throw new Exception($e);
 			}
+			
+			if(SOLR_TRACK_QTIME) {
+				$this->trackQtime(__FUNCTION__,$start,$solrResult,$query,$datasets[0]);	
+			}			
+			
 			if(isset($solrResult->stats->stats_fields->weight->facets->library_id)) {
 				foreach($datasets as $dataset) {
 					if(isset($solrResult->stats->stats_fields->weight->facets->library_id->$dataset)) {
@@ -662,22 +762,40 @@ class SolrComponent extends BaseModelComponent {
 	 * @access private
 	 */
 	public function mergeIndex($projectId,$core,$datasets) {
-		
-		//create merge url string
+			
+		//define the root URL for the merge that points to the new core
 		$mergeUrl = $this->getSolrUrl(SOLR_MASTER_HOST,SOLR_PORT)."/solr/admin/cores?action=mergeindexes&core=$core";
-
+		
 		//add index information for cores that are going to be merged
 		foreach($datasets as $dataset) {
-			$mergeUrl .= "&indexDir=".SOLR_DATA_DIR."/$dataset/index";
+			$mergeUrl .= "&indexDir=".SOLR_DATA_DIR."/$projectId/$dataset/index";
+			
+			try {
+				//execute a commit and optimize before the merge
+				$this->commitAndOptimize($dataset);
+			}
+			catch (Exception $e) {
+				throw new Exception($e);
+			}				
+		}	
+		try {
+			//delete core; ignore exception if exists
+			$this->deleteIndex($core);
 		}
-		try {				
+		catch (Exception $e) {
+			
+		}			
+				
+		try {	
+			//create new merge core				
 			$this->log("Create Core: $projectId,$core");
-			$this->createCore($projectId,$core);
+			$this->createCore($projectId,$core);			
 			$this->log("Execute Merge Url: $mergeUrl");
 			$this->executeUrl($mergeUrl,3600);
-			sleep(80);
-			$this->log("Commit & Optimize Core: $core");
 			$this->commitAndOptimize($core);
+			$this->log("Commit & Optimize Core: $core");
+			//sleep 80s to synchronize slave and master cores
+			sleep(80);						
 		}
 		catch (Exception $e) {
 			throw new Exception($e);
@@ -714,6 +832,10 @@ class SolrComponent extends BaseModelComponent {
 
 		$params['fl'] = $fields;
 
+		if(SOLR_TRACK_QTIME) {
+			$start = $this->time();
+		}		
+		
 		try {
 			$result = $this->solrLoadBalancer->search("/solr/$dataset",$query, $offset,$limit,$params,$this->method);
 				
@@ -722,6 +844,11 @@ class SolrComponent extends BaseModelComponent {
 			//rethrow exception
 			throw new Exception($e);
 		}
+		
+		if(SOLR_TRACK_QTIME) {
+			$this->trackQtime(__FUNCTION__,$start,$result,$query,$dataset);	
+		}		
+		
 		//if documents are being returned
 		$docs = $result->response->docs;
 		$this->removeUnassignedValues($docs);
@@ -745,13 +872,24 @@ class SolrComponent extends BaseModelComponent {
 	 */
 		
 	private function unweightedSearch($dataset,$query, $offset, $limit, $params, $renameFacets = false){	
-		try {		
-			$result = $this->solrLoadBalancer->search("/solr/$dataset",$query, $offset,$limit,$params,$this->method);					
+		
+		if(SOLR_TRACK_QTIME) {
+			$start = $this->time();
+		}
+			
+		try {	
+			$result = $this->solrLoadBalancer->search("/solr/$dataset",$query, $offset,$limit,$params,$this->method);				
 		}
 		catch (Exception $e) {				
 			//rethrow exception
 			throw new Exception($e);
-		}		
+		}	
+		
+		if(SOLR_TRACK_QTIME) {
+			#debug(__FUNCTION__.",$start,$query,$dataset");
+			$this->trackQtime(__FUNCTION__,$start,$result,$query,$dataset);	
+		}
+		
 		//if documents are being returned
 		if($limit > 0) {
 			$hits = $result->response->docs;		
@@ -775,12 +913,22 @@ class SolrComponent extends BaseModelComponent {
 	 */
 	
 	private function unweightedCount($dataset,$query,$params) {
+		
+		if(SOLR_TRACK_QTIME) {
+			$start = $this->time();
+		}
+		
 		try {
 			$result = $this->solrLoadBalancer->search("/solr/$dataset",$query, 0,0,$params,$this->method);			
 		}
 		catch (Exception $e) {
 			throw new Exception($e);
-		}	
+		}
+
+		if(SOLR_TRACK_QTIME) {
+			$this->trackQtime(__FUNCTION__,$start,$result,$query,$dataset);	
+		}		
+		
 		$numHits = (int) $result->response->numFound;	
 		unset($result);
 		return $numHits;
@@ -804,7 +952,7 @@ class SolrComponent extends BaseModelComponent {
 	 */	
 	
 	private function weightedSearch($datasets,$query, $offset, $limit, $params, $renameFacets = false){
-
+	
 		//transform facet queries into queries that are executed sequentially
 		if(isset($params['facet.query'])) {
 			$facetQueries = $params['facet.query'];
@@ -818,7 +966,7 @@ class SolrComponent extends BaseModelComponent {
 			foreach($facetQueries as $facetQuery) {
 				$params['fq'] = $facetQuery;
 				if(count($datasets) == 1) {
-					$facetQueryResults[$facetQuery] = $this->weightedCount($datasets,$query,$params);
+					$facetQueryResults[$facetQuery] = $this->weightedCount($datasets,$query,$params);									
 				}
 				else if(count($datasets) > 1) {
 					$result = $this->weightedDistributedSearch($datasets,$query,$facetQuery);
@@ -836,17 +984,26 @@ class SolrComponent extends BaseModelComponent {
 				
 			$facetFields = $params['facet.field'];
 			$facetLimit  = $params['facet.limit'];
-				
-			#unset($params['facet']);
+			
+			$facetPrefix = null;
+			if(isset($params['facet.prefix'])) {
+				$facetPrefix = $params['facet.prefix'];
+			}
+			
 			unset($params['facet.limit']);
 			unset($params['facet.field']);
 
-			//specify arguments
+			##specify arguments
 			$params['stats'] 	   = 'true';
 			$params['stats.field'] = 'weight';
 			$params['stats.facet'] =  $facetFields;
 				
 			if(count($datasets) == 1) {
+				
+				if(SOLR_TRACK_QTIME) {
+					$start = $this->time();
+				}					
+				
 				try {
 					$result = $this->solrLoadBalancer->search("/solr/$datasets",$query, $offset,$limit,$params,$this->method);
 				}
@@ -854,6 +1011,10 @@ class SolrComponent extends BaseModelComponent {
 					//rethrow exception
 					throw new Exception($e);
 				}
+				
+				if(SOLR_TRACK_QTIME) {
+					$this->trackQtime(__FUNCTION__,$start,$result,$query,$datasets);	
+				}					
 			}
 			//execute distributed search for multiple datasets
 			else if(count($datasets) > 1) {
@@ -862,13 +1023,23 @@ class SolrComponent extends BaseModelComponent {
 				$results = array();
 				foreach($shardChunks as $datasets) {
 					$params['shards'] = $this->getSolrShardArgument($datasets);
+
+					if(SOLR_TRACK_QTIME) {
+						$start = $this->time();
+					}						
+					
 					try {		
 						$shardResult = $this->solrLoadBalancer->search("/solr/$datasets[0]",$query, $offset,$limit,$params,$this->method);
 					}
 					catch (Exception $e) {				
 						//rethrow exception
 						throw new Exception($e);
-					}	
+					}
+
+					if(SOLR_TRACK_QTIME) {
+						$this->trackQtime(__FUNCTION__,$start,$shardResult,$query,$datasets[0]);	
+					}						
+					
 					array_push($results,$shardResult);
 				}
 				$result = $this->mergeWeightedFacetShardResults($facetFields,$results);
@@ -889,7 +1060,7 @@ class SolrComponent extends BaseModelComponent {
 
 			//if facets are provided do facet weighting
 			if(isset($params['stats.facet'])) {
-				$this->weightFacets($datasets,$query,$result,$facetFields,$facetLimit);
+				$this->weightFacets($datasets,$query,$result,$facetFields,$facetLimit,$facetPrefix);
 			}
 
 			if($renameFacets) {
@@ -911,15 +1082,20 @@ class SolrComponent extends BaseModelComponent {
 	 */
 	
 	private function weightedCount($datasets,$query,$params) {
-
+		
 		$numHits = 0;
 
-		//specify stats arguments
+		// specify stats arguments
 		$params['stats'] 	   = 'true';
 		$params['stats.field'] = 'weight';
 
-		//execute search for single dataset
+		// execute search for single dataset
 		if(count($datasets) == 1) {
+			
+			if(SOLR_TRACK_QTIME) {
+				$start = $this->time();
+			}					
+			
 			try {
 				$result = $this->solrLoadBalancer->search("/solr/$datasets",$query, 0,0,$params, $this->method);
 			}
@@ -927,20 +1103,41 @@ class SolrComponent extends BaseModelComponent {
 				//rethrow exception
 				throw new Exception($e);
 			}
+			
+			if(SOLR_TRACK_QTIME) {
+				$this->trackQtime(__FUNCTION__,$start,$result,$query,$datsets);	
+			}
+							
 			//get the number of weighted hits
 			if(!is_null($result->stats->stats_fields->weight)) {
 				$numHits =  round((double) $result->stats->stats_fields->weight->sum,WEIGHTED_COUNT_PRECISION);
 			}
 			unset($result);
 		}
-		//execute distributed search for multiple weighted datasets
+		// execute distributed search for multiple weighted datasets
 		else if(count($datasets) > 1) {
 			$aggregatedCounts = null;
 			$shardChunks = array_chunk($datasets ,SOLR_NUM_MAX_WEIGHTED_SHARDS);
 			$results = array();
 			foreach($shardChunks as $datasets) {
 				$params['shards'] = $this->getSolrShardArgument($datasets);
-				$result = $this->solrLoadBalancer->search("/solr/$datasets[0]",$query, 0,0,$params,$this->method);
+				
+				if(SOLR_TRACK_QTIME) {
+					$start = $this->time();
+				}					
+				
+				try {
+					$result = $this->solrLoadBalancer->search("/solr/$datasets[0]",$query, 0,0,$params,$this->method);
+				}
+				catch (Exception $e) {
+					//rethrow exception
+					throw new Exception($e);
+				}	
+				
+				if(SOLR_TRACK_QTIME) {
+					$this->trackQtime(__FUNCTION__,$start,$result,$query,$datasets[0]);	
+				}								
+				
 				if(!is_null($result->stats->stats_fields->weight)) {
 					$numHits +=  round((double) $result->stats->stats_fields->weight->sum,WEIGHTED_COUNT_PRECISION);
 				}
@@ -985,7 +1182,7 @@ class SolrComponent extends BaseModelComponent {
 			$this->executeUrl($this->getSolrUrl(SOLR_MASTER_HOST,SOLR_PORT)."/solr/admin/cores?action=UNLOAD&core=$dataset");
 				
 			//unload slave core if a Solr slave host has been defined in the METAREP configuration file
-			if(defined('SOLR_SLAVE_HOST')) {
+			if(defined('SOLR_SLAVE_HOST')) {				
 				$this->executeUrl($this->getSolrUrl(SOLR_SLAVE_HOST,SOLR_PORT)."/solr/admin/cores?action=UNLOAD&core=$dataset");
 			}
 		}
@@ -1234,9 +1431,11 @@ class SolrComponent extends BaseModelComponent {
 	 * returned by the solr stats component
 	 *
 	 * @param string $result solr result set
-	 * @return string $facetFields facet field
+	 * @param string $facetFields facwt fields
+ 	 * @param string $limit the top number of facets to return
+	 * @return string $facetPrefix filter for facets that start with the prefix
 	 */
-	private function weightFacets($dataset,$query,$result,$facetFields,$limit=-1) {
+	private function weightFacets($dataset,$query,$result,$facetFields,$limit=-1,$facetPrefix = null) {
 
 		if(!is_array($facetFields)) {
 			$facetFields = array($facetFields);
@@ -1246,6 +1445,13 @@ class SolrComponent extends BaseModelComponent {
 
 			if(isset($result->stats->stats_fields->weight->facets->$facetField)) {
 				foreach($result->stats->stats_fields->weight->facets->$facetField as $acc => $stats) {
+					
+					## filter based on facet prefix
+					if(!is_null($facetPrefix)) {
+						if(! preg_match("/^$facetPrefix.*/",$acc)) {
+							continue;
+						}
+					}
 					$sortedFacets[$acc] = round($stats->sum,WEIGHTED_COUNT_PRECISION);
 				}
 
@@ -1255,6 +1461,7 @@ class SolrComponent extends BaseModelComponent {
 					if($limit > 0) {
 						$sortedFacets = array_slice($sortedFacets, 0, $limit);
 					}
+
 						
 					$result->facet_counts->facet_fields->$facetField = $sortedFacets;
 					unset($sortedFacets);
@@ -1346,6 +1553,34 @@ class SolrComponent extends BaseModelComponent {
 		}
 		
 		return implode(',',$shardIps);
+	}
+	
+	private function trackQtime($action,$start,$result,$query,$dataset) {	
+		$entry = array();
+		$entry['SolrQtime']['wtime_ms']   		= round(($this->time() - $start)*1000,0);
+		$entry['SolrQtime']['qtime_ms']   		= $result->responseHeader->QTime;
+		$entry['SolrQtime']['action'] 	  		= $action;
+		$entry['SolrQtime']['http_status'] 		= $result->getHttpStatus();	
+		$entry['SolrQtime']['url']  	  		= $result->url;
+		$entry['SolrQtime']['query']  	  		= $query;
+		$entry['SolrQtime']['dataset']  	  	= $dataset;
+		
+		if(isset($result->responseHeader->params->facet)) {
+			$entry['SolrQtime']['facet_flag']  	  	= ($result->responseHeader->params->facet === 'true') ?1:0;
+			$entry['SolrQtime']['facet_query_flag'] = (preg_match('/facet\.query/',$result->url)) ?1:0;
+		}		
+		if(isset($result->responseHeader->params->stats)) {
+			$entry['SolrQtime']['stats_flag']  	  	= ($result->responseHeader->params->stats === 'true') ?1:0;
+			$entry['SolrQtime']['stats_facet_flag'] = (preg_match('/stats\.facet/',$result->url)) ?1:0;
+		}
+		
+		$entry['SolrQtime']['host_ip']  	  	= $result->host;
+		$entry['SolrQtime']['http_transport'] 	= $result->transport;
+		
+		
+		if(! $this->SolrQtime->save($entry)) {
+			debug('failed saving solr_qtime entry!');
+		}
 	}
 }
 ?>

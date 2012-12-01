@@ -13,7 +13,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -47,6 +47,11 @@ class Project extends AppModel {
 		
 		return $projectName;
 	}   
+	 
+	public function getProjectNameById($id) {
+		$project = $this->findById($id);
+		return $project['Project']['name'];
+	}
 	
 	public function getProjectId($dataset) {
 		$this->contain('Library.project_id');
@@ -133,10 +138,34 @@ class Project extends AppModel {
 		return $pipeline;					
 	}	
 
+	public function populationsToDatasets($datasets) {
+		$allDatasets = array();
+			
+		if(sizeof($datasets) == 1 && !is_array($datasets)) {
+			$datasets = array($datasets);
+		}
+		
+		foreach($datasets as $dataset) {
+			if($this->isPopulation($dataset)) {
+				$populationDatasets = $this->Population->getLibraries($dataset);
+				foreach($populationDatasets as $populationDataset) {
+					$allDatasets[$populationDataset] = '';
+				}
+			}
+			else {	
+				
+				$allDatasets[$dataset] = '';
+			}
+		}
+		
+		return array_keys($allDatasets);		
+	}	
+	
 	public function checkDatasetPipelines($datasets) {
 		
 		$datasetPipelines[PIPELINE_DEFAULT]			= true;
 		$datasetPipelines[PIPELINE_JCVI_META_PROK]	= true;
+		$datasetPipelines[PIPELINE_JCVI_META_VIRAL]	= true;
 		$datasetPipelines[PIPELINE_HUMANN]			= true;
 				
 		foreach($datasets as $dataset) {		
@@ -297,14 +326,15 @@ class Project extends AppModel {
 		//do not query database if results have been cached
 		if(($userProjects = Cache::read($currentUserId.'projects')) === false) {
 			
-			$this->contain('Population.id','Population.project_id','Population.name','Population.has_apis',
-						   'Library.id','Library.project_id','Library.name','Library.apis_database','Library.apis_dataset','Library.has_ftp','Library.is_weighted');	  
+			$this->contain('Population.id','Population.project_id','Population.name','Population.has_apis','Population.has_ko','Population.has_sequence',
+						   'Library.id','Library.project_id','Library.name','Library.apis_database','Library.apis_dataset','Library.has_ftp','Library.is_weighted','Library.has_ko','Library.has_sequence');	  
 	
 			//return all project for admin and jcvi users
 			if($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP) {
 				$userProjects = $this->find('all',array('fields'=>array('Project.name')));
-			}			   
-			#return public projects for guest users
+			}
+						   
+			//return public projects for guest users
 			else if($userGroup === GUEST_USER_GROUP) {		
 				$userProjects = $this->find('all', array('conditions' => array('is_public' => 1)));
 			} 
@@ -317,7 +347,7 @@ class Project extends AppModel {
 				foreach($results as $result) {	
 					
 					$this->contain('Population.id','Population.project_id','Population.name','Population.has_apis',
-						   'Library.id','Library.project_id','Library.name','Library.apis_database','Library.apis_dataset','Library.has_ftp','Library.is_weighted');	  
+						   'Library.id','Library.project_id','Library.name','Library.apis_database','Library.apis_dataset','Library.has_ftp','Library.is_weighted','Library.has_ko');	  
 					
 					$projectId = $result['Project']['id'];
 					$project = $this->findById($projectId);

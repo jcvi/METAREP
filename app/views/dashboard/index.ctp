@@ -18,7 +18,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.3.0
+  @version METAREP v 1.4.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -32,19 +32,15 @@
 <div class="dash-board">
 	<h2><?php __('Dash Board')?></h2>
 	<div class="dash-board-main-panel">
-	<fieldset>
+	<fieldset >
 	<legend >JCVI Metagenomics Reports (v<?php echo(METAREP_VERSION)?>)</legend>
 	<div class="dash-board-abstract">	
-		<p>JCVI Metagenomics Reports (METAREP) is a new <strong>open source</strong> tool for <strong>high-performance</strong> comparative metagenomics. 
-		It provides a suite of web based tools to help scientists to <strong>view, query, browse</strong> and <strong>compare</strong> metagenomics annotation data
-		derived from ORFs called on metagenomics reads.</p><BR>
-		<p>
-		METAREP supports browsing of functional and taxonomic
-		assignments. Users can either specify fields,
-		or logical combinations of fields to <strong>flexibly filter datasets on the fly</strong>.	
+		<p>JCVI Metagenomics Reports (METAREP) is an <strong>open source</strong> tool for <strong>high-performance</strong> comparative metagenomics. 
+		It helps scientists to <strong>view, query, browse</strong> and <strong>compare</strong> metagenomics annotation profiles from short reads or assemblies.
+		METAREP supports fielded search using combinations of functional and taxonomic fields to <strong>slice and dice big datasets in real-time</strong>.	
 		Users can <strong>compare multiple datasets</strong> at	various functional and taxonomic levels
-		applying statistical tests as well as hierarchical clustering, multidimensional scaling and heatmaps.
-		</p><BR><p> 
+		applying <strong>statistical tests</strong>  as well as hierarchical clustering, multidimensional scaling and heatmaps.
+		
 		For each of these features, METAREP provides download options to <strong>export
 		tab delimited files</strong> for downstream analysis. The web site is
 		optimized to be <strong>user friendly and fast</strong>.</p>
@@ -73,11 +69,29 @@
 		</table>
 		</p>			
 	</div>
-	</fieldset>	
 	
+	</fieldset>	
 		<fieldset>
-			<legend >Lucene Revolution 2010 Lightning Talk</legend>				
-			<object width="570	" height="385"><param name="movie" value="http://www.youtube.com/v/DJNjM7LMVWU?fs=1&amp;hl=en_US"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/DJNjM7LMVWU?fs=1&amp;hl=en_US" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="570" height="385"></embed></object>
+			<legend>Videos</legend>
+			
+	<div id="tabs">
+	<ul>
+		<li><a href="#tabs-1">5 Minute Overview</a></li>
+		<li><a href="#tabs-2">Demo</a></li>
+		<li><a href="#tabs-3">Implementation</a></li>
+	</ul>
+	<div id="tabs-1">
+		<iframe width="565" height="385" theme="light" showsearch="1" src="http://www.youtube.com/v/DJNjM7LMVWU?&amp;hl=en_US&amp;hd=1;theme=light;color=orange;showsearch=1;frameborder=1;egm=1" allowfullscreen modestbranding></iframe>
+	</div>
+	<div id="tabs-2">
+		<iframe width="565" height="385" theme="light" showsearch="1" src="http://www.youtube.com/v/7FPJaPyLjMk?&amp;hl=en_US&amp;hd=1;theme=light;color=orange;showsearch=1;frameborder=1;egm=1" allowfullscreen modestbranding></iframe>
+	</div>
+	<div id="tabs-3">
+		<iframe width="565" height="385" theme="light" showsearch="1" src="http://www.youtube.com/v/j0rlTIkvfvI?&amp;hl=en_US&amp;hd=1;theme=light;color=orange;showsearch=1;frameborder=1;egm=1" allowfullscreen modestbranding></iframe>
+	</div>
+</div>
+			
+			
 	</fieldset>
 </div>
 
@@ -106,21 +120,15 @@
 
 <div class="dash-board-google-groups-panel" > 
 <fieldset >
-		<legend >Mailing List</legend>
-			<table border=0 style="background-color: #fff; padding: 0px;" cellspacing=0>
-			  <tr><td>
-			  <img src="http://groups.google.com/intl/en/images/logos/groups_logo_sm.gif"
-			         height=30 width=140 alt="Google Groups">
+		<legend >METAREP Mailing List</legend>
+			<table border=0 style="background-color: #fff; padding: 0px;" cellspacing=0>			  
 			  </td></tr>
-			  <form action="http://groups.google.com/group/metarep/boxsubscribe">
-			  <tr><td style="padding-left: 0px;">
-			  Enter Your Email: <input type=text name=email>
+			  <form action="http://groups.google.com/group/phylo-metarep/boxsubscribe">
+			  <tr><td style="padding-left: 2px;padding-right: 10px;">
+			  Enter Your Email: <input type=text name=email width=30px>
 			  <input type=submit name="sub" value="Subscribe" width="10px">
 			  </td></tr>
 			</form>
-			<tr><td align=right>
-			  <a href="http://groups.google.com/group/metarep" target = "_blank">Visit this group</a>
-			</td></tr>
 			</table>
 </fieldset>
 </div>
@@ -191,6 +199,11 @@ jQuery(document).ready(function(){
 	jQuery('a.track_stats').click(function() {
 		jQuery.post("/metarep/users/stats",{id: jQuery(this).attr('id')});
 		return true;
+	});
+	
+jQuery(function() {
+		jQuery("#tabs").tabs({ spinner: '<img src="/metarep/img/ajax.gif\"/>' });
+		 
 	});
 });
 

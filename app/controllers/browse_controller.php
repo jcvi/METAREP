@@ -20,7 +20,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -38,7 +38,7 @@ class BrowseController extends AppController {
 	var $name 		= 'Browse';
 	var $helpers 	= array('Facet','Tree','Dialog');
 	var $uses 		= array();	
-	var $components = array('Session','RequestHandler','Solr','Format','Color');
+	var $components = array('Session','RequestHandler','Solr','Download','Format','Color');
 
 	var $facetFields = array(
 								'blast_species'=>'Species (Blast)',
@@ -172,8 +172,7 @@ class BrowseController extends AppController {
 		$this->set('numChildHits',$numChildHits);
 		$this->set('facets',$facets);	
 		$this->set('pipeline',$pipeline);		
-		$this->set('mode',BLAST_TAXONOMY);	
-			
+		$this->set('mode',BLAST_TAXONOMY);				
 	}
 
 	/**
@@ -184,113 +183,119 @@ class BrowseController extends AppController {
 	function apisTaxonomy($dataset,$expandTaxon=1,$query='*:*') {
 		$function = __FUNCTION__;
 		$this->loadModel('Project');
-		$this->loadModel('Taxonomy');		
+		$this->loadModel('TaxonomyApis');
 		$this->pageTitle = 'Browse Taxonomy (Apis)';
-		
+	
 		$pipeline			=  $this->Project->getPipeline($dataset);
 		$optionalDatatypes  = $this->Project->checkOptionalDatatypes(array($dataset));
-		
-		if($pipeline === PIPELINE_HUMANN || $optionalDatatypes['ko']) { 
- 			$this->facetFields = array(
-								'blast_species'=>'Species (Blast)',
-								'ko_id'=>'Kegg Ortholog',
-								'go_id'=>'Gene Ontology',
-								'ec_id'=>'Enzyme',
-							);			
+	
+		if($pipeline === PIPELINE_HUMANN || $optionalDatatypes['ko']) {
+			$this->facetFields = array(
+									'blast_species'=>'Species (Blast)',
+									'ko_id'=>'Kegg Ortholog',
+									'go_id'=>'Gene Ontology',
+									'ec_id'=>'Enzyme',
+			);
 		}
-		
+	
 		if($this->Session->check($function.'.browse.query')){
 			$query = $this->Session->read($function.'.browse.query');
 		}
-		
+	
 		//get session based taxonomic tree
 		$displayedTree = $this->Session->read(APIS_TAXONOMY.'.browse.tree');
-		
+	
 		if(!isset($displayedTree)) {
 			$expandTaxon=1;
 		}
-		
+	
 		//get taxonomy information from database
-		$taxaChildren = $this->Taxonomy->find('all', array('conditions' => array('Taxonomy.parent_tax_id' => $expandTaxon)));
-		$taxaParent = $this->Taxonomy->find('first', array('conditions' => array('Taxonomy.taxon_id' => $expandTaxon)));
-		//die(print($taxaParent['Taxonomy']['name']));
-		$parentName = $taxaParent['Taxonomy']['name'];				
-
+		$taxaChildren = $this->TaxonomyApis->find('all', array('conditions' => array('TaxonomyApis.parent_tax_id' => $expandTaxon)));
+		$taxaParent = $this->TaxonomyApis->find('first', array('conditions' => array('TaxonomyApis.taxon_id' => $expandTaxon)));
+		//die(print($taxaParent['TaxonomyApis']['name']));
+		$parentName = $taxaParent['TaxonomyApis']['name'];
+	
 		$childArray = array();
 		$childCounts = array();
 		$numChildHits =0;
 			
 		//for each child get solr count
 		foreach($taxaChildren as $taxon) {
-				
-			$solrAguments = array('fq'=>"apis_tree:{$taxon['Taxonomy']['taxon_id']}");		
+			$taxonId = $taxon['TaxonomyApis']['taxon_id'];
+			// handle minus categories
+			$searchTaxonId	= $taxonId < 0 ? str_replace('-','\-',$taxonId) : $taxonId;
+	
+			$solrAguments = array('fq'=>"apis_tree:$searchTaxonId");
 			//get solr count
 			try {
 				$count=  $this->Solr->count($dataset,$query,$solrAguments);
-			}	
+			}
 			catch(Exception $e) {
 				$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
 				$this->redirect('/projects/index',null,true);
 			}
 			//set count
-			$taxon['Taxonomy']['count'] = $count;
-				
-			$taxonId = $taxon['Taxonomy']['taxon_id'];
-				
+			$taxon['TaxonomyApis']['count'] = $count;
+	
+			$taxonId = $taxon['TaxonomyApis']['taxon_id'];
+	
 			//filter for children
 			if($count>0 && $taxonId!=1) {
-				$taxon['Taxonomy']['count'] = $count;
-				$taxon['Taxonomy']['children'] = NULL;
-				
-				$childCounts[$taxon['Taxonomy']['name']]=$count;
+				$taxon['TaxonomyApis']['count'] = $count;
+				$taxon['TaxonomyApis']['children'] = NULL;
+	
+				$childCounts[$taxon['TaxonomyApis']['name']]=$count;
 				//add children to child array
-				$childArray[$taxonId] = $taxon['Taxonomy'];
+				$childArray[$taxonId] = $taxon['TaxonomyApis'];
 				$numChildHits +=$count;
 			}
 		}
-			
-		$solrArguments = array(	
-						'fq'=> "apis_tree:$expandTaxon",
-						'facet' => 'true',
-						'facet.field' => array_keys($this->facetFields),
-						'facet.mincount' => 1,
-						'facet.limit' => NUM_TOP_FACET_COUNTS);
-		
-		try{		
+	
+		// handle minus categories
+		$searchExpandTaxon	= $expandTaxon < 0 ? str_replace('-','\-',$expandTaxon) : $expandTaxon;
+	
+		$solrArguments = array(
+							'fq'=> "apis_tree:$searchExpandTaxon",
+							'facet' => 'true',
+							'facet.field' => array_keys($this->facetFields),
+							'facet.mincount' => 1,
+							'facet.limit' => NUM_TOP_FACET_COUNTS);
+	
+		try{
 			$result = $this->Solr->search($dataset,$query, 0,0,$solrArguments,true);
 		}
 		catch(Exception $e) {
 			$this->Session->setFlash(SOLR_CONNECT_EXCEPTION);
 			$this->redirect('/projects/index',null,true);
 		}
-		
+	
 		$numHits= $result->response->numFound;
 		$facets = $result->facet_counts;
-
+	
 		//handle unresolved child nodes
 		if(count($taxaChildren) > 0 && $numChildHits <	$numHits) {
 			$childCounts['unresolved'] = $numHits - $numChildHits;
 			$childArray[-1]['name']  = 'unresolved';
 			$childArray[-1]['rank']  = 'no rank';
-			$childArray[-1]['taxon_id'] = -1; 
+			$childArray[-1]['taxon_id'] = -1;
 			$childArray[-1]['count']  = $numHits - $numChildHits;
 			$childArray[-1]['children'] = NULL;
 		}
-		
+	
 		//show root level for 1
 		if($expandTaxon==1) {
-			$displayedTree = $childArray;			
+			$displayedTree = $childArray;
 		}
 		//build tree
 		else {
 			$this->traverseArray($displayedTree,$childArray,$expandTaxon);
 		}
-		
+	
 		$this->Session->write(APIS_TAXONOMY.'.browse.tree', $displayedTree);
 		$this->Session->write(APIS_TAXONOMY.'.browse.childCounts', $childCounts);
-		$this->Session->write(APIS_TAXONOMY.'.browse.facets', $facets);		
-		$this->Session->write(APIS_TAXONOMY.'.browse.facetFields',$this->facetFields);	
-		
+		$this->Session->write(APIS_TAXONOMY.'.browse.facets', $facets);
+		$this->Session->write(APIS_TAXONOMY.'.browse.facetFields',$this->facetFields);
+	
 		$this->set('projectName', $this->Project->getProjectName($dataset));
 		$this->set('projectId', $this->Project->getProjectId($dataset));
 		$this->set('dataset',$dataset);
@@ -300,7 +305,7 @@ class BrowseController extends AppController {
 		$this->set('numChildHits',$numChildHits);
 		$this->set('facets',$facets);
 		$this->set('mode',APIS_TAXONOMY);
-		
+	
 	}
 		
 	function enzymes($dataset,$expandTaxon='root',$query = '*:*') {		
@@ -818,8 +823,6 @@ class BrowseController extends AppController {
 				
 		}
 
-
-
 		if($parentId == 1) {
 			$displayedTree = $childArray;
 		}
@@ -827,7 +830,6 @@ class BrowseController extends AppController {
 		else {
 			$this->traverseArray($displayedTree,$childArray,$parentId);
 		}
-
 
 		$this->Session->write("$function.browse.tree", $displayedTree);
 		$this->Session->write("$function.browse.childCounts", $childCounts);
@@ -878,14 +880,10 @@ class BrowseController extends AppController {
 		}
 		
 		$content = $this->Format->infoString("Browse $mode Results",$dataset,$query,0,$numHits,$node);		
-		$content.=$this->Format->facetToDownloadString($node,$childCounts,$numHits);
+		$content.= $this->Format->facetToDownloadString($node,$childCounts,$numHits);
 		
 		$fileName = uniqid('jcvi_metagenomics_report_').'.txt';
-		
-        header("Content-type: text/plain"); 
-        header("Content-Disposition: attachment;filename=$fileName");
-       
-        echo $content;					
+       	$this->Download->string($fileName,$content);				
 	}
 
 	public function dowloadFacets($dataset,$node,$mode,$numHits,$query = "*:*") {
@@ -916,17 +914,10 @@ class BrowseController extends AppController {
 			$facetFields = $this->Session->read($mode.'.browse.facetFields');
 		}
 		
-		
-		
-		#die("Browse $mode Results - Top 10 Functional Categories,$dataset,$facets,$query,$numHits,$node");
 		$content=$this->Format->facetListToDownloadString("Browse $mode Results - Top 10 Functional Categories",$dataset,$facets,$facetFields,$query,$numHits,$node);
 		
 		$fileName = uniqid('jcvi_metagenomics_report_').'.txt';
-		
-        header("Content-type: text/plain"); 
-        header("Content-Disposition: attachment;filename=$fileName");
-       
-        echo $content;
+		$this->Download->string($fileName,$content);		
 	}	
 	
 	// Recursively traverses a multi-dimensional array.

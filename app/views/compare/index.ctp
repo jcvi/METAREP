@@ -29,7 +29,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.3.0
+  @version METAREP v 1.4.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -52,12 +52,14 @@ $allDatasets= $session->read('allDatasets');
 $minCount 	= $session->read('minCount');
 $option 	= $session->read('option');
 $filter 	= $session->read('filter');
+
+
 ?>
 
 <div id="compare">
 <ul id="breadcrumb">
  	<li><a href="/metarep/dashboard/index" title="Dashboard"><img src="/metarep/img/home.png" alt="Dashboard" class="home" /></a></li>
-    <li><?php echo $html->link('List Projects', "/projects/index");?></li>
+    <li><?php echo $html->link('Projects', "/projects/index");?></li>
     <li><?php echo $html->link('View Project', "/projects/view/$projectId");?></li>
     <li><?php echo $html->link('Compare Datasets', "/compare/index/$dataset");?></li>
 </ul>
@@ -116,20 +118,20 @@ new Form.Element.EventObserver('CompareSelection.all', function(element, value) 
 	
 
 	<?php 		
-	//skipping ,'fisher.test'=>"Fisher's Exact Test"
-	#echo $form->input('test', array( 'options' => array('chisq.test'=>'Chi-Square Test of Independence','metastats'=>'METASTATS - non parametric t-test'),'label' => false, 'empty'=>'--Select Statistical Test--','div'=>'comparator-test-select-option','selected'=>$test));
 	echo $form->input('option', 
 						array('options' => 	
-							array(	'Summary' => array( 
+							array(	'Count Matrices' => array( 
 												ABSOLUTE_COUNTS =>'Absolute Counts',
 												RELATIVE_COUNTS =>'Relative Counts',
 												HEATMAP_COUNTS =>'Heatmap Counts',
 												),
-									'Statistical Test' => array( 
-												CHISQUARE =>'Chi-Square Test of Independence',
-												WILCOXON =>'Wilcoxon Rank Sum Test',
-												METASTATS =>'METASTATS - non parametric t-test',),
-							
+									'Statistical Tests (2 datasets)' => array( 
+												PROPORTION_TEST =>'Equality of Proportions Test',
+												FISHER =>'Fishers Exact Test',												
+												CHISQUARE =>'Chi-Square Test of Independence',),
+									'Statistical Tests (2 populations)' => array( 
+												WILCOXON =>'Wilcoxon Rank-Sum Test',
+												METASTATS =>'METASTATS - Non Parametric T-Test',),							
 									'Plots' => array( 
 												HIERARCHICAL_CLUSTER_PLOT  =>'Hierarchical Cluster Plot',												
 												HEATMAP_PLOT =>'HeatMap Plot',

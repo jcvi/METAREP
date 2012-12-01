@@ -11,8 +11,12 @@ CSS for dash board page
 	padding-top: 0px !important;
 }
 
+.dash-board legend {
+	font-size: 1.15em;	
+}
+
 .dash-board-abstract {
-	font-size: 1.25em;	
+	font-size: 1.15em;	
 }
 
 #header-url-panel {

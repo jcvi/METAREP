@@ -31,7 +31,7 @@ $.widget("ui.multiselect", {
 	_init: function() {
 		this.element.hide();
 		this.id = this.element.attr("id");
-		this.container = $('<div class="ui-multiselect ui-helper-clearfix ui-widget" style="width: 1031px !important;"></div>').insertAfter(this.element);
+		this.container = $('<div class="ui-multiselect ui-helper-clearfix ui-widget" style="width: 531px !important;"></div>').insertAfter(this.element);
 		this.count = 0; // number of currently selected options
 		this.selectedContainer = $('<div class="selected" style="width: 49.6% !important;"></div>').appendTo(this.container);
 		this.availableContainer = $('<div class="available" style="width: 50.3% !important;"></div>').appendTo(this.container);

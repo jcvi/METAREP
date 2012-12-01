@@ -13,13 +13,11 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
-
-ini_set('memory_limit', '256M');
 
 class ColorComponent extends Object {
 
@@ -42,6 +40,10 @@ class ColorComponent extends Object {
 				$hexstart = HEATMAP_GREEN_START;
 				$hexend   = HEATMAP_GREEN_END;
 				break;						
+			case HEATMAP_COLOR_RED_BLUE:
+				$hexstart = HEATMAP_RED_BLUE_START;
+				$hexend   = HEATMAP_RED_BLUE_END;
+				break;					
 		}		
 	
 	    $start['r'] = hexdec(substr($hexstart, 0, 2));
@@ -78,6 +80,50 @@ class ColorComponent extends Object {
 		array_pop($gradient);			
 	    
 		return $gradient;	
+	}
+	
+	function twoColorGradientHash($heatmapColorA,$heatmapColorB,$rangeMin,$rangeMax,$step) {
+		$offset = $rangeMax;
+		
+		## add outer classes < rangeMin and > range Max 
+		$numCol = ceil(($rangeMax - $rangeMin)/0.2)+2;
+		
+		## generate color gradient for log ods ratio scale
+		$colGradHash = array();
+		$colGradNeg =   array_reverse($this->gradient(HEATMAP_COLOR_BLUE,$numCol/2));
+		$colGradPos =  $this->gradient(HEATMAP_COLOR_GREEN,$numCol/2);
+		$colGrad = array_merge($colGradNeg,$colGradPos);		
+
+		## set upper bound
+		$colGradHash[$colGrad[0]]['min'] = $rangeMax;
+		$colGradHash[$colGrad[0]]['max'] = 999999999;
+		$colGradHash[$colGrad[0]]['lab'] = "> $rangeMax";	
+		
+		## set interval bounds
+		for($i = 1; $i < count($colGrad)-1; $i++ ) {
+			$max = round($offset,1);
+			$min = round($offset-$step,1);	
+			
+			## handle - sign before zeros
+			if(abs($max) == 0) {
+				$max =0;
+			}
+			if(abs($min) == 0) {
+				$min =0;
+			}
+			
+			$colGradHash[$colGrad[$i]]['min'] = $min;
+			$colGradHash[$colGrad[$i]]['max'] = $max;
+			$colGradHash[$colGrad[$i]]['lab'] = "$min to $max";
+			$offset = $offset-$step;	
+		}
+
+		## set lower bound
+		$colGradHash[$colGrad[count($colGrad)-1]]['min'] = -999999999;
+		$colGradHash[$colGrad[count($colGrad)-1]]['max'] = $rangeMin;	
+		$colGradHash[$colGrad[count($colGrad)-1]]['lab'] = "< $rangeMin";		
+		
+		return $colGradHash;
 	}
 }
 ?>

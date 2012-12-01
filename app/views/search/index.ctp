@@ -18,7 +18,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.3.0
+  @version METAREP v 1.4.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -31,7 +31,7 @@
 
 	<ul id="breadcrumb">
 	 	<li><a href="/metarep/dashboard/index" title="Dashboard"><img src="/metarep/img/home.png" alt="Dashboard" class="home" /></a></li>
-	    <li><?php echo $html->link('List Projects', "/projects/index");?></li>
+	    <li><?php echo $html->link('Projects', "/projects/index");?></li>
 	    <li><?php echo $html->link('View Project', "/projects/view/$projectId");?></li>
 	    <li><?php echo $html->link('Search Dataset', "/search/index/$dataset");?></li>
 	</ul>
@@ -105,23 +105,20 @@
 			<div class="data-panel">
 			
 			<?php 
-			$downloadIdsLinkImg 	= $html->link($html->image("download-small.png",array("title" => "Download IDs")),array('controller' =>  'search','action'=>'dowloadData',$dataset,$numHits,$sessionQueryId),array('escape' => false));
-			$downloadIdsLink 		= $html->link('Download IDs',array('controller' =>  'search','action'=>'dowloadData',$dataset,$numHits,$sessionQueryId),array('escape' => false));
+			$downloadImg 		= $html->image("download-small.png",array("title" => "Download",'style'=>'float:left'));
+			$downloadIdsLink 	= $html->link('Download IDs',array('controller' =>  'search','action'=>'dowloadAnnotation',$dataset,$numHits,$sessionQueryId,1),array('escape' => false));
+			$downloadAllLink 	= $html->link('Download Annotations',array('controller' =>  'search','action'=>'dowloadAnnotation',$dataset,$numHits,$sessionQueryId,0),array('escape' => false));
 			
 			if($hasSequence)	{
 				$action =  array('controller' =>  'search','action'=>'dowloadSequences',$dataset,$projectId,$numHits,$sessionQueryId);
 			 	$downloadSeqImg = $html->link($html->image("download-small.png",array("title" => "Download Sequences")),$action,array('escape' => false));
 				$downloadSeqLink= $html->link('Download Sequences',$action,array('escape' => false));
-			 	echo("<div id=\"resize-box\">$downloadIdsLinkImg $downloadIdsLink $downloadSeqImg $downloadSeqLink</div>");
+			 	echo("<div id=\"resize-box\">$downloadImg $downloadIdsLink $downloadAllLink $downloadSeqLink</div>");
 			}
 			else {
-				echo("<div id=\"resize-box\">$downloadIdsLinkImg $downloadIdsLink</div>");
-						#echo $html->div('download', $html->link($html->image("download-medium.png",array("title" => "Download Peptide Id List")), array('controller'=>  'search','action'=>'dowloadData',$dataset,$numHits,$sessionQueryId),array('escape' => false)));	
+				echo("<div id=\"resize-box\">$downloadImg $downloadIdsLink $downloadAllLink</div>");
 			}
-			?>
-			
-			<?php  
-					echo $luceneResultPaginator->data($dataset,$documents,$page,$numDocuments,NUM_SEARCH_RESULTS,$sessionQueryId,$resultFields);				
+			echo $luceneResultPaginator->data($dataset,$documents,$page,$numDocuments,NUM_SEARCH_RESULTS,$sessionQueryId,$resultFields);				
 			?>
 			</div>
 		<?php }?>

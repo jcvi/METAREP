@@ -13,7 +13,7 @@
  *
  * @link http://www.jcvi.org/metarep METAREP Project
  * @package metarep
- * @version METAREP v 1.3.0
+ * @version METAREP v 1.4.0
  * @author Johannes Goll
  * @lastmodified 2010-07-09
  * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -289,7 +289,9 @@ class Pathway extends AppModel {
 		
 		return array('numResults'=>$numResults,'enzymes'=>$foundPathwayEnzymes);
 	}
+	
 
+	
 	public function getById($pathwayId,$pathwayModel) {	
 		
 		if($pathwayModel === KEGG_PATHWAYS || $pathwayModel === METACYC_PATHWAYS) {
@@ -334,6 +336,11 @@ class Pathway extends AppModel {
 		return $results;
 	}	
 
+	public function getChildrenByExternalParentId($externalId,$pathwayModel) {				
+		$queryResults= $this->query("select id FROM $pathwayModel where external_id = '$externalId'");
+		return $this->getChildrenByParentId($queryResults[0][$pathwayModel]['id'],$pathwayModel);
+	}	
+	
 	function getChildrenByParentId($parentId,$pathwayModel) {
 		if($pathwayModel === KEGG_PATHWAYS || $pathwayModel === METACYC_PATHWAYS) {
 			$results = $this->query("select id,name,level,external_id,ec_id FROM $pathwayModel where parent_id = $parentId");
@@ -399,6 +406,16 @@ class Pathway extends AppModel {
 		$search['suggestions'] =  explode('@',$results[0][0]['suggestions']);
 		return $search;
 	}
+	
+	function getKeggKoQueryByPathwayName($pathwayName,$pathwayModel) {
+		$results = $this->query("select count(*) as hits,replace(group_concat(distinct concat('ko_id:',ko_id) separator ' OR '),'-','*') as query from $pathwayModel where level ='kegg-ortholog' and parent_id in (select id from $pathwayModel where name like '%$pathwayName%' and level='pathway')");
+		$search['hits'] 	=  $results[0][0]['hits'];
+		$search['query']	=  $results[0][0]['query'];
+		$results = $this->query("SELECT GROUP_CONCAT(DISTINCT concat('ko',lpad(external_id,5,'0'),' ',name,' (',child_count,' kegg orthologs)') separator '@') as suggestions FROM $pathwayModel where name like '%$pathwayName%' and level='pathway'");
+		$search['suggestions'] =  explode('@',$results[0][0]['suggestions']);
+		return $search;
+	}
+		
 	function getKeggTreeQueryByPathwayId($pathwayId,$pathwayModel) {
 		$results = $this->query("select count(*) as hits,replace(group_concat(distinct concat('kegg_tree:',id) separator ' OR '),'-','*') as query from $pathwayModel where external_id = $pathwayId and level='pathway'");
 		$search['hits'] 	=  $results[0][0]['hits'];

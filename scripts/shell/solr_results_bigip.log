@@ -1,0 +1,140 @@
+
+ab -n2000 -c2
+This is ApacheBench, Version 2.0.40-dev <$Revision: 1.146 $> apache-2.0
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Copyright 2006 The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 172.20.13.24 (be patient)
+
+
+Server Software:        Jetty(6.1.3)
+Server Hostname:        172.20.13.24
+Server Port:            8989
+
+Document Path:          /solr/Manangatang-Managed/select?q=com_name_txt%3A%2Aepimerase+AND+blast_evalue_exp%3A%7B20+TO+%2A%7D+AND+-blast_tree%3A28211&start=0&rows=20
+Document Length:        14355 bytes
+
+Concurrency Level:      2
+Time taken for tests:   5.971827 seconds
+Complete requests:      2000
+Failed requests:        1998
+   (Connect: 0, Length: 1998, Exceptions: 0)
+Write errors:           0
+Total transferred:      29080004 bytes
+HTML transferred:       28706004 bytes
+Requests per second:    334.91 [#/sec] (mean)
+Time per request:       5.972 [ms] (mean)
+Time per request:       2.986 [ms] (mean, across all concurrent requests)
+Transfer rate:          4755.33 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    0   0.1      0       3
+Processing:     4    5  19.4      5     618
+Waiting:        2    3  19.3      3     614
+Total:          4    5  19.4      5     618
+
+Percentage of the requests served within a certain time (ms)
+  50%      5
+  66%      5
+  75%      5
+  80%      5
+  90%      6
+  95%      6
+  98%      6
+  99%      7
+ 100%    618 (longest request)
+ab -n4000 -c4
+This is ApacheBench, Version 2.0.40-dev <$Revision: 1.146 $> apache-2.0
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Copyright 2006 The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 172.20.13.24 (be patient)
+
+
+Server Software:        Jetty(6.1.3)
+Server Hostname:        172.20.13.24
+Server Port:            8989
+
+Document Path:          /solr/Manangatang-Managed/select?q=com_name_txt%3A%2Aepimerase+AND+blast_evalue_exp%3A%7B20+TO+%2A%7D+AND+-blast_tree%3A28211&start=0&rows=20
+Document Length:        14353 bytes
+
+Concurrency Level:      4
+Time taken for tests:   12.828674 seconds
+Complete requests:      4000
+Failed requests:        0
+Write errors:           0
+Total transferred:      58160000 bytes
+HTML transferred:       57412000 bytes
+Requests per second:    311.80 [#/sec] (mean)
+Time per request:       12.829 [ms] (mean)
+Time per request:       3.207 [ms] (mean, across all concurrent requests)
+Transfer rate:          4427.27 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    0   0.6      0       3
+Processing:     3   11 192.4      6    6096
+Waiting:        1    6 136.1      3    6094
+Total:          3   12 192.4      6    6097
+
+Percentage of the requests served within a certain time (ms)
+  50%      6
+  66%      7
+  75%      7
+  80%      7
+  90%      8
+  95%      8
+  98%      9
+  99%      9
+ 100%   6097 (longest request)
+ab -n8000 -c8
+This is ApacheBench, Version 2.0.40-dev <$Revision: 1.146 $> apache-2.0
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Copyright 2006 The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 172.20.13.24 (be patient)
+
+
+Server Software:        Jetty(6.1.3)
+Server Hostname:        172.20.13.24
+Server Port:            8989
+
+Document Path:          /solr/Manangatang-Managed/select?q=com_name_txt%3A%2Aepimerase+AND+blast_evalue_exp%3A%7B20+TO+%2A%7D+AND+-blast_tree%3A28211&start=0&rows=20
+Document Length:        14353 bytes
+
+Concurrency Level:      8
+Time taken for tests:   10.400784 seconds
+Complete requests:      8000
+Failed requests:        0
+Write errors:           0
+Total transferred:      116331131 bytes
+HTML transferred:       114834944 bytes
+Requests per second:    769.17 [#/sec] (mean)
+Time per request:       10.401 [ms] (mean)
+Time per request:       1.300 [ms] (mean, across all concurrent requests)
+Transfer rate:          10922.64 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    1   0.7      1       4
+Processing:     4    8   4.4      8     142
+Waiting:        2    4   3.1      4     139
+Total:          5    9   4.4     10     144
+
+Percentage of the requests served within a certain time (ms)
+  50%     10
+  66%     10
+  75%     10
+  80%     10
+  90%     11
+  95%     12
+  98%     12
+  99%     13
+ 100%    144 (longest request)
+ab -n16000 -c16
+This is ApacheBench, Version 2.0.40-dev <$Revision: 1.146 $> apache-2.0
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Copyright 2006 The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 172.20.13.24 (be patient)

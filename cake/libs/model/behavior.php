@@ -168,7 +168,11 @@ class ModelBehavior extends Object {
 				return $this->{$method}($model, $params[0], $params[1], $params[2], $params[3], $params[4]);
 			default:
 				array_unshift($params, $model);
-				return call_user_func_array(array(&$this, $method), $params);
+				## new version to handle function update
+				return call_user_func_array(array(&$this, $method), &$params);
+				
+				## old version that did not pass by reference 
+				#return call_user_func_array(&$tarray, $params);
 			break;
 		}
 	}

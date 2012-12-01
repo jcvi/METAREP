@@ -15,7 +15,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.3.0
+  @version METAREP v 1.4.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -48,7 +48,7 @@
 		
 		#the METAREP admin and the project admin can make a project publicy accessable
 		if($userGroup === ADMIN_USER_GROUP || $currentUserId == $projectUserId) { 		
-			echo $form->input('is_public',array('label' => 'Is Public Dataset'));		
+			echo $form->input('is_public',array('label' => 'Is Public Project'));		
 		}
 		
 		echo $form->input('charge_code');

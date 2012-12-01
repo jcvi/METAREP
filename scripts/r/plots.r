@@ -9,7 +9,7 @@
 #
 # link http://www.jcvi.org/metarep METAREP Project
 # package metarep
-# version METAREP v 1.3.4
+# version METAREP v 1.4.0
 # author Kelvin Li et al.
 # lastmodified 2010-07-09
 # license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -47,7 +47,7 @@ if(is.na(args[arg_count])){
 # Main program loop
 
 while(!(is.na(args[arg_count]))){
-        InputFileName           = as.character(args[1])	
+	InputFileName	= as.character(args[1])
 	Option 			= as.numeric(args[2])
 	Title 			= as.character(args[3])
 	Subtitle 		= as.character(args[4])
@@ -55,6 +55,8 @@ while(!(is.na(args[arg_count]))){
 	ClusterMethod  	= as.character(args[6])
 	HeatmapColor 	= as.character(args[7])
 	ClusterFile    	= as.character(args[8])
+	
+	
 	
 	
 	CompleteLinkagePlotPDF = paste(InputFileName, "_hclust_plot.pdf", sep="")
@@ -275,22 +277,13 @@ while(!(is.na(args[arg_count]))){
 		hclust2  <- function(x, method=ClusterMethod) hclust(x, method=method)
 		vegdist2 <- function(x, method=DistanceMethod) vegdist(x, method=method)
 		
-		## heatmap colors
-		## colorset = rev(rainbow(2^8, start=0, end=0.65)
-		## redgreen(75)
-		## heat.colors(256)
-		## ol=rev(heat.colors(256))
 		
 		heatmap.2(Z,trace="none",col=heatcolor, distfun = vegdist2,
 				hclustfun = hclust2,cexRow=label_scale* 0.80,keysize = 1.2,scale = c("none"),
 				cexCol=col_scale * 0.95,main=args[3], density.info=c('none'),margins=c(18,18))
 		
 		mtext(Subtitle,line= 0,cex= 0.75)
-		#heatmap(Z, cexRow=label_scale* 0.80,  cexCol=label_scale * 0.63,	
-		#main=args[3],key=TRUE,
-		#col=rev(rainbow(2^16, start=0, end=0.65)),
-		#margins=c(18,8)
-		#)
+		
 		
 		dev.off()
 		

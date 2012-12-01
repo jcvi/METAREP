@@ -333,6 +333,8 @@ class Apache_Solr_Service
 		$httpResponse = $httpTransport->performGetRequest($url, $timeout);
 		$solrResponse = new Apache_Solr_Response($httpResponse, $this->_createDocuments, $this->_collapseSingleValueArrays);
 
+		$solrResponse->url = $url;
+		
 		if ($solrResponse->getHttpStatus() != 200)
 		{
 			throw new Apache_Solr_HttpTransportException($solrResponse);
@@ -358,7 +360,9 @@ class Apache_Solr_Service
 
 		$httpResponse = $httpTransport->performPostRequest($url, $rawPost, $contentType, $timeout);
 		$solrResponse = new Apache_Solr_Response($httpResponse, $this->_createDocuments, $this->_collapseSingleValueArrays);
-
+		
+		$solrResponse->url = "$url?$rawPost";
+		
 		if ($solrResponse->getHttpStatus() != 200) {
 			throw new Apache_Solr_HttpTransportException($solrResponse);
 		}
@@ -493,6 +497,10 @@ class Apache_Solr_Service
 		$this->_httpTransport = $httpTransport;
 	}
 
+	public function getSearchUrl() {
+		return $this->_searchUrl;
+	}
+	
 	/**
 	 * Set the create documents flag. This determines whether {@link Apache_Solr_Response} objects will
 	 * parse the response and create {@link Apache_Solr_Document} instances in place.
@@ -1105,7 +1113,8 @@ class Apache_Solr_Service
 		}
 		else if ($method == self::METHOD_POST)
 		{
-			return $this->_sendRawPost($this->_searchUrl, $queryString, FALSE, 'application/x-www-form-urlencoded; charset=UTF-8');
+			$result = $this->_sendRawPost($this->_searchUrl, $queryString, FALSE, 'application/x-www-form-urlencoded; charset=UTF-8');
+			return $result;
 		}
 		else
 		{

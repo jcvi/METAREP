@@ -13,7 +13,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -74,35 +74,40 @@ class FormatComponent extends Object {
 	}	
 	
 	public function infoString($title,$dataset,$query,$minCount,$numHits='',$node =''){
-		$content ="----------------------------------------------------------\n";
+		$content  ="#------------------------------------------------------------------------------------------------------\n";
+		$content .="# If you use this software please cite:\n";
+		$content .="# METAREP: JCVI metagenomics reports - an open source tool for high-performance comparative metagenomics\n";
+		$content .="# Bioinformatics (2010) 26(20): 2631-2632\n";
+		$content .="# \n";
+		
 		$timestamp =$today = date("F j, Y, g:i a"); 
-		$content .= METAREP_RUNNING_TITLE." - $title\n";
-		$content .= "Version:\t".METAREP_VERSION."\n";
-		#for browse data add node
-		$content .= "Date:\t\t$timestamp\nQuery:\t\t$query\n";
+		
+		$content .= "# Date:\t\t$timestamp\n";
+		$content .= "# Query:\t$query\n";
+		$content .= "# Instance:\t".METAREP_RUNNING_TITLE."\n";
+		$content .= "# Version:\t".METAREP_VERSION."\n";
+		$content .= "# Option:\t".$title."\n";
 		
 		if($minCount != 0) {
-			$content .="Min. Count:\t$minCount\n";		
+			$content .="# Min. Count:\t$minCount\n";		
 		}	
 		if(!empty($node)) {
-			$content .="Node:\t\t$node\n";
+			$content .="# Node:\t\t$node\n";
 		}
 		if(is_array($dataset)) {
-			$content .="Datasets:\n";
+			$content .="# Datasets:\n";
 			foreach($dataset as $entry) {			
-				$content .="\t\t$entry\n";
+				$content .="# \t\t$entry\n";
 			}
 		}
 		else {
-			$content .= "Dataset:\t$dataset\n";
+			$content .= "# Dataset:\t$dataset\n";
 		}		
 		if(!empty($numHits)) {
-			$content .= "Hits:\t\t$numHits\n";
+			$content .= "# Hits:\t\t$numHits\n";
 		}
-
-		
-		$content .="----------------------------------------------------------\n";
-		return "$content\n\n";
+		$content  .="#------------------------------------------------------------------------------------------------------\n";
+		return "$content\n";
 	}
 	
 	private function printMultiValue($value){
@@ -148,8 +153,8 @@ class FormatComponent extends Object {
 	}
 	
 	
-	public function metatstatsResultsToDonwloadString($counts,$selectedDatasets) {
-		
+	public function metatstatsResultsToDonwloadString($counts,$selectedDatasets,$maxPvalue) {
+		$this->filterCountsByMaxPvalue($counts,$maxPvalue);
 		$content 	= "ID\tCategory\t";
 		
 		foreach($selectedDatasets as $dataset) {
@@ -160,7 +165,8 @@ class FormatComponent extends Object {
 		}
 		$content .= "Mean Ratio\t";
 		$content .= "P-Value\t";
-		$content .= "P-Value (Bonf. Corr.)\n";
+		$content .= "P-Value (bonferroni)\t";
+		$content .= "Q-Value (fdr)\n";
 		
 		foreach($counts as $category => $row) {				
 			if($category != $row['name']) {
@@ -178,14 +184,15 @@ class FormatComponent extends Object {
 			}
 			$content .= $row['mratio']."\t";
 			$content .= $row['pvalue']."\t";
+			$content .= $row['bvalue']."\t";
 			$content .= $row['qvalue']."\n";
 		}
 		
 		return $content;	
 	}
 
-	public function wilcoxonResultsToDonwloadString($counts,$selectedDatasets) {
-		
+	public function wilcoxonResultsToDonwloadString($counts,$selectedDatasets,$maxPvalue) {
+		$this->filterCountsByMaxPvalue($counts,$maxPvalue);
 		$content 	= "ID\tCategory\t";
 		
 		foreach($selectedDatasets as $dataset) {
@@ -210,13 +217,113 @@ class FormatComponent extends Object {
 			}
 			$content .= $row['mratio']."\t";
 			$content .= $row['pvalue']."\t";
-			$content .= $row['bonf-pvalue']."\n";
+			$content .= $row['bvalue']."\n";
 		}
 		
 		return $content;	
 	}	
+
+	public function twoWayTestResultsToDownloadString($counts,$selectedDatasets,$maxPvalue) {
+
+		$this->filterCountsByMaxPvalue($counts,$maxPvalue);
+		
+		$content 	= "ID\tCategory\t";
+
+		foreach($selectedDatasets as $dataset) {
+			$content .= "Count ($dataset)\t";
+			$content .= "Proportion ($dataset)\t";
+		}		
+		
+		$content .= "Log Odds Ratio\t";
+		$content .= "Relative Risk\t";
+		$content .= "\tP-Value\t";
+		$content .= "\tP-Value (Bonferroni)\t";
+		$content .= "\tQ-Value (FDR)\t";
+		$content .="\n";
+
+		foreach($counts as $category => $row) {
+			if($row['sum'] > 0 ) {
+
+				//strip off html content
+				$name = strip_tags($row['name']);
+					
+				
+				
+				if($category != $name) {
+					$content .="$category\t$name";
+				}
+				else {
+					$content .= "NA\t$name";
+				}
+					
+				$content .="\t".$row[$selectedDatasets[0]];
+				$content .="\t".$row['propa'];
+				$content .="\t".$row[$selectedDatasets[1]];
+				$content .="\t".$row['propb'];
+				$content .="\t".$row['oratio'];
+				$content .="\t".$row['rrisk'];
+				$content .="\t".$row['pvalue'];
+				$content .="\t".$row['bvalue'];
+				$content .="\t".$row['qvalue'];	
+				
+			}		
+			$content .="\n";	
+		}
+		return $content;
+	}
 	
-	public function comparisonResultsToDownloadString($counts,$selectedDatasets,$option) {
+	private function filterCountsByMaxPvalue(&$counts,$maxPvalue) {
+						
+			if($maxPvalue == PVALUE_ALL) {
+				return;
+			}
+			switch ($maxPvalue) {
+				case PVALUE_HIGH_SIGNIFICANCE;
+				$cutoff = 0.01;
+				$fieldName = 'pvalue';
+				break;
+				case PVALUE_MEDIUM_SIGNIFICANCE;
+				$cutoff = 0.05;
+				$fieldName = 'pvalue';
+				break;
+				case PVALUE_LOW_SIGNIFICANCE;
+				$cutoff = 0.1;
+				$fieldName = 'pvalue';
+				break;
+				case PVALUE_BONFERONI_HIGH_SIGNIFICANCE;
+				$cutoff = 0.01;
+				$fieldName = 'bvalue';
+				break;
+				case PVALUE_BONFERONI_MEDIUM_SIGNIFICANCE;
+				$cutoff = 0.05;
+				$fieldName = 'bvalue';
+				break;
+				case PVALUE_BONFERONI_LOW_SIGNIFICANCE;
+				$cutoff = 0.1;
+				$fieldName = 'bvalue';
+				break;
+				case PVALUE_FDR_HIGH_SIGNIFICANCE;
+				$cutoff = 0.01;
+				$fieldName = 'qvalue';
+				break;
+				case PVALUE_FDR_MEDIUM_SIGNIFICANCE;
+				$cutoff = 0.05;
+				$fieldName = 'qvalue';
+				break;
+				case PVALUE_FDR_LOW_SIGNIFICANCE;
+				$cutoff = 0.1;
+				$fieldName = 'qvalue';
+				break;						
+			}
+			
+			foreach($counts as $category => $row) {	
+				if($row[$fieldName]>=$cutoff) {
+					unset($counts[$category]);
+				}
+			}
+	}
+	
+	public function countResultsToDownloadString($counts,$selectedDatasets,$option) {
 		$content 	= "ID\tCategory\t";
 		
 		foreach($selectedDatasets as $dataset) {
@@ -225,10 +332,6 @@ class FormatComponent extends Object {
 		if($option == ABSOLUTE_COUNTS) {
 			$content .="Total";
 		}
-		if($option == CHISQUARE || $option == FISHER) {
-			$content .="\tP-Value\t";
-			$content .="\tP-Value (Bonf. Corr.)\t";			
-		}	
 		
 		$content .="\n";
 		
@@ -250,44 +353,24 @@ class FormatComponent extends Object {
 				}
 				if($option == ABSOLUTE_COUNTS) {
 						$content .="\t".$row['sum'];
-				}
-				if($option == CHISQUARE || $option == FISHER) {
-					$pvalue = $row['pvalue'];
-					$adjPValue= $pvalue * count($counts);
-					
-					if($adjPValue > 1) {
-						$adjPValue=1;
-					}					
-					
-					$content .="\t".$pvalue."\t".$adjPValue;
-				}			
+				}	
 				$content .="\n";
 			}
 		}	
-		
-		#handle unclassified category
-		#$category = 'unclassified';
-		
-		#$content .= $category ;
-				
-//		foreach($selectedDatasets as $dataset) {
-//			$content .="\t".$counts[$category][$dataset];
-//		}
-//		if($option == ABSOLUTE_COUNTS) {
-//				$content .="\t".$counts[$category]['sum'];
-//		}
-//		if($option == CHISQUARE || $option == FISHER) {
-//			$pvalue 	= $counts[$category]['pvalue'];
-//			$adjPValue 	= $pvalue * count($counts);
-//			
-//			if($adjPValue>1) {
-//				$adjPValue=1;
-//			}					
-//			
-//			$content .="\t".$pvalue."\t".$adjPValue;
-//		}			
-//		$content .="\n";
 		return $content;
 	}
+	
+	public function blastAnnotationsToDownloadString($annotations,$fields){
+		$content 	= join("\t",array_values($fields))."\n";
+		foreach($annotations as $annotation) {
+			$row = array();
+			foreach($fields as $id => $name) {
+				
+				array_push($row,$this->printMultiValue($annotation->{$id}));
+			}
+			$content .= join("\t",$row)."\n";	
+		}		
+		return $content;	
+	}	
 }
 ?>

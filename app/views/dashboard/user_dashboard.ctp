@@ -21,7 +21,7 @@
 
   @link http://www.jcvi.org/metarep METAREP Project
   @package metarep
-  @version METAREP v 1.3.0
+  @version METAREP v 1.4.0
   @author Johannes Goll
   @lastmodified 2010-07-09
   @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -72,7 +72,7 @@
 							<ul></p><BR>
 							<p>
 								<ul>");
-							
+							echo("<li>".$html->link('View Project',"/projects/view/{$project['Project']['id']}")."</li>");
 							echo("<li>".$html->link('Edit Project Information',"/projects/edit/{$project['Project']['id']}")."</li>");
 							echo("<li>".$html->link('Manage Project Permissions',"/users/editProjectUsers/{$project['Project']['id']}" )."</li>	");	
 							echo("</li></ul></p>");

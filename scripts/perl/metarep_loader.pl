@@ -12,7 +12,7 @@
 #
 # link http://www.jcvi.org/metarep METAREP Project
 # package metarep
-# version METAREP v 1.3.4
+# version METAREP v 1.4.0
 # author Johannes Goll
 # lastmodified 2011-06-02
 # license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -307,6 +307,7 @@ $sqliteDbConnection->do("PRAGMA cache_size = 20000");
 $log->info("Set Sqlite PRAGMA cache_size = 20000.");
 
 if(defined($args{project_dir})) {
+	
 	if($args{format} eq 'jpmap') {
 		opendir(DIR, $args{project_dir});
 		my @libraries = readdir(DIR);
@@ -323,9 +324,11 @@ if(defined($args{project_dir})) {
 		my @files = grep(/\.$args{format}$/,readdir(DIR));
 			
 		foreach my $file(@files) {
+		
 			$log->info("Processing file $file.");
 				
 			if($args{format} eq 'tab') {
+				
 				&createIndexFromTabFile("$args{project_dir}/$file");
 			}
 			elsif($args{format} eq 'humann') {
@@ -797,34 +800,36 @@ sub addDocument() {
 	my ($peptideId,$libraryId,$comName,$comNameSrc,$goId,$goSrc,$goTree,$ecId,$ecSrc,
         $hmmId,$blastSpecies,$blastEvalue,$blastEvalueExponent,$blastPid,$blastCov,$blastTree,$filter,$weight,$koId,$koSrc,$koTree) = @_;	 
 	
-	print INDEX "<doc>\n";		
+	if($peptideId) {
+		print INDEX "<doc>\n";		
+			
+		## write core fields
+		&printSingleValue('peptide_id',$peptideId);
+		&printSingleValue('library_id',$libraryId);
+		&printMultiValue('com_name',$comName);
+		&printMultiValue('com_name_src',$comNameSrc);
+		&printMultiValue('go_id',$goId);
+		&printMultiValue('go_src',$goSrc);
+		&printMultiValue('go_tree',$goTree);
+		&printMultiValue('ec_id',$ecId);
+		&printMultiValue('ec_src',$ecSrc);		
+		&printMultiValue('hmm_id',$hmmId);		
+		&printMultiValue('filter',$filter);
+		&printMultiValue('ko_id',$koId);
+		&printMultiValue('ko_src',$koSrc);
+		&printMultiValue('kegg_tree',$koTree);
+		&printSingleValue('weight',$weight);
 		
-	## write core fields
-	&printSingleValue('peptide_id',$peptideId);
-	&printSingleValue('library_id',$libraryId);
-	&printMultiValue('com_name',$comName);
-	&printMultiValue('com_name_src',$comNameSrc);
-	&printMultiValue('go_id',$goId);
-	&printMultiValue('go_src',$goSrc);
-	&printMultiValue('go_tree',$goTree);
-	&printMultiValue('ec_id',$ecId);
-	&printMultiValue('ec_src',$ecSrc);		
-	&printMultiValue('hmm_id',$hmmId);		
-	&printMultiValue('filter',$filter);
-	&printMultiValue('ko_id',$koId);
-	&printMultiValue('ko_src',$koSrc);
-	&printMultiValue('kegg_tree',$koTree);
-	&printSingleValue('weight',$weight);
-	
-	## write best Blast hit fields
-	&printSingleValue('blast_species',$blastSpecies);
-	&printSingleValue('blast_evalue',$blastEvalue);
-	&printSingleValue('blast_evalue_exp',$blastEvalueExponent);
-	&printSingleValue('blast_pid',$blastPid);
-	&printSingleValue('blast_cov',$blastCov);	
-	&printMultiValue( 'blast_tree',$blastTree);			
-	
-	print INDEX "</doc>\n";		
+		## write best Blast hit fields
+		&printSingleValue('blast_species',$blastSpecies);
+		&printSingleValue('blast_evalue',$blastEvalue);
+		&printSingleValue('blast_evalue_exp',$blastEvalueExponent);
+		&printSingleValue('blast_pid',$blastPid);
+		&printSingleValue('blast_cov',$blastCov);	
+		&printMultiValue( 'blast_tree',$blastTree);		
+		print INDEX "</doc>\n";		
+	}
+		
 }
 
 ########################################################
@@ -1098,14 +1103,14 @@ sub deleteMetarepDataset() {
 	my $name = shift;
 	
 	my $query ="delete from libraries where name = ?";
-
+	
 	## reconnect to avoid mysql time-out
 	$metarepDbConnection = DBI->connect_cached("DBI:mysql:".$args{mysql_db}.";host=".$args{mysql_host}."",$args{mysql_username},$args{mysql_password}, { 'RaiseError' => 0 });
 	
 	## prepare query
 	my $sth =$metarepDbConnection->prepare($query);
 	
-	$sth->execute($name) or die "Couldn't execute: $DBI::errstr";
+	$sth->execute($name) or $log->die("Couldn't execute: $DBI::errstr");
 }
 
 ########################################################
@@ -1132,7 +1137,7 @@ sub createSolrCore() {
 	my ($core,$solrUrl) = @_;
 	
 	## create core
-	$log->debug("Creating new core: curl $solrUrl/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_instance_dir}&dataDir=$args{solr_data_dir}/$core.");
+	$log->info("Creating new core: curl $solrUrl/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_instance_dir}&dataDir=$args{solr_data_dir}/$core.");
 	system("curl \"$solrUrl/solr/admin/cores?action=CREATE&name=$core&instanceDir=$args{solr_instance_dir}&dataDir=$args{solr_data_dir}/$core\" 1>/dev/null 2>/dev/null");	
 }
 

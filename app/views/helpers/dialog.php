@@ -14,7 +14,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -142,21 +142,26 @@ class DialogHelper extends AppHelper {
 				<ul>
 				<h5>Summary</h5>
 				<BR>
-					<li><strong>absolute counts</strong> displays the absolute number of peptides that fall into a certain category.</li>
-					<li><strong>relative count</strong> displays the absolute number of peptides that fall into a certain category 
-				devided by the dataset's overall number of peptides.</li>
-					<li><strong>heatmap</strong> displays a colored representation
-				of relative row peptide counts. The relative row peptide count is the relative peptide count devided by the sum of all relative
-				peptide counts of a category in a row.</li>
+					<li><strong>absolute counts</strong> displays the sum of peptides/weights that fall into a certain category.</li>
+					<li><strong>relative counts</strong> displays the sum of peptides/weights that fall into a certain category 
+				devided by the dataset's overall sum of peptides/weights.</li>
+					<li><strong>heatmap counts</strong> displays a colored representation
+				of relative row counts. The relative row count is the row count devided by the sum of all row counts of a category across all datasets.</li>
 				</ul>
 				</td><td valign=\"top\">
-				<h5>Statistical Test</h5>
+				<h5>Statistical Tests (2 datasets)</h5>
 				<BR>
-					<li><strong>Chi-Square Test of Independence</strong> Tests association between a certain feature (taxon, hmm, etc.) and selected datasets (assumes that selected datasets are derived from a single population).</li>
-					<li><strong>Wilcoxon Rank Sum Test</strong> non-parametric test to compare two sample populations.</i></li>
-					<li><strong>METASTATS</strong> modified non-parametric test to compare two sample populations (White et al.).</i></li>
+					<li><strong>Equality of Proportions Test</strong> Tests if the difference in the proportion of a certain feature for two datasets is significant. This is a large sample approximation test and can only accurately be applied to categories with at least five absolute counts (Min. Count is set to 5).</li>
+					<li><strong>Chi-Square Test of Independence</strong> Tests association between rows and column features. In a two by two case it mirrows the proportion test. This is a large sample approximation test and can only accurately be applied to categories with at least five absolute counts (Min. Count is set to 5).</li>
+					<li><strong>Fishers Exact Test</strong> Tests association between between rows and columns features using the hypergeometric distribution. This is an exact test that can be applied to cell counts below 5. Note that this test takes much longer tahn any of the two approximate tests.</li>
 				</ul>
 				</td><td valign=\"top\">
+				<h5>Statistical Tests (2 populations)</h5>
+				<BR>
+					<li><strong>Wilcoxon Rank Sum Test</strong> Non-parametric test to compare two sample populations.</i></li>
+					<li><strong>METASTATS</strong> modified non-parametric t-test to compare two sample populations (White et al.).</i></li>
+				</ul>
+				</td><td valign=\"top\">				
 				<h5>Hierarchical Clustering Plot</h5>
 				<BR>
 				<ul>	
@@ -178,10 +183,11 @@ of observations in each cluster</li>
 				<ul>	
 					<li><strong>Multidimensional Scaling Plot</strong> applies non-metric multidimensional scaling to project differences between samples
 onto a two dimensional space where samples that are close are more similar than those that a farther apart.</li>
-					<li><strong>Heatmap Plot</strong> prvides quick visual impression of differences between datasets and
+					<li><strong>Heatmap Plot</strong> provides quick visual impression of differences between datasets and
 categories. Differences are highlighted by a color gradient and dendrograms (tree like structures) that
 are added to the left and to the top axis. Click on the download button to
 download both sets of euclidean distances</li>
+					<li><strong>Mosaic Plot</strong> plots rectangles for each datasets category combination proportional to the absolute counts.</li>
 				</ul></td>				
 				</tr>
 				
@@ -194,7 +200,7 @@ download both sets of euclidean distances</li>
 				Click on a tab in the tab panel to switch between different categories. For each selected tab, the level of comparison can be adjusted by selected the desired level from the drop down menu.
 				</p>
 				<BR>
-				<b>Download </b>
+				<b>Download</b><BR>
 				<p>
 				Comparison results can be downloaded by clicking on the disk with the green arrow at the left upper corner of the tab panel.".$this->Html->image("download-small.png")."
 				<p>
@@ -202,6 +208,34 @@ download both sets of euclidean distances</li>
 		</div>");
 	}
 	
+	function blast($divId) {
+		echo("<div id=\"$divId\" title=\"Blast Datasets Help Dialog\">
+				<BR>	
+				<b>Select Datasets</b>
+				<BR>	
+				<p>Choose datsets from the left subpanel either by clicking on the + symbol or by dragging it into the left subpanel. You can narrow down the list in the rigth subpanel by entering a search term into the
+				text box above the list.<p>
+				<BR>	
+				<b>Enter Sequence</b>
+				<BR>	
+				<p>Enter your sequence (one only).<p>								
+				<BR>	
+				<b>Filter Datasets</b>{$this->searchParagraph}
+				<BR>	
+				</table>				
+				<BR>	
+				<b>Tabs</b><BR>
+				<p>
+				Click on a tab in the tab panel to switch between different categories. For each selected tab, the level of comparison can be adjusted by selected the desired level from the drop down menu.
+				</p>
+				<BR>
+				<b>Download </b>
+				<p>
+				Blast results can be downloaded by clicking on the disk with the green arrow at the left upper corner of the tab panel.".$this->Html->image("download-small.png")."
+				<p>
+				
+		</div>");
+	}	
 	function browseTaxonomy($divId) {
 		echo("<div id=\"$divId\" title=\"Browse Taxonomy Help Dialog\">
 				

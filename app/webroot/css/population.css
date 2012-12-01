@@ -17,6 +17,12 @@ CSS for comparator pages
 	
 }
 
+/* multi-comparator box width configuration
+----------------------------------*/
+.ui-multiselect { width: 600px !important;}
+.ui-multiselect div.selected { position: relative; padding: 0; margin: 0; border: 0; float:left; width: 290px !important;}
+.ui-multiselect div.available { position: relative; padding: 0; margin: 0; border: 0; float:left; border-left: 1px solid; width: 308px !important;}
+
 .multiselect {	
 	height: 175px !important;
 	width:50%;

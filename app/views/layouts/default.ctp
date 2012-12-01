@@ -45,6 +45,8 @@
 	echo $javascript->link(array('jquery.qtip-1.0.0-rc3.min.js'));	
 ?>
 	
+
+	
 <script type="text/javascript">
  jQuery.noConflict();
 	
@@ -91,7 +93,7 @@
 		);
 		
 	});
-
+	
 	jQuery.fn.qtip.styles.mystyle = { // Last part is the name of the style
 			   width: 250,
 			   background: '#A2D959',
@@ -111,7 +113,7 @@
 			         }
 				},
 			   name: 'dark' // Inherit the rest of the attributes from the preset dark style
-	}		
+	}	
 </script>
 
 <?if(defined('GOOGLE_ANALYTICS_TRACKER_ID') && defined('GOOGLE_ANALYTICS_DOMAIN_NAME')):?>
@@ -139,7 +141,7 @@
 	    } catch(err) {}
 	  } // end if(is_production)  
 </script>   
-<? endif;?>	     	
+<? endif;?>	
       
 <style type="text/css">
 	/*demo page css*/	
@@ -174,18 +176,21 @@
 	       		$userGroup  	= $currentUser['UserGroup']['name'];
 	       	?>	       					
 		<ul id="menu">			
-			<li><?php echo $html->link(__('Quick Navigation', true), array('controller'=> 'menus', 'action'=>'quick')); ?></li>
-			<li><?php echo $html->link(__('Search', true), array('controller'=> 'search', 'action'=>'all')); ?></li>
+			<li><?php echo $html->link(__('Quick Navigation', true), array('plugin' => null,'controller'=> 'menus', 'action'=>'quick')); ?></li>
+			<li><?php echo $html->link(__('Search', true), array('plugin' => null,'controller'=> 'search', 'action'=>'all')); ?></li>
 			<? if (	$userGroup === ADMIN_USER_GROUP):?>
-				<li><?php echo $html->link(__('New Project', true), array('controller'=> 'projects', 'action'=>'add')); ?></li>
+				<li><?php echo $html->link(__('New Project', true), array('plugin' => null,'controller'=> 'projects', 'action'=>'add')); ?></li>
 			<?endif;?>			
-			<li><?php echo $html->link(__('List Projects', true), array('controller'=> 'projects', 'action'=>'index')); ?> </li>			
+			<li><?php echo $html->link(__('Projects', true), array('plugin' => null,'controller'=> 'projects', 'action'=>'index')); ?> </li>			
 			<? if (	$userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP):?>
-			<li><?php echo $html->link(__('List Populations', true), array('controller'=> 'populations', 'action'=>'index')); ?> </li>
-				<li><?php if(JCVI_INSTALLATION) {echo $html->link(__('Pipeline Log', true), array('controller'=> 'logs', 'action'=>'index'));} ?> </li>
-			<?endif;?>		
-			<li><?php if($userGroup != GUEST_USER_GROUP && $username != 'jamboree') {echo $html->link(__('Dashboard', true), array('controller'=> 'dashboard'));} ?></li>
-			<li><?php echo $html->link(__('Log Out', true), array('controller'=> 'users', 'action'=>'logout')); ?> </li>
+			<li><?php echo $html->link(__('List Populations', true), array('plugin' => null,'controller'=> 'populations', 'action'=>'index')); ?> </li>
+				<li><?php if(JCVI_INSTALLATION) {echo $html->link(__('Pipeline Log', true), array('plugin' => null,'controller'=> 'logs', 'action'=>'index'));} ?> </li>
+			<?endif;?>	
+			<? if ((in_array('Phylodb', Configure::listObjects('plugin')) && JCVI_INSTALLATION) && ($userGroup === ADMIN_USER_GROUP || $userGroup === INTERNAL_USER_GROUP || $userGroup === EXTERNAL_USER_GROUP)):?>				
+			<li><?php echo $html->link(__('PhyloDB Search', true), array('plugin' => 'phylodb','controller'=> 'phylodb', 'action'=>'search','all')); ?> </li>			
+			<?endif;?>							
+			<li><?php if($userGroup != GUEST_USER_GROUP && $username != 'jamboree') {echo $html->link(__('Dashboard', true), array('plugin' => null,'controller'=> 'dashboard'));} ?></li>
+			<li><?php echo $html->link(__('Log Out', true), array('plugin' => null,'controller'=> 'users', 'action'=>'logout')); ?> </li>
 		</ul>	
 		<?endif;?>		
 		

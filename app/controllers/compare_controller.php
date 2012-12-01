@@ -16,7 +16,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -28,13 +28,12 @@ class CompareController extends AppController {
 	var $helpers 	= array('Matrix','Dialog','Ajax');
 	var $uses 		= array();
 	#var $uses 		= array('Project','Library','Population');
-	var $components = array('Solr','RequestHandler','Session','Matrix','Format','Color'); 
+	var $components = array('Solr','RequestHandler','Session','Matrix','Download','Format','Color','Kegg'); 
 	
 	var $taxonomyLevels = array(
-		'root' 		=> 'root',
-		'kingdom' 	=> 'kingdom',
-		'class' 	=> 'class',
+		'root' 		=> 'superkingdom',
 		'phylum' 	=> 'phylum',
+		'class' 	=> 'class',
 		'order' 	=> 'order',
 		'family' 	=> 'family',
 		'genus' 	=> 'genus',
@@ -183,7 +182,7 @@ class CompareController extends AppController {
 	function ajaxTabPanel() {
 		$this->loadModel('Project');
 		
-		#get compare form data
+		## get compare form data
 		$option				= $this->data['Compare']['option'];
 		$minCount 			= $this->data['Compare']['minCount'];
 		$filter				= $this->data['Compare']['filter'];
@@ -194,83 +193,76 @@ class CompareController extends AppController {
 			//get pipeline summary for all selected datasets
 			$datasetPipelines 	= $this->Project->checkDatasetPipelines($selectedDatasets);
 			
-					//configure result tabs for each pipeline type
+			//configure result tabs for each pipeline type
 			if($datasetPipelines[PIPELINE_DEFAULT]) {			
-			$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
-						  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree','rootLevel'=>1),
-						  array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
-						  array('function'=>'metacycPathways','isActive'=>1,'tabName' => 'Metacyc Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
-						  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzyme','dbTable' => 'Enzymes','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
-						  array('function'=>'hmms','isActive'=>1,'tabName' => 'HMM','dbTable' => 'Hmm','sorlField' => 'hmm_id','rootLevel'=>'TIGR'),
-						  array('function'=>'commonNames','isActive'=>1,'tabName' => 'Common Names','dbTable' => null,'sorlField' => 'com_name','rootLevel'=>10));
-			}
-			else if($datasetPipelines[PIPELINE_JCVI_META_PROK] ) {			
-			$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
-						  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree','rootLevel'=>1),
-						  array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
-						  array('function'=>'metacycPathways','isActive'=>1,'tabName' => 'Metacyc Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
-						  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzyme','dbTable' => 'Enzymes','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
-						  array('function'=>'hmms','isActive'=>1,'tabName' => 'HMM','dbTable' => 'Hmm','sorlField' => 'hmm_id','rootLevel'=>'TIGR'),
-						  array('function'=>'commonNames','isActive'=>1,'tabName' => 'Common Names','dbTable' => null,'sorlField' => 'com_name','rootLevel'=>10));
-			}			
-			else if($datasetPipelines[PIPELINE_JCVI_META_VIRAL]) {	
-			$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
-						  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree','rootLevel'=>1),
-						  array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
-						  array('function'=>'metacycPathways','isActive'=>1,'tabName' => 'Metacyc Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
-						  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzyme','dbTable' => 'Enzymes','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
-						  array('function'=>'hmms','isActive'=>1,'tabName' => 'HMM','dbTable' => 'Hmm','sorlField' => 'hmm_id','rootLevel'=>'TIGR'),
-						  array('function'=>'commonNames','isActive'=>1,'tabName' => 'Common Names','dbTable' => null,'sorlField' => 'com_name','rootLevel'=>10),
- 						  array('function'=>'environmentalLibraries','isActive'=>1,'tabName' => 'Environmental Libraries','dbTable' => 'environemental_libraries','sorlField' => 'env_lib','rootLevel'=>'level1'));						  							
-			}			
-			else if($datasetPipelines[PIPELINE_HUMANN]) {	
-			$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
-							  //array('function'=>'keggOrtholog','isActive'=>1,'tabName' => 'Kegg Ortholog','dbTable' => 'KeggOrtholog','sorlField' => 'ko_id','rootLevel'=>'root'),
+				$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
 							  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree','rootLevel'=>1),
-							  array('function'=>'keggPathwaysKo','isActive'=>1,'tabName' => 'Kegg Pathway (KO)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'level 1'),
 							  array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
 							  array('function'=>'metacycPathways','isActive'=>1,'tabName' => 'Metacyc Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
-							  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzymes','dbTable' => 'Enzyme','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
-							  );				
+							  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzyme','dbTable' => 'Enzymes','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
+							  array('function'=>'hmms','isActive'=>1,'tabName' => 'HMM','dbTable' => 'Hmm','sorlField' => 'hmm_id','rootLevel'=>'TIGR'));
+							  ##array('function'=>'commonNames','isActive'=>1,'tabName' => 'Common Names','dbTable' => null,'sorlField' => 'com_name','rootLevel'=>10));
+			}
+			else if($datasetPipelines[PIPELINE_JCVI_META_PROK] ) {			
+				$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
+							  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree','rootLevel'=>1),
+							  array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+							  array('function'=>'metacycPathways','isActive'=>1,'tabName' => 'Metacyc Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+							  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzyme','dbTable' => 'Enzymes','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
+							  array('function'=>'hmms','isActive'=>1,'tabName' => 'HMM','dbTable' => 'Hmm','sorlField' => 'hmm_id','rootLevel'=>'TIGR'));
+							  ##array('function'=>'commonNames','isActive'=>1,'tabName' => 'Common Names','dbTable' => null,'sorlField' => 'com_name','rootLevel'=>10));
+			}			
+			else if($datasetPipelines[PIPELINE_JCVI_META_VIRAL]) {	
+				$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
+							  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree','rootLevel'=>1),
+							  array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+							  array('function'=>'metacycPathways','isActive'=>1,'tabName' => 'Metacyc Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+							  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzyme','dbTable' => 'Enzymes','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
+							  array('function'=>'hmms','isActive'=>1,'tabName' => 'HMM','dbTable' => 'Hmm','sorlField' => 'hmm_id','rootLevel'=>'TIGR'),
+							  ##array('function'=>'commonNames','isActive'=>1,'tabName' => 'Common Names','dbTable' => null,'sorlField' => 'com_name','rootLevel'=>10));
+	 						  array('function'=>'environmentalLibraries','isActive'=>1,'tabName' => 'Environmental Libraries','dbTable' => 'environemental_libraries','sorlField' => 'env_lib','rootLevel'=>'level1'));						  							
+			}	
+					
+			else if($datasetPipelines[PIPELINE_HUMANN]) {	
+				$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
+								  //array('function'=>'keggOrtholog','isActive'=>1,'tabName' => 'Kegg Ortholog','dbTable' => 'KeggOrtholog','sorlField' => 'ko_id','rootLevel'=>'root'),
+								  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree','rootLevel'=>1),							 
+								  array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+								  array('function'=>'keggPathwaysKo','isActive'=>1,'tabName' => 'Kegg Pathway (KO)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'level 1'),
+								  array('function'=>'metacycPathways','isActive'=>1,'tabName' => 'Metacyc Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+								  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzymes','dbTable' => 'Enzyme','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
+								  );				
 			}
 			//common denominator
 			else{
-			$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
-						  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree','rootLevel'=>1),
-						  array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
-						  array('function'=>'metacycPathways','isActive'=>1,'tabName' => 'Metacyc Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
-						  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzyme','dbTable' => 'Enzymes','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
- 						  array('function'=>'hmms','isActive'=>1,'tabName' => 'HMM','dbTable' => 'Hmm','sorlField' => 'hmm_id','rootLevel'=>'TIGR'),
-						  array('function'=>'commonNames','isActive'=>1,'tabName' => 'Common Names','dbTable' => null,'sorlField' => 'com_name','rootLevel'=>10));				
+				$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
+							  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree','rootLevel'=>1),
+							  array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+							  array('function'=>'metacycPathways','isActive'=>1,'tabName' => 'Metacyc Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
+							  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzyme','dbTable' => 'Enzymes','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
+	 						  array('function'=>'hmms','isActive'=>1,'tabName' => 'HMM','dbTable' => 'Hmm','sorlField' => 'hmm_id','rootLevel'=>'TIGR'));
+							  ##array('function'=>'commonNames','isActive'=>1,'tabName' => 'Common Names','dbTable' => null,'sorlField' => 'com_name','rootLevel'=>10));				
 			}
-				
+			
 			$optionalDatatypes  = $this->Project->checkOptionalDatatypes($selectedDatasets);
-						  
+
+			if($optionalDatatypes['ko']) {					
+				$ko = array(array('function'=>'keggPathwaysKo','isActive'=>1,'tabName' => 'Kegg Pathway (KO)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'level 1'));							 
+				#$ec = array(array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'));
+				array_splice($tabs, 2, 0, $ko);
+			}			
+			
 			//set optional data types for JCVI-only installation					  
-			if(JCVI_INSTALLATION) {		  							  
+			if(JCVI_INSTALLATION) {		  											  
 				if($optionalDatatypes['apis']) {
-					array_push($tabs,array('function'=>'apisTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Apis)','dbTable' => 'Taxonomy','sorlField' => 'apis_tree','rootLevel' =>'root'));
+					$apis = array(array('function'=>'apisTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Apis)','dbTable' => 'Taxonomy','sorlField' => 'apis_tree','rootLevel' =>'root'));
+					array_splice($tabs, 1, 0, $apis);
 				}
 				if($optionalDatatypes['clusters']) {
 					array_push($tabs,array('function'=>'clusters','isActive'=>1,'tabName' => 'Clusters','dbTable' => null,'sorlField' => 'cluster_id','rootLevel' =>'CAM_CR'));
-				}			
-				if($optionalDatatypes['viral']) {					
-					array_push($tabs,array('function'=>'environmentalLibraries','isActive'=>1,'tabName' => 'Environmental Libraries','dbTable' => 'environemental_libraries','sorlField' => 'env_lib'));
-				}	
-				if($optionalDatatypes['ko']) {
-					$tabs = array(array('function'=>'blastTaxonomy','isActive'=>1,'tabName' => 'Taxonomy (Blast)','dbTable' => 'Taxonomy','sorlField' => 'blast_tree','rootLevel'=>'root'),
-							  array('function'=>'geneOntology','isActive'=>1,'tabName' => 'Gene Ontology','dbTable' => 'GeneOntology','sorlField' => 'go_tree','rootLevel'=>1),
-							  array('function'=>'keggPathwaysKo','isActive'=>1,'tabName' => 'Kegg Pathway (KO)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'level 1'),
-							  array('function'=>'keggPathwaysEc','isActive'=>1,'tabName' => 'Kegg Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
-							  array('function'=>'metacycPathways','isActive'=>1,'tabName' => 'Metacyc Pathway (EC)','dbTable' => null,'sorlField' => 'ec_id','rootLevel'=>'super-pathway'),
-							  array('function'=>'enzymes','isActive'=>1,'tabName' => 'Enzymes','dbTable' => 'Enzyme','sorlField' => 'enzyme_id','rootLevel'=>'level 1'),
-							   array('function'=>'hmms','isActive'=>1,'tabName' => 'HMM','dbTable' => 'Hmm','sorlField' => 'hmm_id','rootLevel'=>'TIGR'),
-							  array('function'=>'commonNames','isActive'=>1,'tabName' => 'Common Names','dbTable' => null,'sorlField' => 'com_name','rootLevel'=>10));
-							 
-				}									  					  
+				}												  					  
 			}
-						
-			
+
 			if(empty($option)) {
 				$option = ABSOLUTE_COUNTS;
 			}
@@ -286,21 +278,34 @@ class CompareController extends AppController {
 			else {
 				$heatmapColor = HEATMAP_COLOR_YELLOW_RED;
 			}
-			$colorGradient =  $this->Color->gradient($heatmapColor);			
+			$colorGradient =  $this->Color->gradient($heatmapColor);	
+
+			## reset p-value filtering on update
+			if($this->Session->check('maxPvalue')) {
+				$this->Session->write('maxPvalue',PVALUE_ALL);
+			}
 			
-			## handle tests
-			if($option == CHISQUARE) {
+			
+			## handle min. count for large sample approximation tests
+			if($option == CHISQUARE || $option == PROPORTION_TEST) {
 				$minCount = 5;
 			}
 			else if($option == METASTATS || $option == WILCOXON) {
-				#handle metastats exception (fewer than 3 datasets)				
+				## handle metastats exception (fewer than 3 datasets)				
 				if(count($selectedDatasets) != 2 || !$optionalDatatypes['population']) {
 					$this->set('multiSelectException','Please select 2 populations for this statistical test.');
 					$this->set('filter',$filter);
 					$this->render('/compare/result_panel','ajax');
 				}								
 			}			
-					
+
+			## handle plot exception (fewer than 3 datasets)
+			if(count($selectedDatasets) !=2 && ($option == CHISQUARE || $option == FISHER || $option == PROPORTION_TEST)) {				
+				$this->set('multiSelectException','Please select 2 datasets for this statistical test.');
+				$this->set('filter',$filter);
+				$this->render('/compare/result_panel','ajax');
+			}
+			
 			## handle plot exception (fewer than 3 datasets)
 			if(count($selectedDatasets) < 3 && ($option == HEATMAP_PLOT || $option == MDS_PLOT || $option == HIERARCHICAL_CLUSTER_PLOT )) {				
 				$this->set('multiSelectException','Please select at least 3 datasets for this plot option.');
@@ -344,7 +349,7 @@ class CompareController extends AppController {
 	 * @access private
 	 */	
 	public function blastTaxonomy() {
-		$this->taxonomy('blast_tree');
+		$this->taxonomy('Taxonomy');
 	}
 
 	/**
@@ -354,28 +359,29 @@ class CompareController extends AppController {
 	 * @access private
 	 */	
 	public function apisTaxonomy() {
-		$this->taxonomy('apis_tree');
+		$this->taxonomy('TaxonomyApis');
 	}	
 
 	/**
 	 * Compare NCBI taxonomic assignments across selected datasets
 	 * 
-	 * @param String $facetField 	equals blast_tree for Blast taxonomic assignments
-	 * 								or apis_tree for Apis taxonomic assignments
+	 * @param String $taxonomyModel equals Taxonomy for Blast taxonomic assignments
+	 * 								or TaxonomyApis for Apis taxonomic assignments
 	 * @return void
 	 * @access private
 	 */	
-	private function taxonomy($facetField = 'blast_tree') {
-		
-		$this->loadModel('Taxonomy');
+	private function taxonomy($taxonomyModel = 'Taxonomy') {		
 		$this->loadModel('Project');
 		$this->loadModel('Population');
+		$this->{$taxonomyModel} =& ClassRegistry::init($taxonomyModel);
 				
-		if($facetField === 'blast_tree') {
+		if($taxonomyModel === 'Taxonomy') {
 			$mode = 'blastTaxonomy';
+			$facetField= 'blast_tree';
 		}
-		if($facetField === 'apis_tree') {
+		elseif($taxonomyModel === 'TaxonomyApis') {
 			$mode = 'apisTaxonomy';
+			$facetField= 'apis_tree';
 		}		
 		
 		$counts	= array();
@@ -417,22 +423,28 @@ class CompareController extends AppController {
 		$facetQueries = array();
 
 		if($level === 'root') {
-			$taxonResults = $this->Taxonomy->findTopLevelTaxons();
+			$taxonResults = $this->{$taxonomyModel}->findTopLevelTaxons();
 		}
 		else {
-			$taxonResults = $this->Taxonomy->find('all', array('conditions' => array('Taxonomy.rank' => $level),'fields' => array('taxon_id','name')));
+			$taxonResults = $this->{$taxonomyModel}->find('all', array('conditions' => array('rank' => $level),'fields' => array('taxon_id','name')));			
 		}
 		
+		$queryMapping = array();
 		//set up count matrix
 		foreach($taxonResults as $taxonResult) {
-			$id = $taxonResult['Taxonomy']['taxon_id'];
-			$name = $taxonResult['Taxonomy']['name'];
+			$id = $taxonResult[$taxonomyModel]['taxon_id'];
+			$name = $taxonResult[$taxonomyModel]['name'];
 			$counts[$id]['name'] 	= $name;	
 			$counts[$id]['sum'] 	= 0;	
-			array_push($facetQueries,"$facetField:$id");			
+			
+			$searchId	= $id < 0 ? str_replace('-','\-',$id) : $id;
+			$queryMapping["$facetField:$searchId"] = $id;	
+			array_push($facetQueries,"$facetField:$searchId");							
 		}
 		unset($taxonResults);	
-		$this->Solr->multiSearch($counts,$selectedDatasets,$facetQueries,$filter,$minCount);
+		
+		$this->Solr->multiSearch($counts,$selectedDatasets,$facetQueries,$filter,$minCount,$queryMapping);
+		
 		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts,$plotLabel,$clusterMethod,$distanceMatrix);
 		$this->Session->write('counts',$counts);	
 		$this->render('/compare/result_panel','ajax');
@@ -1241,6 +1253,182 @@ class CompareController extends AppController {
 		$this->render('/compare/result_panel','ajax');
 	}
 	
+	function pathwayMap($mode,$level,$externalPathwayId) {
+		$this->loadModel('Pathway');
+		$this->loadModel('Project');
+				
+		$this->Session->write("$mode.level", $level);
+		
+		$option 			= $this->Session->read('option');#ylab="Datasets"
+		$minCount 			= $this->Session->read('minCount');
+		$filter 			= $this->Session->read('filter');
+		$selectedDatasets	= $this->Session->read('selectedDatasets');
+		$totalCounts		= $this->Session->read('totalCounts');
+		$plotLabel			= $this->Session->read('plotLabel');
+		$clusterMethod		= $this->Session->read('clusterMethod');
+		$distanceMatrix		= $this->Session->read('distanceMatrix');
+		$maxPvalue			= $this->Session->read('maxPvalue');
+			
+		$dataset1 = $selectedDatasets[0];
+		$dataset2 = $selectedDatasets[1];
+		
+		## define p-value field and cut off
+		switch ($maxPvalue) {
+			case PVALUE_HIGH_SIGNIFICANCE;
+			$cutoff = 0.01;
+			$fieldName = 'pvalue';
+			break;
+			case PVALUE_MEDIUM_SIGNIFICANCE;
+			$cutoff = 0.05;
+			$fieldName = 'pvalue';
+			break;
+			case PVALUE_LOW_SIGNIFICANCE;
+			$cutoff = 0.1;
+			$fieldName = 'pvalue';
+			break;
+			case PVALUE_BONFERONI_HIGH_SIGNIFICANCE;
+			$cutoff = 0.01;
+			$fieldName = 'bvalue';
+			break;
+			case PVALUE_BONFERONI_MEDIUM_SIGNIFICANCE;
+			$cutoff = 0.05;
+			$fieldName = 'bvalue';
+			break;
+			case PVALUE_BONFERONI_LOW_SIGNIFICANCE;
+			$cutoff = 0.1;
+			$fieldName = 'bvalue';
+			break;
+			case PVALUE_FDR_HIGH_SIGNIFICANCE;
+			$cutoff = 0.01;
+			$fieldName = 'qvalue';
+			break;
+			case PVALUE_FDR_MEDIUM_SIGNIFICANCE;
+			$cutoff = 0.05;
+			$fieldName = 'qvalue';
+			break;
+			case PVALUE_FDR_LOW_SIGNIFICANCE;
+			$cutoff = 0.1;
+			$fieldName = 'qvalue';
+			break;						
+		}		
+				
+		if($mode === 'keggPathwaysEc') {
+			$pathwayModel = KEGG_PATHWAYS;
+			$field = 'ec_id';
+		}
+		else if($mode === 'keggPathwaysKo') {
+			$pathwayModel = KEGG_PATHWAYS_KO;
+			$field = 'ko_id';			
+		}
+			
+		$pathwayUrl = $this->Pathway->getUrl($externalPathwayId,$pathwayModel);
+				
+		$children 	= $this->Pathway->getChildrenByExternalParentId($externalPathwayId,$pathwayModel);
+				
+		$facetQueries = array();
+		
+		foreach($children as $child) {
+			$entry = $child[$pathwayModel];
+			
+			$query = $field.":".str_replace("-","*",$entry[$field]);
+			$counts[$entry[$field]]['sum']  = 0;
+			$counts[$entry[$field]]['name'] = $entry['name'];
+			$counts[$entry[$field]]['query']= $query;	
+			
+			$facetQueryMapping[$query] = $entry[$field];
+			array_push($facetQueries,$query);
+		}
+		$countsBackup = $counts;
+		
+		$this->Solr->multiSearch($counts,$selectedDatasets,$facetQueries,$filter,$minCount,$facetQueryMapping);	
+		
+		$this->Matrix->formatCounts($option,$filter,$minCount,$selectedDatasets,$totalCounts,$counts,$plotLabel,$clusterMethod,$distanceMatrix);		
+		
+		$colorGradient = $this->Color->twoColorGradientHash(HEATMAP_COLOR_BLUE,HEATMAP_COLOR_GREEN,-2,2,0.2);
+
+		
+		
+		foreach($countsBackup as $id => $entry) {
+			if(!array_key_exists($id,$counts)) {				
+				$pathwayUrl.="/$id%09%23FFFFFF";			
+			}
+			else {
+				## color-code pathway members based on odds ratio
+				foreach($colorGradient as $color => $entry) {
+						if($counts[$id]['oratio'] >=  $entry['min'] && $counts[$id]['oratio'] <  $entry['max'] ) {
+							$pathwayUrl.="/$id%09%23$color";	
+						}			
+				}
+				## color-code pathway members based on pvalue
+				if($maxPvalue != PVALUE_ALL && $counts[$id][$fieldName] < $cutoff)	{								
+					$pathwayUrl.=",red";	
+				}				
+			}			
+		}
+		
+		$pathwayImage = $this->Kegg->pathwayImageFromUrl($pathwayUrl);
+				
+		
+		$this->Session->write('counts',$counts);
+		$this->set('projectName',$this->Project->getProjectName($dataset1));
+		$this->set('projectId', $this->Project->getProjectId($dataset1));
+		$this->set('dataset1', $dataset1);
+		$this->set('dataset2', $dataset2);
+		$this->set('pathwayImage', $pathwayImage);
+		$this->set('externalPathwayId',$externalPathwayId);
+		$this->set('colorGradient',$colorGradient);
+		$this->render('/compare/pathway_map');
+		
+		
+//		$parentName  		= $parent['name'];
+//		$parentExternalId 	= $parent['external_id'];
+//		$parentLevel 		= $parent['level'];
+//
+//		if($pathwayModel === KEGG_PATHWAYS || $pathwayModel === METACYC_PATHWAYS) {
+//			$parentEcId 	= $parent['ec_id'];
+//		}
+//		else if($pathwayModel === KEGG_PATHWAYS_KO) {
+//			$parentkoId 	= $parent['ko_id'];
+//		}
+//
+//		$pathwayUrl = $this->Pathway->getUrl($parentExternalId,$pathwayModel);
+//		$pathwayUrl .='/default%3white';
+//		$parentCount = $this->Pathway->getCount($parentId,$this->Solr,$dataset,$query,$pathwayModel);
+//
+//		if($parentLevel === 'enzyme') {
+//			$parentName = "$parentName ($parentEcId)";
+//		}
+//		else if($parentLevel === 'kegg-ortholog') {
+//			$parentName = "$parentName ($parentkoId)";
+//		}
+//		else if($parentLevel === 'pathway') {
+//			$colorGradient =  $this->Color->gradient(HEATMAP_COLOR_YELLOW_RED);
+//			$this->set('colorGradient',$colorGradient);
+//		}
+		
+		
+	}
+	function filterPathwayMapByEvalue($mode,$level,$externalPathwayId) {
+		
+		## handle evalue
+		if($this->Session->check('maxPvalue')) {
+			$maxPvalue	= $this->Session->read('maxPvalue');
+		}
+		else {
+			$maxPvalue = PVALUE_ALL;
+		}
+				
+		if(!empty($this->data['Post']['maxPvalue'])) {
+			$selectedMaxPvalue = $this->data['Post']['maxPvalue'];
+			
+			if($selectedMaxPvalue != $maxPvalue) {
+				$this->Session->write('maxPvalue',$selectedMaxPvalue);	
+			}		
+		}
+		
+		$this->setAction('pathwayMap',$mode,$level,$externalPathwayId);		
+	}
+	
 	/**
 	 * Opens download dialog to export the current compare result matrix
 	 * 
@@ -1260,22 +1448,27 @@ class CompareController extends AppController {
 		$distanceMatrix		= $this->Session->read('distanceMatrix');
 		$maxPvalue			= $this->Session->read('maxPvalue');
 
-		//handle download formats for various compare options
+		## handle download formats for various compare options
 		if($option == ABSOLUTE_COUNTS || $option == RELATIVE_COUNTS || $option == HEATMAP_COUNTS || $option == MOSAIC_PLOT) {
 			$title = "Comparison Results";
 			$content = $this->Format->infoString($title,$selectedDatasets,$filter,$minCount);
-			$content.= $this->Format->comparisonResultsToDownloadString($counts,$selectedDatasets,$option);				
+			$content.= $this->Format->countResultsToDownloadString($counts,$selectedDatasets,$option);				
 		}
 		elseif($option == CHISQUARE) {
 			$title = 'Comparison Results - Chi-Square Test of Independence';
 			$content = $this->Format->infoString($title,$selectedDatasets,$filter,$minCount);
-			$content.= $this->Format->comparisonResultsToDownloadString($counts,$selectedDatasets,$option);
+			$content.= $this->Format->twoWayTestResultsToDownloadString($counts,$selectedDatasets,$maxPvalue);
 		}
 		elseif($option == FISHER) {			
 			$title = "Comparison Results - Fisher's Exact Test";
 			$content = $this->Format->infoString($title,$selectedDatasets,$filter,$minCount);
-			$content.= $this->Format->comparisonResultsToDownloadString($counts,$selectedDatasets,$option);
+			$content.= $this->Format->twoWayTestResultsToDownloadString($counts,$selectedDatasets,$maxPvalue);
 		}
+		elseif($option == PROPORTION_TEST) {			
+			$title = "Comparison Results - Equality of Proportions Test";
+			$content = $this->Format->infoString($title,$selectedDatasets,$filter,$minCount);
+			$content.= $this->Format->twoWayTestResultsToDownloadString($counts,$selectedDatasets,$maxPvalue);
+		}		
 		elseif($option == METASTATS) {
 			$title = "Comparison Results - METASTATS non-parametric t-test";
 			$content = $this->Format->infoString($title,$selectedDatasets,$filter,$minCount);
@@ -1294,10 +1487,7 @@ class CompareController extends AppController {
 		}						
 	
 		$fileName = uniqid('jcvi_metagenomics_report_').'.txt';
-
-		header("Content-type: text/plain");
-		header("Content-Disposition: attachment;filename=$fileName");
-		echo $content;
+		$this->Download->string($fileName,$content);
 	}
 
 	/**
@@ -1365,7 +1555,7 @@ class CompareController extends AppController {
 		$this->render('/compare/result_panel','ajax');
 	}
 
-	function changePvalue() {
+	function changeMaxPvalue() {
 		$selectedDatasets	= $this->Session->read('selectedDatasets');
 		$counts				= $this->Session->read('counts');
 		$option 			= $this->Session->read('option');
@@ -1381,8 +1571,7 @@ class CompareController extends AppController {
 		else {
 			$maxPvalue = PVALUE_ALL;
 		}
-		
-		
+				
 		if(!empty($this->data['Post']['maxPvalue'])) {
 			$selectedMaxPvalue = $this->data['Post']['maxPvalue'];
 			

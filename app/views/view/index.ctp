@@ -28,7 +28,7 @@ $resultFields = $session->read($sessionId.'resultFields');
 
 <ul id="breadcrumb">
  	<li><a href="/metarep/dashboard/index" title="Dashboard"><img src="/metarep/img/home.png" alt="Dashboard" class="home" /></a></li>
-    <li><?php echo $html->link('List Projects', "/projects/index");?></li>
+    <li><?php echo $html->link('Projects', "/projects/index");?></li>
     <li><?php echo $html->link('View Project', "/projects/view/$projectId");?></li>
     <li><?php echo $html->link('View Dataset', "/view/index/$dataset");?></li>
 </ul>

@@ -8,10 +8,17 @@ CSS for comparator pages
 	position: absolute;
 	top: 170px;
 	left: 40px;
-	width: 1030px;
+	width: 1030px !important;
 	height: 152px;
 	border: 1px solid #aaaaaa;
 }
+
+
+/* multi-comparator box width configuration
+----------------------------------*/
+.ui-multiselect { width: 1031px !important;}
+.ui-multiselect div.selected { position: relative; padding: 0; margin: 0; border: 0; float:left; width: 510px !important;}
+.ui-multiselect div.available { position: relative; padding: 0; margin: 0; border: 0; float:left; border-left: 1px solid; width: 519px !important;}
 
 .comparator-query-panel {  
 	position: absolute;
@@ -44,6 +51,13 @@ tbody {max-height:180px;width: 800px;overflow:auto;}
 	height: 50px;
 }
 
+.comparator-pathway-map-panel {  
+	width: 100%;
+	height: 400px;
+	overflow: auto;
+	text-align: center;
+}
+
 .align-right td {  
 	text-align:right;
 }
@@ -73,14 +87,12 @@ form {
 
 #dialog_link {
 	position: absolute;
-	top: 0px;
-	left:0px;
+	left:5px;
 	height: 15px;
 }
 
 input[type="submit"] {
 	position: absolute;
-	top: 0px;
 	left:440px;
 	width: 70px;
 	height: 25px;
@@ -90,27 +102,26 @@ input[type="submit"] {
     display:inline !important;
     padding-left: 25px;
     text-indent: -35px;
-    padding-right:20px;
+    padding-right:0px;
 }
 
 .compare-radio-box {
 	display: inline !important;
 	position:absolute;
-	top:213px;
+	top:208px;
 	left:750px;
 	font-size: 0.9em;
-	width:300px;
+	width:250px;
 	line-height:11px;
-	vertical-align: midle;
+	vertical-align: middle;
 }
 
 input[type="text"] {
 	position: absolute;
-	top: 0px;
 	width: 490px;
 	font-size:120% !important;
 	hight:8px;
-	left: 0px;
+	left: 4px;
 	padding:0px !important;
 }
 	
@@ -136,8 +147,8 @@ select {
 
 .comparator-drop-down-one {	
 	position:absolute;
-	left: 9px;
-	top: 45px;
+	left:15px;
+	top: 63px !important; 
 	font-size:0.9em;
 	float:top;
 }
@@ -145,7 +156,7 @@ select {
 .comparator-drop-down-two {	
 	position:absolute;
 	left: 200px;
-	top: 45px;
+	top: 63px !important; 
 	font-size:0.9em;
 	float:top;
 }
@@ -153,7 +164,7 @@ select {
 .comparator-drop-down-three {	
 	position:absolute;
 	left: 370px;
-	top: 45px;
+	top: 63px !important; 
 	font-size:0.9em;
 	float:top;
 }
@@ -161,20 +172,28 @@ select {
 .comparator-drop-down-four {	
 	position:absolute;
 	left: 550px;
-	top: 45px;
+	top: 63px !important; 
 	font-size:0.9em;	
 }
 
 .comparator-drop-down-five {	
 	position:absolute;
 	left: 740px;
-	top: 45px;
+	top: 63px !important; 
 	font-size:0.9em;	
+}
+
+.comparator-pathway-drop-down {	
+	position:relative;
+	left: 20px;
+	top: 0px;
+	font-size:0.9em;
+	float:left;
 }
 
 label {
     float: top !important;
-    font-size:0.9em;
+    font-size:0.9em !important;
 }
 
 #comparison-results {
@@ -197,11 +216,10 @@ label {
 
 
 .comparator-min-count-option {
-	position: absolute;
-	left:70px;
-	top:0px;
-	width:145px;
-	height: 23px;
+	position: absolute !important;
+	left:70px !important;
+	width:145px!important;
+	height: 23px!important;
 }
 
 fieldset {
@@ -210,12 +228,13 @@ fieldset {
 
 .comparator-min-count-option label {
 	position: absolute;
-	top:0px;
 	left:0px;
 	width:70px;
 	height:35px;
 	padding:0px !important;
-	text-align: left !important;	
+	text-align: right !important;	
+	vertical-align:middle !important;
+	
 }
 
 .comparator-min-count-option input[type="text"] {
@@ -254,8 +273,15 @@ fieldset {
 
 .comparator-download {  	
 	position: absolute;
-	top: 47px;
+	top: 68px;
 	left:975px;
+}
+
+.comparator-pathway-map-download {  	
+	position: relative;
+	top: 0px;
+	padding: 0px;
+	float:right;
 }
 
 .tab{
@@ -291,7 +317,7 @@ table.tablesorter tbody tr.even td {
 	background-color:#f0f0f0;
 	border:1px dashed #a0a0a0;
 	position:absolute;
-	top:54px;
+	top:75px;
 	right:72px;
 }
 

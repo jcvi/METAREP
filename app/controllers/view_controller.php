@@ -22,7 +22,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -32,7 +32,7 @@ class ViewController extends AppController {
 	var $name 		= 'View';
 	var $helpers 	= array('LuceneResultPaginator','Facet','Html');
 	var $uses 		= array();
-	var $components = array('Solr','Format');
+	var $components = array('Solr','Download','Format');
 	
 	var $resultFields = array(
 								'peptide_id'=>'Peptide ID',
@@ -464,13 +464,9 @@ class ViewController extends AppController {
 
 		#generate download file name
 		$fileName = uniqid('jcvi_metagenomics_report_').'.txt';
-		
-		#prepare for download
-        header("Content-type: text/plain"); 
-        header("Content-Disposition: attachment;filename=$fileName");
-       
-        echo $content;
+		$this->Download->string($fileName,$content);
 	}
+	
 	private function addSummaryCounts($dataset,$totalCount,$summaryTitle,$filterQuery,$queries,&$summaryCounts) {
 		
 		foreach($queries as $name => $query) {

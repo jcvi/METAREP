@@ -13,7 +13,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -31,9 +31,9 @@ define('HEATMAP_COLOR_YELLOW_RED', 1);
 define('HEATMAP_COLOR_YELLOW_BLUE', 2);
 define('HEATMAP_COLOR_BLUE', 3);
 define('HEATMAP_COLOR_GREEN', 4);
+define('HEATMAP_COLOR_RED_BLUE', 5);
 
 //define compare options
-define('FISHER', 0);
 define('ABSOLUTE_COUNTS', 1);
 define('RELATIVE_COUNTS', 2);
 define('HEATMAP_COUNTS', 3);
@@ -44,6 +44,8 @@ define('HIERARCHICAL_CLUSTER_PLOT', 7);
 define('MDS_PLOT', 8);
 define('HEATMAP_PLOT', 9);
 define('MOSAIC_PLOT', 10);
+define('FISHER', 11);
+define('PROPORTION_TEST', 12);
 
 //define compare dataset mode
 define('SHOW_ALL_DATASETS',0);
@@ -57,7 +59,11 @@ define('PVALUE_LOW_SIGNIFICANCE',3);
 define('PVALUE_BONFERONI_HIGH_SIGNIFICANCE',4);
 define('PVALUE_BONFERONI_MEDIUM_SIGNIFICANCE',5);
 define('PVALUE_BONFERONI_LOW_SIGNIFICANCE',6);
-define('PVALUE_ALL',7);
+define('PVALUE_FDR_HIGH_SIGNIFICANCE',7);
+define('PVALUE_FDR_MEDIUM_SIGNIFICANCE',8);
+define('PVALUE_FDR_LOW_SIGNIFICANCE',9);
+
+define('PVALUE_ALL',10);
 
 //define distance matrices
 define('DISTANCE_HORN','horn');
@@ -97,6 +103,13 @@ define('HEATMAP_BLUE_END', 'DEEBF7');
 define('HEATMAP_GREEN_START', '31A354');
 define('HEATMAP_GREEN_END', 'E5F5E0');
 
+define('HEATMAP_RED_BLUE_START', '7FBF7B');
+define('HEATMAP_RED_BLUE_END', 'F99D31');
+
 define('PHP_HTTP_TRANSPORT_CURL_REUSE', 'CURL_NO_REUSE');
 define('PHP_HTTP_TRANSPORT_CURL_NOREUSE', 'CURL_NO_REUSE');
 define('PHP_HTTP_TRANSPORT_FILE_GET_CONTENTS', 'FILE_GET_CONTENTS');
+
+define('SOLR_RESULT_FACETS_UNWEIGHTED', 1);
+define('SOLR_RESULT_FACETS_WEIGHTED', 2);
+define('SOLR_RESULT_SINGLE_WEIGHTED', 3);

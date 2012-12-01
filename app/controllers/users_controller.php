@@ -16,7 +16,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -199,10 +199,15 @@ class UsersController extends AppController {
 			
 			$projectId = $this->data['Project']['id'];  
 			
-			#delete all previous users except current user
+			## delete all previous users except current user
 			$this->User->ProjectsUser->deleteAll(array('project_id'=>$projectId,'user_id !=' => $currentUserId));
 			
 			if($this->Project->save($this->data)) {
+				## clear user project cache 
+				foreach($this->data['User']['User'] as $userId) {
+					Cache::delete($userId.'projects');	
+				}
+				
 				$this->Session->setFlash("Your user project permissions have been saved.");
 				$this->redirect("/dashboard",null,true);	
 			}		
@@ -214,20 +219,20 @@ class UsersController extends AppController {
 		else {
 			$this->User->Project->contain('User');
 			
-			#get all users except current user and admin for multi-user select box	
+			## get all users except current user and admin for multi-user select box	
 			$users  = $this->User->findAll(array('NOT'=>array('User.username'=>'admin','User.id'=>$currentUserId)));
 			
-			#get current project users
+			## get current project users
 			$existingUsers = array();
 			$projectUsers = $this->User->Project->find('all', array('conditions'=>array('Project.id'=>$projectId)));
 			
 			$projectName = $projectUsers[0]['Project']['name'];
 			
-			#format current users as list of user ids 
+			## format current users as list of user ids 
 			foreach($projectUsers[0]['User'] as $projectUser) {
 				$projectUserId = $projectUser['id'];
 				
-				#only add non project admin & admin to existing user list
+				## only add non project admin & admin to existing user list
 				if($projectUserId != $currentUserId && $projectUser['username']!='admin') {
 					array_push($existingUsers,$projectUserId);
 				}
@@ -262,14 +267,14 @@ class UsersController extends AppController {
 	
 	function login() {
 		$this->loadModel('User');	
-		#account activation
+		## account activation
 		if(isset($_GET["ident"])) {
 			#on success
 			if ($this->User->activateAccount($_GET)) {
 				$this->Session->setFlash("Thank you. Your METAREP account has been activated. Please login.");
 				$this->redirect("/dashboard",null,true);		
 			}
-			#on failure 
+			## on failure 
 			else {
 				$this->Session->setFlash("There was a problem with your account information. Please contact ".METAREP_SUPPORT_EMAIL);
 				$this->redirect("/dashboard",null,true);				

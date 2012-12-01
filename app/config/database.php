@@ -1,7 +1,7 @@
 <?php
 /***********************************************************
-* File: database.php
-* Description: configuration file for METAREP datasources
+*  File: database.php
+*  Description: configuration file for cakephp datasources
 *
 * PHP versions 4 and 5
 *
@@ -13,23 +13,22 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.4
+* @version METAREP v 1.4.0
 * @author Johannes Goll
-* @lastmodified 2011-10-12
+* @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
 
 class DATABASE_CONFIG {
 	
-	//METAREP MySQL database connection parameters
 	var $default = array(
 		'driver' => 'mysqli',
 		'persistent' => true,
-		'host' => 'localhost',
-		'login' => '<your-login>',
-		'password' => '<your-password>',
-		'database' => 'metarep',
-	);
+		'host' => 'mysql51-dmz-pro',
+		'login' => 'repneomgx',
+		'password' => 'g+k2_p*LPn',
+		'database' => 'ifx_metagenomics_reports',
+	);			
 	
 	//METAREP Blog connection parameters
 	var $blog = array(

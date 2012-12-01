@@ -15,7 +15,7 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.0
+* @version METAREP v 1.4.0
 * @author Johannes Goll
 * @lastmodified 2010-07-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
@@ -219,12 +219,16 @@ class TreeHelper extends AppHelper {
 	
 	private function getTreeLabel($class,$link,$level,$count) {
 
-		if(is_float($count)) {
-			$count = number_format($count,2);
+		## get number of decimal places
+		$numDec = strlen(substr(strrchr($count, "."), 1));
+		
+		if($numDec == 0) {
+			$count = number_format($count,0);		
 		}
 		else {
-			$count = number_format($count);
+			$count = number_format($count,WEIGHTED_COUNT_PRECISION);
 		}
+		
 		if($level) {
 			return "<li $class><span style=\"white-space: nowrap\">$link ($level) <strong>[$count hits]</strong></span>";
 		}
