@@ -31,7 +31,7 @@ New Feature:
 METAREP-461 Import dataset option for Admin via project page
 
 METAREP-206 New Blast Page to find homologous sequences in selected datasets, display
-and export results, e.g. http://www.jcvi.org/metarep/blast/index/GS659_G8KGLNH_G9ALM7U_0p8
+and export results
 
 METAREP-460 New Search Page option to search datasets using user defined sequences at
 three homology cut-off levels (1E-5, 1E-20 and 1E-50)
