@@ -24,10 +24,10 @@ class DATABASE_CONFIG {
 	var $default = array(
 		'driver' => 'mysqli',
 		'persistent' => true,
-		'host' => 'mysql51-dmz-pro',
-		'login' => 'repneomgx',
-		'password' => 'g+k2_p*LPn',
-		'database' => 'ifx_metagenomics_reports',
+		'host' => 'localhost',
+		'login' => '<your-login>',
+		'password' => '<your-password>',
+		'database' => 'metarep',
 	);			
 	
 	//METAREP Blog connection parameters
