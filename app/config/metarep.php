@@ -13,9 +13,9 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.3.1
+* @version METAREP v 1.4.0
 * @author Johannes Goll
-* @lastmodified 2011-10-12
+* @lastmodified 2013-02-09
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
 
@@ -108,14 +108,6 @@ define('SOLR_MASTER_HOST','localhost');
 //define('SOLR_SLAVE_HOST','');
 
 /**
- * Solr big ip; define if you use a 
- * Define Solr BIG-IP if you use METAREP in a 
- * load balanced/replication set-up
- */
-
-//define('SOLR_BIG_IP_HOST','');
-
-/**
  * FTP host
  * 
  * Specify FTP host if you like to provide 
@@ -142,10 +134,10 @@ define('SOLR_MASTER_HOST','localhost');
  * Email is displayed if METAREP can not access the Solr or
  * MySQL servers. It is also used to provide users an Email
  * address send bug reports and feature requests.
- * Default: metarep-support@jcvi.org
+ * Default: metarep@googlegroups.com
  */
 
-define('METAREP_SUPPORT_EMAIL','metarep-support@jcvi.org');
+define('METAREP_SUPPORT_EMAIL','metarep@googlegroups.com');
 
 /**
  * Internal Email Extension
