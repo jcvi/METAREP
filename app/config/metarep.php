@@ -13,9 +13,9 @@
 *
 * @link http://www.jcvi.org/metarep METAREP Project
 * @package metarep
-* @version METAREP v 1.4.0
+* @version METAREP v 1.3.1
 * @author Johannes Goll
-* @lastmodified 2010-07-09
+* @lastmodified 2011-10-12
 * @license http://www.opensource.org/licenses/mit-license.php The MIT License
 **/
 
@@ -40,17 +40,17 @@ define('METAREP_RUNNING_TITLE','JCVI Metagenomics Reports');
  * METAREP Web Root
  * 
  * Point this variable to your Apache METAREP webroot directory
- * Default: /<your-installation-dir>/apache-2.2.14/htdocs/metarep
+ * Default: /<your-apache-installation-dir>/htdocs/metarep
  */
 
-define('METAREP_WEB_ROOT','/opt/www/metarep/htdocs/metarep');
+define('METAREP_WEB_ROOT','/<your-apache-installation-dir>/htodocs/metarep');
 
 /**
  * METAREP Url Root
- * 
+ * Default: http://localhost:80/metarep
  */
 
-define('METAREP_URL_ROOT','http://www.jcvi.org/metarep');
+define('METAREP_URL_ROOT','http://localhost:80/metarep');
 
 /**
  * Directory to store temporary files
@@ -59,24 +59,16 @@ define('METAREP_URL_ROOT','http://www.jcvi.org/metarep');
  * Default: /tmp
  */
 
-define('METAREP_TMP_DIR','/opt/www/metarep/tmp');
-
-/**
- * Solr home dir
- * 
- * Contains Solr example data including <solr-home>/example/exampledocs/post.jar
- */
-
-define('SOLR_HOME_DIR','/opt/software/apache-solr/solr');
+define('METAREP_TMP_DIR','/tmp');
 
 /**
  * Solr instance dir
  * 
  * Contains Solr configuration files in conf/  subdirectory
- * Default: /your-installation-dir>/apache-solr-1.4.0/metarep-solr
+ * Default: /your-solr-installation-dir>/apache-solr-3.1.0/metarep-solr
  */
 
-define('SOLR_INSTANCE_DIR','/opt/software/apache-solr/solr');
+define('SOLR_INSTANCE_DIR','/<your-solr-installation-dir>/apache-solr-3.1.0/metarep-solr');
 
 /**
  * Solr port
@@ -85,25 +77,16 @@ define('SOLR_INSTANCE_DIR','/opt/software/apache-solr/solr');
  * Default: 1234
  */
 
-define('SOLR_PORT','8989');
-
-/**
- * Track Solr Qtime  
- * 
- * Track Solr query performance statistics in solr_Qtime table.
- * Should be set to 0 in production environment.
- */
-
-define('SOLR_TRACK_QTIME',0);
+define('SOLR_PORT','1234');
 
 /**
  * Solr data dir
  * 
  * Defines location of Solr index files
- * Default: /<your-installation-dir>/apache-solr-1.4.0/metarep-solr/data/
+ * Default: /<your-solr-installation-dir>/apache-solr-3.1.0/metarep-solr/data
  */
 
-define('SOLR_DATA_DIR','/solr-index');
+define('SOLR_DATA_DIR','/<your-solr-installation-dir>/apache-solr-3.1.0/metarep-solr/data');
 
 /**
  * Solr master server host
@@ -113,7 +96,7 @@ define('SOLR_DATA_DIR','/solr-index');
  * Default: localhost
  */
 
-define('SOLR_MASTER_HOST','172.20.13.24');
+define('SOLR_MASTER_HOST','localhost');
 
 /**
  * Solr slave server host
@@ -122,27 +105,15 @@ define('SOLR_MASTER_HOST','172.20.13.24');
  * in a load balanced/replication set-up
  */
 
-define('SOLR_SLAVE_HOST','172.20.13.25');
-
-
-/**
-* Maximum number of shards to use distributed
-* searches
-*/
-
-define('SOLR_NUM_MAX_WEIGHTED_SHARDS',32);
-
+//define('SOLR_SLAVE_HOST','');
 
 /**
- * METAREP SQLite database 
- * 
- * Define the location of the METAREP SQLite
- * database on the server to allow users to
- * upload and index data.
+ * Solr big ip; define if you use a 
+ * Define Solr BIG-IP if you use METAREP in a 
+ * load balanced/replication set-up
  */
 
-define('METAREP_SQLITE_DB_PATH','/usr/local/projects/DB/MGX/mgx-metarep/current/metarep.sqlite3.db');
-
+//define('SOLR_BIG_IP_HOST','');
 
 /**
  * FTP host
@@ -151,19 +122,19 @@ define('METAREP_SQLITE_DB_PATH','/usr/local/projects/DB/MGX/mgx-metarep/current/
  * additional data for your METAREP dataset
  */
 
-define('FTP_HOST','ftp.jcvi.org');
+//define('FTP_HOST','');
 
 /**
  * FTP suser name 
  */
 
-define('FTP_USERNAME','metarepftp');
+//define('FTP_USERNAME','');
 
 /**
  * FTP password
  */
 
-define('FTP_PASSWORD','P7ALdDVM');
+//define('FTP_PASSWORD','');
 
 /**
  * Email to send bug reports and feature requests. 
@@ -171,6 +142,7 @@ define('FTP_PASSWORD','P7ALdDVM');
  * Email is displayed if METAREP can not access the Solr or
  * MySQL servers. It is also used to provide users an Email
  * address send bug reports and feature requests.
+ * Default: metarep-support@jcvi.org
  */
 
 define('METAREP_SUPPORT_EMAIL','metarep-support@jcvi.org');
@@ -185,34 +157,34 @@ define('METAREP_SUPPORT_EMAIL','metarep-support@jcvi.org');
  * EXTERNAL and PUBLIC have restricted access. The variable defines
  * the Email extension that is used to identify INTERNAL users. This
  * is especially helpful if you like to grant dataset access to all
- * users of your institution - just specify your institute’s email
+ * users of your institution - just specify your institute's email
  * extension, e.g. jcvi.org for the J. Craig Venter Institute.
  */
 
-define('INTERNAL_EMAIL_EXTENSION','jcvi.org');
+//define('INTERNAL_EMAIL_EXTENSION','');
 
 /**
  * Google Analytics Tracker ID
  * 
 */
 
-define('GOOGLE_ANALYTICS_TRACKER_ID','UA-9809410-3');
+//define('GOOGLE_ANALYTICS_TRACKER_ID','');
 
 /**
  * Google Analytics Domain Name
  * 
 */
 
-define('GOOGLE_ANALYTICS_DOMAIN_NAME','.jcvi.org');
+//define('GOOGLE_ANALYTICS_DOMAIN_NAME','');
 
 /**
- * PHP HTTP transport implementation for retrieving Solr responses. 
- * Two cCURL implementations (CURL_REUSE,CURL_NO_REUSE) and one implementation based on
- * file_get_contents (FILE_GET_CONTENTS) can be specified. For the curl implemention
- * the PHP cCURL module has to be installed.
- */
+* PHP HTTP transport implementation for retrieving Solr responses.
+* Two cCURL implementations (CURL_REUSE,CURL_NO_REUSE) and one implementation based on
+* file_get_contents (FILE_GET_CONTENTS) can be specified. For the curl implemention
+* the PHP cCURL module has to be installed.
+*/
 
-define('PHP_HTTP_TRANSPORT','CURL_NO_REUSE');
+define('PHP_HTTP_TRANSPORT','FILE_GET_CONTENTS');
 
 /**
  * Number of Top Facet Counts
@@ -255,7 +227,7 @@ define('NUM_VIEW_RESULTS',20);
  * METASTATS t statistic.
  */
 
-define('NUM_METASTATS_BOOTSTRAP_PERMUTATIONS',10000);
+define('NUM_METASTATS_BOOTSTRAP_PERMUTATIONS',1000);
 
 /**
  * Path to R Executable
@@ -264,7 +236,7 @@ define('NUM_METASTATS_BOOTSTRAP_PERMUTATIONS',10000);
  * Default: /usr/local/bin/R
  */
 
-define('R_PATH','/usr/local/packages/R-2.11.1/bin/R');
+define('R_PATH','/usr/local/bin/R');
 
 /**
  * Path to Rscript Executable
@@ -273,7 +245,7 @@ define('R_PATH','/usr/local/packages/R-2.11.1/bin/R');
  * Default: /usr/local/bin/Rscript
  */
 
-define('RSCRIPT_PATH','/usr/local/packages/R-2.11.1/bin/Rscript');
+define('RSCRIPT_PATH','/usr/local/bin/Rscript');
 
 /**
  * Activate/Deactivate JCVI-only features
@@ -284,38 +256,26 @@ define('RSCRIPT_PATH','/usr/local/packages/R-2.11.1/bin/Rscript');
  * Default: 0
  */
 
-define('JCVI_INSTALLATION',1);
+define('JCVI_INSTALLATION',0);
 
 /**
- * Relative Count Precision 
- * 
- * The precision is used for rounding
- * relative counts after normalization.
- */
+* Relative Count Precision
+*
+* The precision is used for rounding
+* relative counts after normalization.
+*/
 
 define('RELATIVE_COUNT_PRECISION',4);
 
 /**
  * Weighted Count Precision
- * 
+ *
  * The precision is used for rounding
- * weighted counts after retrieval from 
+ * weighted counts after retrieval from
  * the index files.
  */
 
 define('WEIGHTED_COUNT_PRECISION',2);
-
-/**
- * P-value Precision 
- * 
- * The precision is used for rounding
- * P-values. For METATSTATS precision is
- * automatically calculated using the 
- * NUM_METASTATS_BOOTSTRAP_PERMUTATIONS
- * field.
- */
-
-define('PVALUE_PRECISION',4);
 
 /**
  * Path to Perl Executable
@@ -325,95 +285,20 @@ define('PERL_PATH','/usr/local/bin/perl');
 
 
 /**
- * Path to formatdb formatted sequences 
+ * Path to formatdb formatted sequences on webserver
  */
 
-define('SEQUENCE_STORE_PATH','/opt/www/metarep/htdocs/metarep/app/webroot/seq-stor');
+define('SEQUENCE_STORE_PATH','');
 
 /**
  * Path to fastcmd
  */
 
-define('FASTACMD_PATH','/usr/local/bin/fastacmd');
-
-/**
- * Path to blastall
- */
-
-define('BLASTALL_PATH','/usr/local/bin/blastall');
-
+define('FASTACMD_PATH','');
 
 /**
  * Path to linux binaries (sed, etc.)
  */
 
 define('LINUX_BINARY_PATH','/usr/local/bin');
-
-
-
-//define('FIELD_CONFIG',serialize(
-//		array('DEFAULT' => 
-//			array('facetFields' => 
-//				array(
-//					'blast_species',
-//					'com_name',
-//					'go_id',
-//					'ec_id',
-//					'hmm_id'),
-//			),
-//			array('resultFields' => 
-//				array(
-//					'peptide_id',
-//					'com_name',
-//					'com_name_src',
-//					'blast_species',
-//					'blast_evalue',
-//					'go_id',
-//					'go_src',
-//					'ec_id',
-//					'ec_src',
-//					'hmm_id',
-//				),	
-//			),			
-//			array('viewTabs' => 
-//				array(
-//					'blast_species',
-//					'com_name',
-//					'go_id',
-//					'ec_id', 
-//					KEGG_PATHWAYS,
-//					METACYC_PATHWAYS),
-//				),				
-//		),
-//		array('HUMANN'=>
-//			array('facetFields' => 
-//				array('blast_species','ko_id','go_id','ec_id'),
-//			),
-//			array('resultFields' => 
-//				array(
-//					'peptide_id',
-//					'com_name',
-//					'com_name_src',
-//					'blast_species',
-//					'ko_id',
-//					'go_id',
-//					'go_src',
-//					'ec_id',
-//					'ec_src',
-//					),
-//			),
-//			array('viewTabs' => 
-//				array(
-//					'blast_species',
-//					'ko_id',
-//					'go_id',
-//					'ec_id',		
-//					 KEGG_PATHWAYS,
-//					 METACYC_PATHWAYS,
-//				),
-//			),				
-//		)
-//	)
-//);
-
 ?>
