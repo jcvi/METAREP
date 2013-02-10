@@ -80,6 +80,15 @@ define('SOLR_INSTANCE_DIR','/<your-solr-installation-dir>/apache-solr-3.1.0/meta
 define('SOLR_PORT','1234');
 
 /**
+ * Track Solr Qtime  
+ * 
+ * Track Solr query performance statistics in solr_Qtime table.
+ * Should be set to 0 in production environment.
+ */
+
+define('SOLR_TRACK_QTIME',0);
+
+/**
  * Solr data dir
  * 
  * Defines location of Solr index files
