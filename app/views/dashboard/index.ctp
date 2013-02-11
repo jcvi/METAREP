@@ -123,7 +123,7 @@
 		<legend >METAREP Mailing List</legend>
 			<table border=0 style="background-color: #fff; padding: 0px;" cellspacing=0>			  
 			  </td></tr>
-			  <form action="http://groups.google.com/group/phylo-metarep/boxsubscribe">
+			  <form action="http://groups.google.com/group/metarep/boxsubscribe">
 			  <tr><td style="padding-left: 2px;padding-right: 10px;">
 			  Enter Your Email: <input type=text name=email width=30px>
 			  <input type=submit name="sub" value="Subscribe" width="10px">
